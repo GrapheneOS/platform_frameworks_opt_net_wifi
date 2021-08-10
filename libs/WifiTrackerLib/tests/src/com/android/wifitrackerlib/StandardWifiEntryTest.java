@@ -28,6 +28,8 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityTypeToStandardWifiEntryKey;
@@ -45,7 +47,6 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -72,6 +73,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -895,17 +897,22 @@ public class StandardWifiEntryTest {
         NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
 
-        // Simulate user tapping on the network and receiving captive portal capabilities.
-        // This should trigger the captive portal app.
-        entry.connect(null /* callback */);
-        entry.updateNetworkCapabilities(captivePortalCapabilities);
+        MockitoSession session = mockitoSession().spyStatic(HiddenApiWrapper.class).startMocking();
+        try {
+            // Simulate user tapping on the network and receiving captive portal capabilities.
+            // This should trigger the captive portal app.
+            entry.connect(null /* callback */);
+            entry.updateNetworkCapabilities(captivePortalCapabilities);
 
-        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
+            verify(() -> HiddenApiWrapper.startCaptivePortalApp(any(), any()), times(1));
 
-        // Update network capabilities again. This should not trigger the captive portal app.
-        entry.updateNetworkCapabilities(captivePortalCapabilities);
+            // Update network capabilities again. This should not trigger the captive portal app.
+            entry.updateNetworkCapabilities(captivePortalCapabilities);
 
-        verify(mMockConnectivityManager, times(1)).startCaptivePortalApp(any());
+            verify(() -> HiddenApiWrapper.startCaptivePortalApp(any(), any()), times(1));
+        } finally {
+            session.finishMocking();
+        }
     }
 
     @Test
