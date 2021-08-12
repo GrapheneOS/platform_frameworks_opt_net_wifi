@@ -115,61 +115,61 @@
     <!-- Summary for Connected wifi network with a low quality connection [CHAR LIMIT=NONE] -->
     <string name="wifi_connected_low_quality">Low quality</string>
 
-    <!-- Concise terminology for wifi with WPA/WPA2 802.1x EAP security -->
-    <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" translatable="false">WPA/WPA2-EAP</string>
+    <!-- Concise terminology for wifi with WPA/WPA2 802.1x EAP security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2">WPA/WPA2-EAP</string>
 
-    <!-- Concise terminology for wifi with WPA/WPA2 802.1x EAP security -->
-    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" translatable="false">WPA/WPA2-Enterprise</string>
+    <!-- Concise terminology for wifi with WPA/WPA2 802.1x EAP security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2">WPA/WPA2-Enterprise</string>
 
-    <!-- Concise terminology for wifi with WPA3 802.1x EAP security -->
-    <string name="wifitrackerlib_wifi_security_short_eap_wpa3" translatable="false">WPA3-EAP</string>
+    <!-- Concise terminology for wifi with WPA3 802.1x EAP security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_eap_wpa3">WPA3-EAP</string>
 
-    <!-- Concise terminology for wifi with WPA3 802.1x EAP security -->
-    <string name="wifitrackerlib_wifi_security_eap_wpa3" translatable="false">WPA3-Enterprise</string>
+    <!-- Concise terminology for wifi with WPA3 802.1x EAP security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_eap_wpa3">WPA3-Enterprise</string>
 
-    <!-- Concise terminology for wifi with WPA/WPA2/WPA3 802.1x EAP security -->
-    <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3" translatable="false">WPA/WPA2/WPA3-EAP</string>
+    <!-- Concise terminology for wifi with WPA/WPA2/WPA3 802.1x EAP security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3">WPA/WPA2/WPA3-EAP</string>
 
-    <!-- Concise terminology for wifi with WPA/WPA2/WPA3 802.1x EAP security -->
-    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2_wpa3" translatable="false">WPA/WPA2/WPA3-Enterprise</string>
+    <!-- Concise terminology for wifi with WPA/WPA2/WPA3 802.1x EAP security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2_wpa3">WPA/WPA2/WPA3-Enterprise</string>
 
-    <!-- Concise terminology for wifi with 802.1x EAP Suite-B-192 security -->
-    <string name="wifitrackerlib_wifi_security_short_eap_suiteb" translatable="false">Suite-B-192</string>
+    <!-- Concise terminology for wifi with 802.1x EAP Suite-B-192 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_eap_suiteb">Suite-B-192</string>
 
-    <!-- Concise terminology for wifi with 802.1x EAP Suite-B-192 security -->
-    <string name="wifitrackerlib_wifi_security_eap_suiteb" translatable="false">WPA3-Enterprise 192-bit</string>
+    <!-- Concise terminology for wifi with 802.1x EAP Suite-B-192 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_eap_suiteb">WPA3-Enterprise 192-bit</string>
 
-    <!-- Concise terminology for wifi with both WPA/WPA2 security -->
-    <string name="wifitrackerlib_wifi_security_short_wpa_wpa2" translatable="false">WPA/WPA2</string>
+    <!-- Concise terminology for wifi with both WPA/WPA2 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_wpa_wpa2">WPA/WPA2</string>
 
-    <!-- Terminology for wifi with both WPA/WPA2 security -->
-    <string name="wifitrackerlib_wifi_security_wpa_wpa2" translatable="false">WPA/WPA2-Personal</string>
+    <!-- Terminology for wifi with both WPA/WPA2 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_wpa_wpa2">WPA/WPA2-Personal</string>
 
-    <!-- Concise terminology for wifi with both WPA/WPA2/WPA3 security -->
-    <string name="wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3" translatable="false">WPA/WPA2/WPA3</string>
+    <!-- Concise terminology for wifi with both WPA/WPA2/WPA3 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3">WPA/WPA2/WPA3</string>
 
-    <!-- Terminology for wifi with both WPA/WPA2/WPA3 security -->
-    <string name="wifitrackerlib_wifi_security_wpa_wpa2_wpa3" translatable="false">WPA/WPA2/WPA3-Personal</string>
+    <!-- Terminology for wifi with both WPA/WPA2/WPA3 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_wpa_wpa2_wpa3">WPA/WPA2/WPA3-Personal</string>
 
-    <!-- Terminology for wifi with WEP security -->
-    <string name="wifitrackerlib_wifi_security_wep" translatable="false">WEP</string>
+    <!-- Terminology for wifi with WEP security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_wep">WEP</string>
 
-    <!-- Concise terminology for wifi with WPA3 security -->
-    <string name="wifitrackerlib_wifi_security_short_sae" translatable="false">WPA3</string>
+    <!-- Concise terminology for wifi with WPA3 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_sae">WPA3</string>
 
-    <!-- Terminology for wifi with WPA3 security -->
-    <string name="wifitrackerlib_wifi_security_sae" translatable="false">WPA3-Personal</string>
+    <!-- Terminology for wifi with WPA3 security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_sae">WPA3-Personal</string>
 
-    <!-- Concise terminology for wifi with OWE security -->
-    <string name="wifitrackerlib_wifi_security_short_owe" translatable="false">OWE</string>
+    <!-- Concise terminology for wifi with OWE security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_short_owe">OWE</string>
 
-    <!-- Terminology for wifi with OWE security -->
-    <string name="wifitrackerlib_wifi_security_owe" translatable="false">Enhanced Open</string>
+    <!-- Terminology for wifi with OWE security [CHAR LIMIT=40] -->
+    <string name="wifitrackerlib_wifi_security_owe">Enhanced Open</string>
 
     <!-- Used in Wi-Fi settings dialogs when Wi-Fi does not have any security. [CHAR LIMIT=40] -->
     <string name="wifitrackerlib_wifi_security_none">None</string>
 
-    <!-- Terminology for wifi with Passpoint security -->
+    <!-- Terminology for wifi with Passpoint security [CHAR LIMIT=40] -->
     <string name="wifitrackerlib_wifi_security_passpoint">Passpoint</string>
 
     <!-- Passpoint summary for an expired passpoint [CHAR LIMIT=40] -->
