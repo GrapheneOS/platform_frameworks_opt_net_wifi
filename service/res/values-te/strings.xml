@@ -40,7 +40,7 @@
     <string name="wifi_suggestion_action_allow_imsi_privacy_exemption_confirmation" msgid="3102046304611708608">"కనెక్ట్ చేయి"</string>
     <string name="wifi_suggestion_action_disallow_imsi_privacy_exemption_confirmation" msgid="8467281276632253246">"కనెక్ట్ చేయవద్దు"</string>
     <string name="wifi_wakeup_onboarding_title" msgid="8825510461478671504">"Wi‑Fi ఆటోమేటిక్‌గా ఆన్ అవుతుంది"</string>
-    <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"మీరు అధిక నాణ్యత గల సేవ్ చేసిన నెట్‌వర్క్‌కు సమీపంగా ఉన్నప్పుడు"</string>
+    <string name="wifi_wakeup_onboarding_subtext" msgid="2525097093651287599">"మీరు అధిక క్వాలిటీ గల సేవ్ చేసిన నెట్‌వర్క్‌కు సమీపంగా ఉన్నప్పుడు"</string>
     <string name="wifi_wakeup_onboarding_action_disable" msgid="672002169958868470">"తిరిగి ఆన్ చేయవద్దు"</string>
     <string name="wifi_wakeup_enabled_title" msgid="7758584632765597662">"Wi‑Fi ఆటోమేటిక్‌గా ఆన్ చేయబడింది"</string>
     <string name="wifi_wakeup_enabled_content" msgid="4713038331224656338">"మీరు సేవ్ చేసిన నెట్‌వర్క్‌కి సమీపంలో ఉన్నారు: <xliff:g id="NETWORK_SSID">%1$s</xliff:g>"</string>
