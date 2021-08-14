@@ -71,8 +71,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String key) {
-        if (key.startsWith(StandardWifiEntry.KEY_PREFIX)
-                || key.startsWith(NetworkRequestEntry.KEY_PREFIX)) {
+        if (key.startsWith(StandardWifiEntry.KEY_PREFIX)) {
             return new StandardNetworkDetailsTracker(lifecycle, context, wifiManager,
                     connectivityManager, networkScoreManager, mainHandler, workerHandler, clock,
                     maxScanAgeMillis, scanIntervalMillis, key);
@@ -111,7 +110,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
     @Override
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
-        mCurrentNetworkInfo = (NetworkInfo) intent.getExtra(WifiManager.EXTRA_NETWORK_INFO);
+        mCurrentNetworkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
         getWifiEntry().updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
     }
 
