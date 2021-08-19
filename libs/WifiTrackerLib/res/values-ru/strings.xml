@@ -43,40 +43,23 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Доступа к частному DNS-серверу нет"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Подключено к устройству. Нет доступа к интернету."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"низкое качество"</string>
-    <!-- no translation found for wifitrackerlib_wifi_security_short_eap_wpa_wpa2 (4815223667006927841) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_eap_wpa_wpa2 (6425661975745405271) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_short_eap_wpa3 (6210273302049534874) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_eap_wpa3 (3945746966044709030) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3 (1461382917566262495) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_eap_wpa_wpa2_wpa3 (5793439868239112839) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_short_eap_suiteb (6335062557041604336) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_eap_suiteb (4715703239786225763) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_short_wpa_wpa2 (6770438383385707243) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_wpa_wpa2 (5767878305316110228) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3 (4489424775550194618) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_wpa_wpa2_wpa3 (4154428413248489642) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_wep (7714779033848180369) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_short_sae (107913757758514692) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_sae (6191706087425911867) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_short_owe (224333285610280433) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_security_owe (1018282395106838649) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
+    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
+    <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
+    <string name="wifitrackerlib_wifi_security_eap_wpa3" msgid="3945746966044709030">"WPA3-Enterprise"</string>
+    <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3" msgid="1461382917566262495">"WPA/WPA2/WPA3-EAP"</string>
+    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2_wpa3" msgid="5793439868239112839">"WPA/WPA2/WPA3-Enterprise"</string>
+    <string name="wifitrackerlib_wifi_security_short_eap_suiteb" msgid="6335062557041604336">"Suite-B-192"</string>
+    <string name="wifitrackerlib_wifi_security_eap_suiteb" msgid="4715703239786225763">"WPA3-Enterprise 192 бита"</string>
+    <string name="wifitrackerlib_wifi_security_short_wpa_wpa2" msgid="6770438383385707243">"WPA/WPA2"</string>
+    <string name="wifitrackerlib_wifi_security_wpa_wpa2" msgid="5767878305316110228">"WPA/WPA2-Personal"</string>
+    <string name="wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3" msgid="4489424775550194618">"WPA/WPA2/WPA3"</string>
+    <string name="wifitrackerlib_wifi_security_wpa_wpa2_wpa3" msgid="4154428413248489642">"WPA/WPA2/WPA3-Personal"</string>
+    <string name="wifitrackerlib_wifi_security_wep" msgid="7714779033848180369">"WEP"</string>
+    <string name="wifitrackerlib_wifi_security_short_sae" msgid="107913757758514692">"WPA3"</string>
+    <string name="wifitrackerlib_wifi_security_sae" msgid="6191706087425911867">"WPA3-Personal"</string>
+    <string name="wifitrackerlib_wifi_security_short_owe" msgid="224333285610280433">"OWE"</string>
+    <string name="wifitrackerlib_wifi_security_owe" msgid="1018282395106838649">"Enhanced Open"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Нет"</string>
     <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Срок действия истек"</string>
