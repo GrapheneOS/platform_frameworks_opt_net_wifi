@@ -1028,6 +1028,11 @@ public class WifiEntry implements Comparable<WifiEntry> {
     }
 
     @Override
+    public int hashCode() {
+        return getKey().hashCode();
+    }
+
+    @Override
     public String toString() {
         return new StringBuilder()
                 .append(getKey())
