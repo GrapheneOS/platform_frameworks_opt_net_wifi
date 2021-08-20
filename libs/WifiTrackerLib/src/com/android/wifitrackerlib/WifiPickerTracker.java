@@ -804,6 +804,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mNetworkRequestEntry = new NetworkRequestEntry(mContext, mMainHandler, entryKey,
                     mWifiManager, false /* forSavedNetworksPage */);
             mNetworkRequestEntry.updateConfig(matchingConfigs);
+            updateNetworkRequestEntryScans(mScanResultUpdater.getScanResults());
         }
         mNetworkRequestEntry.updateConnectionInfo(wifiInfo, networkInfo);
     }
