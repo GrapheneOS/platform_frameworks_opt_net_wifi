@@ -32,6 +32,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
+import android.os.Build;
 import android.os.PersistableBundle;
 import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
@@ -87,10 +88,15 @@ public class Utils {
     }
 
     // Returns a list of WifiInfo SECURITY_TYPE_* supported by a ScanResult.
-    // TODO(b/187755981): Move to shared static utils class
     @NonNull
     static List<Integer> getSecurityTypesFromScanResult(@NonNull ScanResult scanResult) {
         List<Integer> securityTypes = new ArrayList<>();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            for (int securityType : scanResult.getSecurityTypes()) {
+                securityTypes.add(securityType);
+            }
+            return securityTypes;
+        }
 
         // Open network & its upgradable types
         if (isScanResultForOweTransitionNetwork(scanResult)) {
@@ -690,18 +696,16 @@ public class Utils {
     /**
      * Helper method to check if the provided |scanResult| corresponds to a PSK network or not.
      * This checks if the provided capabilities string contains PSK encryption type or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForPskNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForPskNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("PSK");
     }
 
     /**
      * Helper method to check if the provided |scanResult| corresponds to a WAPI-PSK network or not.
      * This checks if the provided capabilities string contains PSK encryption type or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForWapiPskNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForWapiPskNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("WAPI-PSK");
     }
 
@@ -709,9 +713,8 @@ public class Utils {
      * Helper method to check if the provided |scanResult| corresponds to a WAPI-CERT
      * network or not.
      * This checks if the provided capabilities string contains PSK encryption type or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForWapiCertNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForWapiCertNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("WAPI-CERT");
     }
 
@@ -721,9 +724,8 @@ public class Utils {
      * - Enable EAP/SHA1, EAP/SHA256 AKM, FT/EAP, or EAP-FILS.
      * - Not a WPA3 Enterprise only network.
      * - Not a WPA3 Enterprise transition network.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForEapNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForEapNetwork(ScanResult scanResult) {
         return (scanResult.capabilities.contains("EAP/SHA1")
                 || scanResult.capabilities.contains("EAP/SHA256")
                 || scanResult.capabilities.contains("FT/EAP")
@@ -732,12 +734,10 @@ public class Utils {
                 && !isScanResultForWpa3EnterpriseTransitionNetwork(scanResult);
     }
 
-    // TODO(b/187755981): Move to shared static utils class
     private static boolean isScanResultForPmfMandatoryNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("[MFPR]");
     }
 
-    // TODO(b/187755981): Move to shared static utils class
     private static boolean isScanResultForPmfCapableNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("[MFPC]");
     }
@@ -751,9 +751,8 @@ public class Utils {
      * - Not enable WPA1 version 1, WEP, and TKIP.
      * - Management Frame Protection Capable is set.
      * - Management Frame Protection Required is not set.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForWpa3EnterpriseTransitionNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForWpa3EnterpriseTransitionNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("EAP/SHA1")
                 && scanResult.capabilities.contains("EAP/SHA256")
                 && scanResult.capabilities.contains("RSN")
@@ -773,9 +772,8 @@ public class Utils {
      * - Not enable WPA1 version 1, WEP, and TKIP.
      * - Management Frame Protection Capable is set.
      * - Management Frame Protection Required is set.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForWpa3EnterpriseOnlyNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForWpa3EnterpriseOnlyNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("EAP/SHA256")
                 && !scanResult.capabilities.contains("EAP/SHA1")
                 && scanResult.capabilities.contains("RSN")
@@ -794,9 +792,8 @@ public class Utils {
      * - Not enable EAP/SHA1 AKM suite.
      * - Not enable WPA1 version 1, WEP, and TKIP.
      * - Management Frame Protection Required is set.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForEapSuiteBNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForEapSuiteBNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("SUITE_B_192")
                 && scanResult.capabilities.contains("RSN")
                 && !scanResult.capabilities.contains("WEP")
@@ -807,54 +804,48 @@ public class Utils {
     /**
      * Helper method to check if the provided |scanResult| corresponds to a WEP network or not.
      * This checks if the provided capabilities string contains WEP encryption type or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForWepNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForWepNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("WEP");
     }
 
     /**
      * Helper method to check if the provided |scanResult| corresponds to OWE network.
      * This checks if the provided capabilities string contains OWE or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForOweNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForOweNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("OWE");
     }
 
     /**
      * Helper method to check if the provided |scanResult| corresponds to OWE transition network.
      * This checks if the provided capabilities string contains OWE_TRANSITION or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForOweTransitionNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForOweTransitionNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("OWE_TRANSITION");
     }
 
     /**
      * Helper method to check if the provided |scanResult| corresponds to SAE network.
      * This checks if the provided capabilities string contains SAE or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForSaeNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForSaeNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("SAE");
     }
 
     /**
      * Helper method to check if the provided |scanResult| corresponds to PSK-SAE transition
      * network. This checks if the provided capabilities string contains both PSK and SAE or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForPskSaeTransitionNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForPskSaeTransitionNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("PSK") && scanResult.capabilities.contains("SAE");
     }
 
     /**
      *  Helper method to check if the provided |scanResult| corresponds to an unknown amk network.
      *  This checks if the provided capabilities string contains ? or not.
-     *  TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForUnknownAkmNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForUnknownAkmNetwork(ScanResult scanResult) {
         return scanResult.capabilities.contains("?");
     }
 
@@ -862,9 +853,8 @@ public class Utils {
      * Helper method to check if the provided |scanResult| corresponds to an open network or not.
      * This checks if the provided capabilities string does not contain either of WEP, PSK, SAE
      * EAP, or unknown encryption types or not.
-     * TODO(b/187755981): Move to shared static utils class
      */
-    public static boolean isScanResultForOpenNetwork(ScanResult scanResult) {
+    private static boolean isScanResultForOpenNetwork(ScanResult scanResult) {
         return (!(isScanResultForWepNetwork(scanResult) || isScanResultForPskNetwork(scanResult)
                 || isScanResultForEapNetwork(scanResult) || isScanResultForSaeNetwork(scanResult)
                 || isScanResultForWpa3EnterpriseTransitionNetwork(scanResult)
