@@ -19,6 +19,9 @@ package com.android.wifitrackerlib;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.TransportInfo;
+import android.net.vcn.VcnTransportInfo;
 import android.text.Annotation;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -84,5 +87,15 @@ class HiddenApiWrapper {
             }
         }
         return rawText;
+    }
+
+    /**
+     * Returns whether or not the network capabilities is determined to be VCN over Wi-Fi or not.
+     */
+    static boolean isVcnOverWifi(@NonNull NetworkCapabilities networkCapabilities) {
+        TransportInfo transportInfo = networkCapabilities.getTransportInfo();
+        return transportInfo != null
+                && transportInfo instanceof VcnTransportInfo
+                && ((VcnTransportInfo) transportInfo).getWifiInfo() != null;
     }
 }
