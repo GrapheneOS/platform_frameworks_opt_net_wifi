@@ -35,6 +35,7 @@ import android.net.NetworkRequest;
 import android.net.NetworkScoreManager;
 import android.net.ScoredNetwork;
 import android.net.TransportInfo;
+import android.net.vcn.VcnTransportInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkScoreCache;
@@ -225,9 +226,15 @@ public class BaseWifiTracker implements LifecycleObserver {
                     }
                     final boolean oldWifiDefault = mIsWifiDefaultRoute;
                     final boolean oldCellDefault = mIsCellDefaultRoute;
-                    // raw Wifi or VPN-over-Wifi is default => Wifi is default.
-                    mIsWifiDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_WIFI);
-                    mIsCellDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_CELLULAR);
+                    TransportInfo transportInfo = networkCapabilities.getTransportInfo();
+                    final boolean isVcnOverWifi = transportInfo != null
+                            && transportInfo instanceof VcnTransportInfo
+                            && ((VcnTransportInfo) transportInfo).getWifiInfo() != null;
+                    // raw Wifi or VPN-over-Wifi or VCN-over-Wifi is default => Wifi is default.
+                    mIsWifiDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_WIFI)
+                            || isVcnOverWifi;
+                    mIsCellDefaultRoute = !mIsWifiDefaultRoute
+                            && networkCapabilities.hasTransport(TRANSPORT_CELLULAR);
                     if (mIsWifiDefaultRoute != oldWifiDefault
                             || mIsCellDefaultRoute != oldCellDefault) {
                         if (isVerboseLoggingEnabled()) {
