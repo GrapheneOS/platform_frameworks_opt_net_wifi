@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +39,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkScoreManager;
+import android.net.vcn.VcnTransportInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -1242,6 +1244,42 @@ public class WifiPickerTrackerTest {
                         .addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build());
 
         // Now Wifi is default, so isDefaultNetwork returns true
+        assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
+    }
+
+    /**
+     * Tests that the MergedCarrierEntry is the default network when it is connected and
+     * VCN-over-Wifi is the default network.
+     */
+    @Test
+    public void testGetMergedCarrierEntry_vcnWifiIsDefault_entryIsDefaultNetwork() {
+        final int subId = 1;
+        when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
+        when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent.putExtra("subscription", subId);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
+        verify(mMockConnectivityManager)
+                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
+        MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
+        assertThat(mergedCarrierEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        // Wifi isn't default yet, so isDefaultNetwork returns false
+        assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
+
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                        .setTransportInfo(new VcnTransportInfo(new WifiInfo.Builder().build()))
+                        .build());
+
+        // Now VCN-over-Wifi is default, so isDefaultNetwork returns true
         assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
     }
 }
