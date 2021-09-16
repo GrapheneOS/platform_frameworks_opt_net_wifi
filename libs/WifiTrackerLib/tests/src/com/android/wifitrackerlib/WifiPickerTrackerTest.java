@@ -852,6 +852,50 @@ public class WifiPickerTrackerTest {
                 .count()).isEqualTo(1);
     }
 
+    /**
+     * Tests that a suggestion entry created before scan results are available will be updated to
+     * user shareable after scans become available.
+     */
+    @Test
+    public void testGetWifiEntries_preConnectedSuggestion_becomesUserShareable() {
+        WifiConfiguration suggestionConfig = new WifiConfiguration();
+        suggestionConfig.SSID = "\"ssid\"";
+        suggestionConfig.networkId = 1;
+        suggestionConfig.creatorName = "creator";
+        suggestionConfig.carrierId = 1;
+        suggestionConfig.subscriptionId = 1;
+        suggestionConfig.fromWifiNetworkSuggestion = true;
+        // Initial entries
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks()).thenReturn(
+                Arrays.asList(suggestionConfig));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(suggestionConfig.networkId);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+        WifiEntry suggestionEntry = wifiPickerTracker.getConnectedWifiEntry();
+        assertThat(suggestionEntry).isNotNull();
+
+        // Update with user-shareable scan results for the suggestion
+        when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiManager.getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(any()))
+                .thenReturn(Arrays.asList(suggestionConfig));
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        // Disconnect from network to verify its usershareability in the picker list
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION));
+        mTestLooper.dispatchAll();
+
+        // Suggestion entry should be in picker list now
+        suggestionEntry = wifiPickerTracker.getWifiEntries().get(0);
+        assertThat(suggestionEntry.isSuggestion()).isTrue();
+    }
+
     @Test
     public void testGetConnectedEntry_alreadyConnectedToPasspoint_returnsPasspointEntry() {
         final String fqdn = "fqdn";
