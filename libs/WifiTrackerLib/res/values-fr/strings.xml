@@ -34,7 +34,7 @@
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Déconnecté"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Enregistré"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Facturé à l\'usage"</string>
-    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Non facturé à l\'usage"</string>
+    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Sans compteur"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Connecté via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Disponible via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Connecté automatiquement via <xliff:g id="NAME">%1$s</xliff:g>"</string>
