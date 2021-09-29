@@ -38,6 +38,7 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
+import android.os.UserManager;
 import android.os.test.TestLooper;
 
 import androidx.lifecycle.Lifecycle;
@@ -62,18 +63,13 @@ public class SavedNetworkTrackerTest {
     private static final long MAX_SCAN_AGE_MILLIS = 15_000;
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
-    @Mock
-    private Lifecycle mMockLifecycle;
-    @Mock
-    private Context mMockContext;
-    @Mock
-    private WifiManager mMockWifiManager;
-    @Mock
-    private ConnectivityManager mMockConnectivityManager;
-    @Mock
-    private Clock mMockClock;
-    @Mock
-    private SavedNetworkTracker.SavedNetworkTrackerCallback mMockCallback;
+    @Mock private Lifecycle mMockLifecycle;
+    @Mock private Context mMockContext;
+    @Mock private WifiManager mMockWifiManager;
+    @Mock private ConnectivityManager mMockConnectivityManager;
+    @Mock private UserManager mMockUserManager;
+    @Mock private Clock mMockClock;
+    @Mock private SavedNetworkTracker.SavedNetworkTrackerCallback mMockCallback;
 
     private TestLooper mTestLooper;
 
@@ -100,6 +96,7 @@ public class SavedNetworkTrackerTest {
 
         mTestLooper = new TestLooper();
 
+        when(mMockContext.getSystemService(UserManager.class)).thenReturn(mMockUserManager);
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);

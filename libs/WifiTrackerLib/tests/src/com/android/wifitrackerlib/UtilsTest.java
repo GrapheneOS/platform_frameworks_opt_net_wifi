@@ -50,7 +50,6 @@ import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiNetworkScoreCache;
 import android.os.Handler;
 import android.os.PersistableBundle;
 import android.os.test.TestLooper;
@@ -89,9 +88,10 @@ public class UtilsTest {
 
     private static final String TEST_CARRIER_NAME = "carrierName";
 
+    @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
-    @Mock private WifiNetworkScoreCache mMockScoreCache;
+    @Mock private WifiManager mMockWifiManager;
     @Mock private SubscriptionManager mSubscriptionManager;
     @Mock private TelephonyManager mTelephonyManager;
     @Mock private CarrierConfigManager mCarrierConfigManager;
@@ -449,10 +449,9 @@ public class UtilsTest {
 
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
-        final WifiManager mockWifiManager = mock(WifiManager.class);
-        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
-                new StandardWifiEntryKey(config), Collections.singletonList(config),
-                null, mockWifiManager, false /* forSavedNetworksPage */);
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockInjector, mMockContext,
+                mTestHandler, new StandardWifiEntryKey(config), Collections.singletonList(config),
+                null, mMockWifiManager, false /* forSavedNetworksPage */);
         final WifiInfo mockWifiInfo = mock(WifiInfo.class);
         final NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
 
