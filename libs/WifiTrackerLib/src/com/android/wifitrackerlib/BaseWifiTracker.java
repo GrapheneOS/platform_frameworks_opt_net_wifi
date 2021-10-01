@@ -126,6 +126,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     private final BaseWifiTracker.Scanner mScanner;
     private final BaseWifiTrackerCallback mListener;
 
+    protected final WifiTrackerInjector mInjector;
     protected final Context mContext;
     protected final WifiManager mWifiManager;
     protected final ConnectivityManager mConnectivityManager;
@@ -275,6 +276,7 @@ public class BaseWifiTracker implements LifecycleObserver {
             String tag) {
         lifecycle.addObserver(this);
         mContext = context;
+        mInjector = new WifiTrackerInjector(context);
         mWifiManager = wifiManager;
         mConnectivityManager = connectivityManager;
         mMainHandler = mainHandler;
