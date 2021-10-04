@@ -94,12 +94,10 @@ public class UtilsTest {
 
     private static final String TEST_CARRIER_NAME = "carrierName";
 
-    @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
     @Mock private NetworkScoreManager mMockNetworkScoreManager;
     @Mock private WifiNetworkScoreCache mMockScoreCache;
-    @Mock private WifiManager mMockWifiManager;
     @Mock private SubscriptionManager mSubscriptionManager;
     @Mock private TelephonyManager mTelephonyManager;
     @Mock private CarrierConfigManager mCarrierConfigManager;
@@ -494,9 +492,10 @@ public class UtilsTest {
 
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
-        final StandardWifiEntry entry = new StandardWifiEntry(mMockInjector, mMockContext,
-                mTestHandler, new StandardWifiEntryKey(config), Collections.singletonList(config),
-                null, mMockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
+        final WifiManager mockWifiManager = mock(WifiManager.class);
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockContext, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config),
+                null, mockWifiManager, mMockScoreCache, false /* forSavedNetworksPage */);
         final WifiInfo mockWifiInfo = mock(WifiInfo.class);
         final NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
 

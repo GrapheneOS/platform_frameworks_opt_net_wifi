@@ -101,7 +101,6 @@ public class StandardWifiEntry extends WifiEntry {
 
     @NonNull private final StandardWifiEntryKey mKey;
 
-    @NonNull private final WifiTrackerInjector mInjector;
     @NonNull private final Context mContext;
 
     // Map of security type to matching scan results
@@ -128,14 +127,11 @@ public class StandardWifiEntry extends WifiEntry {
     private final boolean mIsWpa3SuiteBSupported;
     private final boolean mIsEnhancedOpenSupported;
 
-    StandardWifiEntry(
-            @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
+    StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull StandardWifiEntryKey key, @NonNull WifiManager wifiManager,
             @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) {
         super(callbackHandler, wifiManager, scoreCache, forSavedNetworksPage);
-        mInjector = injector;
         mContext = context;
         mKey = key;
         mIsWpa3SaeSupported = wifiManager.isWpa3SaeSupported();
@@ -144,16 +140,14 @@ public class StandardWifiEntry extends WifiEntry {
         updateRecommendationServiceLabel();
     }
 
-    StandardWifiEntry(
-            @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
+    StandardWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull StandardWifiEntryKey key,
             @Nullable List<WifiConfiguration> configs,
             @Nullable List<ScanResult> scanResults,
             @NonNull WifiManager wifiManager,
             @NonNull WifiNetworkScoreCache scoreCache,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        this(injector, context, callbackHandler, key, wifiManager, scoreCache,
+        this(context, callbackHandler, key, wifiManager, scoreCache,
                 forSavedNetworksPage);
         if (configs != null && !configs.isEmpty()) {
             updateConfig(configs);
@@ -435,10 +429,6 @@ public class StandardWifiEntry extends WifiEntry {
      */
     @Override
     public synchronized boolean canShare() {
-        if (mInjector.isDemoMode()) {
-            return false;
-        }
-
         if (getWifiConfiguration() == null) {
             return false;
         }
@@ -462,10 +452,6 @@ public class StandardWifiEntry extends WifiEntry {
      */
     @Override
     public synchronized boolean canEasyConnect() {
-        if (mInjector.isDemoMode()) {
-            return false;
-        }
-
         if (getWifiConfiguration() == null) {
             return false;
         }
