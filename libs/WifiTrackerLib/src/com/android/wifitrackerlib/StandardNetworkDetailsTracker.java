@@ -69,12 +69,12 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         mKey = new StandardWifiEntryKey(key);
         if (mKey.isNetworkRequest()) {
             mIsNetworkRequest = true;
-            mChosenEntry = new NetworkRequestEntry(mContext, mMainHandler, mKey, mWifiManager,
-                    mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+            mChosenEntry = new NetworkRequestEntry(mInjector, mContext, mMainHandler, mKey,
+                    mWifiManager, mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
         } else {
             mIsNetworkRequest = false;
-            mChosenEntry = new StandardWifiEntry(mContext, mMainHandler, mKey, mWifiManager,
-                    mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
+            mChosenEntry = new StandardWifiEntry(mInjector, mContext, mMainHandler, mKey,
+                    mWifiManager, mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
         }
         // It is safe to call updateStartInfo() in the main thread here since onStart() won't have
         // a chance to post handleOnStart() on the worker thread until the main thread finishes

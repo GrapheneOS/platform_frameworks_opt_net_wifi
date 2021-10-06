@@ -41,6 +41,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.os.UserManager;
 import android.os.test.TestLooper;
 
 import androidx.lifecycle.Lifecycle;
@@ -62,18 +63,13 @@ public class StandardNetworkDetailsTrackerTest {
     private static final long MAX_SCAN_AGE_MILLIS = 15_000;
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
-    @Mock
-    private Lifecycle mMockLifecycle;
-    @Mock
-    private Context mMockContext;
-    @Mock
-    private WifiManager mMockWifiManager;
-    @Mock
-    private ConnectivityManager mMockConnectivityManager;
-    @Mock
-    private NetworkScoreManager mMockNetworkScoreManager;
-    @Mock
-    private Clock mMockClock;
+    @Mock private Lifecycle mMockLifecycle;
+    @Mock private Context mMockContext;
+    @Mock private WifiManager mMockWifiManager;
+    @Mock private ConnectivityManager mMockConnectivityManager;
+    @Mock private NetworkScoreManager mMockNetworkScoreManager;
+    @Mock private UserManager mMockUserManager;
+    @Mock private Clock mMockClock;
 
     private TestLooper mTestLooper;
 
@@ -102,6 +98,7 @@ public class StandardNetworkDetailsTrackerTest {
 
         mTestLooper = new TestLooper();
 
+        when(mMockContext.getSystemService(Context.USER_SERVICE)).thenReturn(mMockUserManager);
         when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
         when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);

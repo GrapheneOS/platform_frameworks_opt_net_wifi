@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,6 +47,7 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
+import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -79,30 +79,19 @@ public class WifiPickerTrackerTest {
     private static final long MAX_SCAN_AGE_MILLIS = 15_000;
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
-    @Mock
-    private Lifecycle mMockLifecycle;
-    @Mock
-    private Context mMockContext;
-    @Mock
-    private Resources mMockResources;
-    @Mock
-    private WifiManager mMockWifiManager;
-    @Mock
-    private ConnectivityManager mMockConnectivityManager;
-    @Mock
-    private NetworkScoreManager mMockNetworkScoreManager;
-    @Mock
-    private TelephonyManager mMockTelephonyManager;
-    @Mock
-    private Clock mMockClock;
-    @Mock
-    private WifiPickerTracker.WifiPickerTrackerCallback mMockCallback;
-    @Mock
-    private WifiInfo mMockWifiInfo;
-    @Mock
-    private NetworkInfo mMockNetworkInfo;
-    @Mock
-    private Network mMockNetwork;
+    @Mock private Lifecycle mMockLifecycle;
+    @Mock private Context mMockContext;
+    @Mock private Resources mMockResources;
+    @Mock private WifiManager mMockWifiManager;
+    @Mock private ConnectivityManager mMockConnectivityManager;
+    @Mock private NetworkScoreManager mMockNetworkScoreManager;
+    @Mock private TelephonyManager mMockTelephonyManager;
+    @Mock private UserManager mMockUserManager;
+    @Mock private Clock mMockClock;
+    @Mock private WifiPickerTracker.WifiPickerTrackerCallback mMockCallback;
+    @Mock private WifiInfo mMockWifiInfo;
+    @Mock private NetworkInfo mMockNetworkInfo;
+    @Mock private Network mMockNetwork;
 
     private TestLooper mTestLooper;
 
@@ -143,6 +132,7 @@ public class WifiPickerTrackerTest {
 
         mTestLooper = new TestLooper();
 
+        when(mMockContext.getSystemService(Context.USER_SERVICE)).thenReturn(mMockUserManager);
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getConnectionInfo()).thenReturn(mMockWifiInfo);
         when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
@@ -1325,5 +1315,51 @@ public class WifiPickerTrackerTest {
 
         // Now VCN-over-Wifi is default, so isDefaultNetwork returns true
         assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
+    }
+
+    /**
+     * Tests that roaming from one network to another will update the new network as the default
+     * network if the default route did not change away from Wifi during the roam. This happens if
+     * the new network was switched to via MBB.
+     */
+    @Test
+    public void testGetConnectedEntry_roamedButDefaultRouteDidNotChange_entryIsDefaultNetwork() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config1 = new WifiConfiguration();
+        config1.SSID = "\"ssid1\"";
+        config1.networkId = 1;
+        final WifiConfiguration config2 = new WifiConfiguration();
+        config2.SSID = "\"ssid2\"";
+        config2.networkId = 2;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Arrays.asList(config1, config2));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        verify(mMockConnectivityManager)
+                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
+        // Set the default route to wifi
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                        .build());
+        WifiEntry connectedEntry = wifiPickerTracker.getConnectedWifiEntry();
+        assertThat(connectedEntry.getWifiConfiguration()).isEqualTo(config1);
+        assertThat(connectedEntry.isDefaultNetwork()).isTrue();
+
+        // Connect to new network but don't change the default route
+        when(mMockWifiInfo.getNetworkId()).thenReturn(2);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_NETWORK_INFO, mMockNetworkInfo));
+
+        // Verify that the newly connected network is still marked as the default network
+        connectedEntry = wifiPickerTracker.getConnectedWifiEntry();
+        assertThat(connectedEntry.getWifiConfiguration()).isEqualTo(config2);
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isTrue();
     }
 }
