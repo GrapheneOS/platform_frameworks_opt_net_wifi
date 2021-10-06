@@ -50,7 +50,7 @@ import java.util.Optional;
 /**
  * Implementation of NetworkDetailsTracker that tracks a single PasspointWifiEntry.
  */
-class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
+public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private static final String TAG = "PasspointNetworkDetailsTracker";
 
     private final PasspointWifiEntry mChosenEntry;
@@ -58,7 +58,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     private NetworkInfo mCurrentNetworkInfo;
     private WifiConfiguration mCurrentWifiConfig;
 
-    PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
+    public PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
@@ -99,6 +99,10 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                         "Cannot find config for given PasspointWifiEntry key!");
             }
         }
+        // It is safe to call updateStartInfo() in the main thread here since onStart() won't have
+        // a chance to post handleOnStart() on the worker thread until the main thread finishes
+        // calling this constructor.
+        updateStartInfo();
     }
 
     @AnyThread
@@ -111,17 +115,7 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected  void handleOnStart() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
-        conditionallyUpdateConfig();
-        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        final Network currentNetwork = mWifiManager.getCurrentNetwork();
-        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
-        mChosenEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
-        handleNetworkCapabilitiesChanged(
-                mConnectivityManager.getNetworkCapabilities(currentNetwork));
-        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
-        mChosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-        mChosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        updateStartInfo();
     }
 
     @WorkerThread
@@ -143,6 +137,21 @@ class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     protected void handleConfiguredNetworksChangedAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
         conditionallyUpdateConfig();
+    }
+
+    @WorkerThread
+    private void updateStartInfo() {
+        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateConfig();
+        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+        final Network currentNetwork = mWifiManager.getCurrentNetwork();
+        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
+        mChosenEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
+        handleNetworkCapabilitiesChanged(
+                mConnectivityManager.getNetworkCapabilities(currentNetwork));
+        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
+        mChosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+        mChosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
     }
 
     @WorkerThread

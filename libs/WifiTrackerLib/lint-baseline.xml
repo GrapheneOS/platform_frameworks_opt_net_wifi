@@ -8,8 +8,30 @@
         errorLine2="             ~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
-            line="146"
+            line="148"
             column="14"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 21): `android.net.NetworkCapabilities#getTransportInfo`"
+        errorLine1="        final TransportInfo transportInfo = networkCapabilities.getTransportInfo();"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
+            line="220"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Cast from `TransportInfo` to `WifiInfo` requires API level 29 (current min is 21)"
+        errorLine1="        return ((WifiInfo) transportInfo).isPrimary();"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
+            line="224"
+            column="17"/>
     </issue>
 
     <issue
@@ -19,7 +41,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
-            line="267"
+            line="291"
             column="30"/>
     </issue>
 
@@ -30,7 +52,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
-            line="269"
+            line="293"
             column="30"/>
     </issue>
 
@@ -41,8 +63,19 @@
         errorLine2="                                                             ~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/BaseWifiTracker.java"
-            line="272"
+            line="296"
             column="62"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 31 (current min is 21): `android.net.wifi.WifiInfo#getSubscriptionId`"
+        errorLine1="        return wifiInfo.isCarrierMerged() &amp;&amp; mSubscriptionId == wifiInfo.getSubscriptionId();"
+        errorLine2="                                                                         ~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/MergedCarrierEntry.java"
+            line="132"
+            column="74"/>
     </issue>
 
     <issue
@@ -52,7 +85,7 @@
         errorLine2="                                                                          ~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
-            line="170"
+            line="141"
             column="75"/>
     </issue>
 
@@ -63,7 +96,7 @@
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
-            line="285"
+            line="159"
             column="39"/>
     </issue>
 
@@ -74,7 +107,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
-            line="305"
+            line="179"
             column="26"/>
     </issue>
 
@@ -85,7 +118,7 @@
         errorLine2="                                              ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
-            line="385"
+            line="261"
             column="47"/>
     </issue>
 
@@ -96,7 +129,7 @@
         errorLine2="                                            ~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/OsuWifiEntry.java"
-            line="389"
+            line="265"
             column="45"/>
     </issue>
 
@@ -195,7 +228,7 @@
         errorLine2="                                                               ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="110"
+            line="113"
             column="64"/>
     </issue>
 
@@ -206,7 +239,7 @@
         errorLine2="                                ~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="111"
+            line="114"
             column="33"/>
     </issue>
 
@@ -217,7 +250,7 @@
         errorLine2="                                            ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="111"
+            line="114"
             column="45"/>
     </issue>
 
@@ -228,7 +261,7 @@
         errorLine2="                                        ~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="112"
+            line="115"
             column="41"/>
     </issue>
 
@@ -239,7 +272,7 @@
         errorLine2="                                                    ~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="112"
+            line="115"
             column="53"/>
     </issue>
 
@@ -250,7 +283,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="114"
+            line="117"
             column="33"/>
     </issue>
 
@@ -261,7 +294,7 @@
         errorLine2="                        ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="131"
+            line="134"
             column="25"/>
     </issue>
 
@@ -272,7 +305,7 @@
         errorLine2="                                                          ~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="137"
+            line="140"
             column="59"/>
     </issue>
 
@@ -283,7 +316,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="139"
+            line="142"
             column="25"/>
     </issue>
 
@@ -294,7 +327,7 @@
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="300"
+            line="302"
             column="28"/>
     </issue>
 
@@ -305,7 +338,7 @@
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="390"
+            line="385"
             column="22"/>
     </issue>
 
@@ -316,7 +349,7 @@
         errorLine2="                                                                   ~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="390"
+            line="385"
             column="68"/>
     </issue>
 
@@ -327,7 +360,7 @@
         errorLine2="                                                                               ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="390"
+            line="385"
             column="80"/>
     </issue>
 
@@ -338,7 +371,7 @@
         errorLine2="                                                                  ~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="450"
+            line="425"
             column="67"/>
     </issue>
 
@@ -349,7 +382,7 @@
         errorLine2="                                                                              ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="450"
+            line="425"
             column="79"/>
     </issue>
 
@@ -360,7 +393,7 @@
         errorLine2="                                 ~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="477"
+            line="452"
             column="34"/>
     </issue>
 
@@ -371,7 +404,7 @@
         errorLine2="                                             ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="477"
+            line="452"
             column="46"/>
     </issue>
 
@@ -382,7 +415,7 @@
         errorLine2="                                                                 ~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="501"
+            line="476"
             column="66"/>
     </issue>
 
@@ -393,7 +426,7 @@
         errorLine2="                                                                             ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="501"
+            line="476"
             column="78"/>
     </issue>
 
@@ -404,7 +437,7 @@
         errorLine2="                                            ~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="527"
+            line="502"
             column="45"/>
     </issue>
 
@@ -415,7 +448,7 @@
         errorLine2="                                                        ~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="527"
+            line="502"
             column="57"/>
     </issue>
 
@@ -426,7 +459,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="529"
+            line="504"
             column="37"/>
     </issue>
 
@@ -437,7 +470,7 @@
         errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="568"
+            line="543"
             column="40"/>
     </issue>
 
@@ -448,7 +481,7 @@
         errorLine2="                                         ~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
-            line="606"
+            line="581"
             column="42"/>
     </issue>
 
@@ -459,19 +492,8 @@
         errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="129"
+            line="128"
             column="54"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
-        errorLine1="        if (config != null &amp;&amp; !config.isPasspoint()) {"
-        errorLine2="                                      ~~~~~~~~~~~">
-        <location
-            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="160"
-            column="39"/>
     </issue>
 
     <issue
@@ -481,7 +503,7 @@
         errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="166"
+            line="157"
             column="54"/>
     </issue>
 
@@ -492,7 +514,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="216"
+            line="207"
             column="30"/>
     </issue>
 
@@ -503,7 +525,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="217"
+            line="208"
             column="30"/>
     </issue>
 
@@ -514,7 +536,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="218"
+            line="209"
             column="30"/>
     </issue>
 
@@ -525,7 +547,7 @@
         errorLine2="                                           ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="221"
+            line="212"
             column="44"/>
     </issue>
 
@@ -536,7 +558,7 @@
         errorLine2="                                                                          ~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="237"
+            line="228"
             column="75"/>
     </issue>
 
@@ -547,7 +569,7 @@
         errorLine2="                                                                           ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/SavedNetworkTracker.java"
-            line="351"
+            line="308"
             column="76"/>
     </issue>
 
@@ -558,7 +580,7 @@
         errorLine2="                   ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardNetworkDetailsTracker.java"
-            line="189"
+            line="176"
             column="20"/>
     </issue>
 
@@ -569,7 +591,7 @@
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="334"
+            line="337"
             column="28"/>
     </issue>
 
@@ -580,7 +602,7 @@
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="381"
+            line="379"
             column="47"/>
     </issue>
 
@@ -591,7 +613,7 @@
         errorLine2="                                                               ~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="384"
+            line="382"
             column="64"/>
     </issue>
 
@@ -602,7 +624,7 @@
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="386"
+            line="384"
             column="22"/>
     </issue>
 
@@ -613,7 +635,7 @@
         errorLine2="                                     ~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="395"
+            line="393"
             column="38"/>
     </issue>
 
@@ -624,7 +646,7 @@
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="524"
+            line="531"
             column="27"/>
     </issue>
 
@@ -635,7 +657,7 @@
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="726"
+            line="737"
             column="36"/>
     </issue>
 
@@ -646,7 +668,7 @@
         errorLine2="                    ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
-            line="908"
+            line="920"
             column="21"/>
     </issue>
 
@@ -657,7 +679,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="89"
+            line="92"
             column="44"/>
     </issue>
 
@@ -668,7 +690,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="593"
+            line="628"
             column="18"/>
     </issue>
 
@@ -679,7 +701,7 @@
         errorLine2="                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="596"
+            line="631"
             column="66"/>
     </issue>
 
@@ -690,7 +712,7 @@
         errorLine2="                                       ~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="601"
+            line="636"
             column="40"/>
     </issue>
 
@@ -701,7 +723,7 @@
         errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="614"
+            line="649"
             column="57"/>
     </issue>
 
@@ -712,7 +734,7 @@
         errorLine2="                                        ~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="618"
+            line="653"
             column="41"/>
     </issue>
 
@@ -723,7 +745,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="627"
+            line="662"
             column="44"/>
     </issue>
 
@@ -734,7 +756,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="638"
+            line="673"
             column="18"/>
     </issue>
 
@@ -745,7 +767,7 @@
         errorLine2="                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="643"
+            line="678"
             column="66"/>
     </issue>
 
@@ -756,7 +778,7 @@
         errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="649"
+            line="684"
             column="45"/>
     </issue>
 
@@ -767,7 +789,7 @@
         errorLine2="                        ~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="651"
+            line="686"
             column="25"/>
     </issue>
 
@@ -778,7 +800,7 @@
         errorLine2="                                     ~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="652"
+            line="687"
             column="38"/>
     </issue>
 
@@ -789,7 +811,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="667"
+            line="702"
             column="18"/>
     </issue>
 
@@ -800,7 +822,7 @@
         errorLine2="                                                        ~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="671"
+            line="706"
             column="57"/>
     </issue>
 
@@ -811,7 +833,7 @@
         errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
-            line="687"
+            line="722"
             column="41"/>
     </issue>
 
@@ -822,8 +844,19 @@
         errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiEntry.java"
-            line="633"
+            line="760"
             column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.net.wifi.WifiInfo#getWifiStandard`"
+        errorLine1="                mConnectedInfo.wifiStandard = wifiInfo.getWifiStandard();"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiEntry.java"
+            line="779"
+            column="56"/>
     </issue>
 
     <issue
@@ -833,7 +866,7 @@
         errorLine2="                                                         ~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiEntry.java"
-            line="707"
+            line="835"
             column="58"/>
     </issue>
 
@@ -844,7 +877,7 @@
         errorLine2="                                             ~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiEntry.java"
-            line="751"
+            line="879"
             column="46"/>
     </issue>
 
@@ -855,19 +888,41 @@
         errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="191"
+            line="212"
             column="52"/>
     </issue>
 
     <issue
         id="NewApi"
-        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
-        errorLine1="        if (config != null &amp;&amp; !config.isPasspoint()) {"
-        errorLine2="                                      ~~~~~~~~~~~">
+        message="Call requires API level 31 (current min is 21): `android.telephony.TelephonyManager#registerTelephonyCallback`"
+        errorLine1="        mTelephonyManager.registerTelephonyCallback("
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="232"
-            column="39"/>
+            line="222"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level R (current min is 21): `android.telephony.SubscriptionManager#getActiveDataSubscriptionId`"
+        errorLine1="        updateMergedCarrierEntry(SubscriptionManager.getActiveDataSubscriptionId());"
+        errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="224"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 31 (current min is 21): `android.telephony.TelephonyManager#unregisterTelephonyCallback`"
+        errorLine1="            mTelephonyManager.unregisterTelephonyCallback(mActiveDataSubIdListener);"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="238"
+            column="31"/>
     </issue>
 
     <issue
@@ -877,7 +932,7 @@
         errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="238"
+            line="270"
             column="52"/>
     </issue>
 
@@ -888,7 +943,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="391"
+            line="470"
             column="30"/>
     </issue>
 
@@ -899,7 +954,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="392"
+            line="471"
             column="30"/>
     </issue>
 
@@ -910,7 +965,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="393"
+            line="472"
             column="30"/>
     </issue>
 
@@ -921,7 +976,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="432"
+            line="511"
             column="30"/>
     </issue>
 
@@ -932,7 +987,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="433"
+            line="512"
             column="30"/>
     </issue>
 
@@ -943,7 +998,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="434"
+            line="513"
             column="30"/>
     </issue>
 
@@ -954,7 +1009,7 @@
         errorLine2="                                                                          ~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="483"
+            line="562"
             column="75"/>
     </issue>
 
@@ -965,7 +1020,7 @@
         errorLine2="                                    ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="536"
+            line="615"
             column="37"/>
     </issue>
 
@@ -976,30 +1031,19 @@
         errorLine2="                                                                      ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="545"
+            line="624"
             column="71"/>
     </issue>
 
     <issue
         id="NewApi"
         message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
-        errorLine1="                            !cachedConfig.isEphemeral() &amp;&amp; !cachedConfig.isPasspoint()).count();"
-        errorLine2="                                                                         ~~~~~~~~~~~">
+        errorLine1="            if (config.isPasspoint()) {"
+        errorLine2="                       ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="650"
-            column="74"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
-        errorLine1="                    !cachedConfig.isEphemeral() &amp;&amp; !cachedConfig.isPasspoint()).count();"
-        errorLine2="                                                                 ~~~~~~~~~~~">
-        <location
-            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="685"
-            column="66"/>
+            line="704"
+            column="24"/>
     </issue>
 
     <issue
@@ -1009,7 +1053,7 @@
         errorLine2="                                           ~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="688"
+            line="722"
             column="44"/>
     </issue>
 
@@ -1020,19 +1064,8 @@
         errorLine2="                                         ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="692"
+            line="726"
             column="42"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
-        errorLine1="            if (config != null &amp;&amp; !config.isPasspoint()) {"
-        errorLine2="                                          ~~~~~~~~~~~">
-        <location
-            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="703"
-            column="43"/>
     </issue>
 
     <issue
@@ -1042,41 +1075,74 @@
         errorLine2="                               ~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="734"
-            column="32"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 23 (current min is 21): `android.net.wifi.WifiConfiguration#isPasspoint`"
-        errorLine1="                    wifiConfig.isPasspoint() &amp;&amp; wifiConfig.networkId == connectedNetId"
-        errorLine2="                               ~~~~~~~~~~~">
-        <location
-            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="849"
+            line="768"
             column="32"/>
     </issue>
 
     <issue
         id="NewApi"
         message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
-        errorLine1="                                uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey())))"
-        errorLine2="                                                                           ~~~~~~">
+        errorLine1="                uniqueIdToPasspointWifiEntryKey(cachedWifiConfig.getKey()));"
+        errorLine2="                                                                 ~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="851"
-            column="76"/>
+            line="888"
+            column="66"/>
     </issue>
 
     <issue
         id="NewApi"
-        message="Call requires API level R (current min is 21): `android.net.wifi.WifiConfiguration#getKey`"
-        errorLine1="                            uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey()));"
-        errorLine2="                                                                       ~~~~~~">
+        message="Class requires API level 31 (current min is 21): `android.telephony.TelephonyCallback`"
+        errorLine1="            /* package */ class ActiveDataSubIdListener extends TelephonyCallback implements"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~~">
         <location
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
-            line="854"
-            column="72"/>
+            line="969"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 31 (current min is 21): `android.telephony.TelephonyCallback.ActiveDataSubscriptionIdListener`"
+        errorLine1="            TelephonyCallback.ActiveDataSubscriptionIdListener {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="970"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 31 (current min is 21): `new android.telephony.TelephonyCallback`"
+        errorLine1="            super();"
+        errorLine2="            ~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="972"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): android.telephony.SubscriptionManager#getDefaultDataSubscriptionId [NewApi]"
+        errorLine1="    handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/WifiPickerTracker.java"
+            line="212"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 31 (current min is 21): android.net.wifi.WifiManager#isCarrierNetworkOffloadEnabled [NewApi]"
+        errorLine1="        return mWifiManager.isCarrierNetworkOffloadEnabled(mSubscriptionId, true);"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/MergedCarrierEntry.java"
+            line="142"
+            column="29"/>
     </issue>
 
 </issues>
