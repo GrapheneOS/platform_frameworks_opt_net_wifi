@@ -375,6 +375,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     && mNetworkRequestEntry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
                 mConnectedWifiEntry = mNetworkRequestEntry;
             }
+            if (mConnectedWifiEntry != null) {
+                mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            }
             mWifiEntries.clear();
             final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =
                     mSuggestedWifiEntryCache.stream()
