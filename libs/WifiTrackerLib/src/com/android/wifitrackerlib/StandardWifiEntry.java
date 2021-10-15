@@ -260,7 +260,7 @@ public class StandardWifiEntry extends WifiEntry {
                 return wifiInfoMac;
             }
         }
-        if (mTargetWifiConfig == null || getPrivacy() != PRIVACY_RANDOMIZED_MAC) {
+        if (mTargetWifiConfig == null || getPrivacy() == PRIVACY_DEVICE_MAC) {
             final String[] factoryMacs = mWifiManager.getFactoryMacAddresses();
             if (factoryMacs.length > 0) {
                 return factoryMacs[0];
@@ -553,12 +553,18 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     @Privacy
     public synchronized int getPrivacy() {
-        if (mTargetWifiConfig != null
-                && mTargetWifiConfig.macRandomizationSetting
-                == WifiConfiguration.RANDOMIZATION_NONE) {
-            return PRIVACY_DEVICE_MAC;
+        if (mTargetWifiConfig != null) {
+            switch (mTargetWifiConfig.macRandomizationSetting) {
+                case WifiConfiguration.RANDOMIZATION_NONE:
+                    return PRIVACY_DEVICE_MAC;
+                case WifiConfiguration.RANDOMIZATION_ALWAYS:
+                    return PRIVACY_RANDOMIZATION_ALWAYS;
+                default:
+                    // WifiConfiguration.RANDOMIZATION_AUTO and WifiConfiguration.RANDOMIZATION_PERSISTENT
+                    return PRIVACY_RANDOMIZED_MAC;
+            }
         } else {
-            return PRIVACY_RANDOMIZED_MAC;
+            return PRIVACY_RANDOMIZATION_ALWAYS;
         }
     }
 
@@ -570,9 +576,19 @@ public class StandardWifiEntry extends WifiEntry {
         // Refresh the current config so we don't overwrite any changes that we haven't gotten
         // the CONFIGURED_NETWORKS_CHANGED broadcast for yet.
         refreshTargetWifiConfig();
-        mTargetWifiConfig.macRandomizationSetting = privacy == PRIVACY_RANDOMIZED_MAC
-                ? WifiConfiguration.RANDOMIZATION_AUTO : WifiConfiguration.RANDOMIZATION_NONE;
+        mTargetWifiConfig.macRandomizationSetting = translatePrivacyToWifiConfigurationValues(privacy);
         mWifiManager.save(mTargetWifiConfig, null /* listener */);
+    }
+
+    private static int translatePrivacyToWifiConfigurationValues(int privacyValue) {
+        switch (privacyValue) {
+            case PRIVACY_RANDOMIZED_MAC:
+                return WifiConfiguration.RANDOMIZATION_PERSISTENT;
+            case PRIVACY_DEVICE_MAC:
+                return WifiConfiguration.RANDOMIZATION_NONE;
+            default:
+                return WifiConfiguration.RANDOMIZATION_ALWAYS;
+        }
     }
 
     @Override
