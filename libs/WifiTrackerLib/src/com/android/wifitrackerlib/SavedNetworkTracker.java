@@ -40,6 +40,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
@@ -88,7 +89,24 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             @Nullable SavedNetworkTrackerCallback listener) {
-        super(lifecycle, context, wifiManager, connectivityManager,
+        this(new WifiTrackerInjector(context), lifecycle, context, wifiManager, connectivityManager,
+                mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, listener);
+    }
+
+    @VisibleForTesting
+    SavedNetworkTracker(
+            @NonNull WifiTrackerInjector injector,
+            @NonNull Lifecycle lifecycle,
+            @NonNull Context context,
+            @NonNull WifiManager wifiManager,
+            @NonNull ConnectivityManager connectivityManager,
+            @NonNull Handler mainHandler,
+            @NonNull Handler workerHandler,
+            @NonNull Clock clock,
+            long maxScanAgeMillis,
+            long scanIntervalMillis,
+            @Nullable SavedNetworkTrackerCallback listener) {
+        super(injector, lifecycle, context, wifiManager, connectivityManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, listener,
                 TAG);
         mListener = listener;

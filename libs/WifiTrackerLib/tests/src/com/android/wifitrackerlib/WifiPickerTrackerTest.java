@@ -29,7 +29,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.BroadcastReceiver;
@@ -48,7 +47,6 @@ import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
-import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -81,13 +79,13 @@ public class WifiPickerTrackerTest {
     private static final long MAX_SCAN_AGE_MILLIS = 15_000;
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
+    @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private TelephonyManager mMockTelephonyManager;
-    @Mock private UserManager mMockUserManager;
     @Mock private Clock mMockClock;
     @Mock private WifiPickerTracker.WifiPickerTrackerCallback mMockCallback;
     @Mock private WifiInfo mMockWifiInfo;
@@ -108,7 +106,10 @@ public class WifiPickerTrackerTest {
     private WifiPickerTracker createTestWifiPickerTracker() {
         final Handler testHandler = new Handler(mTestLooper.getLooper());
 
-        return new WifiPickerTracker(mMockLifecycle, mMockContext,
+        return new WifiPickerTracker(
+                mInjector,
+                mMockLifecycle,
+                mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
                 testHandler,
@@ -132,7 +133,6 @@ public class WifiPickerTrackerTest {
 
         mTestLooper = new TestLooper();
 
-        when(mMockContext.getSystemService(UserManager.class)).thenReturn(mMockUserManager);
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getConnectionInfo()).thenReturn(mMockWifiInfo);
         when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);

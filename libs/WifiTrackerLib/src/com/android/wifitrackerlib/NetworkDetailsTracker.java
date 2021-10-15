@@ -32,6 +32,7 @@ import android.os.Handler;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
@@ -68,12 +69,39 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String key) {
+        return createNetworkDetailsTracker(
+                new WifiTrackerInjector(context),
+                lifecycle,
+                context,
+                wifiManager,
+                connectivityManager,
+                mainHandler,
+                workerHandler,
+                clock,
+                maxScanAgeMillis,
+                scanIntervalMillis,
+                key);
+    }
+
+    @VisibleForTesting
+    static NetworkDetailsTracker createNetworkDetailsTracker(
+            @NonNull WifiTrackerInjector injector,
+            @NonNull Lifecycle lifecycle,
+            @NonNull Context context,
+            @NonNull WifiManager wifiManager,
+            @NonNull ConnectivityManager connectivityManager,
+            @NonNull Handler mainHandler,
+            @NonNull Handler workerHandler,
+            @NonNull Clock clock,
+            long maxScanAgeMillis,
+            long scanIntervalMillis,
+            String key) {
         if (key.startsWith(StandardWifiEntry.KEY_PREFIX)) {
-            return new StandardNetworkDetailsTracker(lifecycle, context, wifiManager,
+            return new StandardNetworkDetailsTracker(injector, lifecycle, context, wifiManager,
                     connectivityManager, mainHandler, workerHandler, clock,
                     maxScanAgeMillis, scanIntervalMillis, key);
         } else if (key.startsWith(PasspointWifiEntry.KEY_PREFIX)) {
-            return new PasspointNetworkDetailsTracker(lifecycle, context, wifiManager,
+            return new PasspointNetworkDetailsTracker(injector, lifecycle, context, wifiManager,
                     connectivityManager, mainHandler, workerHandler, clock,
                     maxScanAgeMillis, scanIntervalMillis, key);
         } else {
@@ -88,7 +116,10 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
      * Clients must use {@link NetworkDetailsTracker#createNetworkDetailsTracker} for creating
      * an appropriate concrete instance of this class.
      */
-    NetworkDetailsTracker(@NonNull Lifecycle lifecycle, @NonNull Context context,
+    NetworkDetailsTracker(
+            @NonNull WifiTrackerInjector injector,
+            @NonNull Lifecycle lifecycle,
+            @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
             @NonNull Handler mainHandler,
@@ -97,7 +128,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String tag) {
-        super(lifecycle, context, wifiManager, connectivityManager,
+        super(injector, lifecycle, context, wifiManager, connectivityManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis,
                 null /* listener */, tag);
     }
