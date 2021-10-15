@@ -137,6 +137,7 @@ public class WifiEntry {
     public static final int PRIVACY_DEVICE_MAC = 0;
     public static final int PRIVACY_RANDOMIZED_MAC = 1;
     public static final int PRIVACY_UNKNOWN = 2;
+    public static final int PRIVACY_RANDOMIZATION_ALWAYS = 100;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(value = {
