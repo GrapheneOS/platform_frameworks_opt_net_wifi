@@ -29,7 +29,7 @@ public class WifiTrackerInjector {
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     public WifiTrackerInjector(@NonNull Context context) {
-        mIsDemoMode = ((UserManager) context.getSystemService(Context.USER_SERVICE)).isDemoUser();
+        mIsDemoMode = UserManager.isDeviceInDemoMode(context);
     }
 
     public boolean isDemoMode() {
