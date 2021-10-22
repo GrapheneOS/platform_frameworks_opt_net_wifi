@@ -63,4 +63,12 @@ class HiddenApiWrapper {
         // provider model Settings. Since SUW doesn't use the provider model, this is not used.
         return false;
     }
+
+    /**
+     * Returns whether or not the device is in retail demo mode.
+     */
+    static boolean isDemoMode(@NonNull Context context) {
+        // This should be false since SUW is not used in demo mode.
+        return false;
+    }
 }
