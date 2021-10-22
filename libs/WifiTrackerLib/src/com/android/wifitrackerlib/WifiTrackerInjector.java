@@ -17,7 +17,6 @@
 package com.android.wifitrackerlib;
 
 import android.content.Context;
-import android.os.UserManager;
 
 import androidx.annotation.NonNull;
 
@@ -29,7 +28,7 @@ class WifiTrackerInjector {
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     WifiTrackerInjector(@NonNull Context context) {
-        mIsDemoMode = context.getSystemService(UserManager.class).isDemoUser();
+        mIsDemoMode = HiddenApiWrapper.isDemoMode(context);
     }
 
     boolean isDemoMode() {

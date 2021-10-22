@@ -35,6 +35,7 @@ import android.os.Handler;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
@@ -62,7 +63,24 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String key) {
-        super(lifecycle, context, wifiManager, connectivityManager,
+        this(new WifiTrackerInjector(context), lifecycle, context, wifiManager, connectivityManager,
+                mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, key);
+    }
+
+    @VisibleForTesting
+    StandardNetworkDetailsTracker(
+            @NonNull WifiTrackerInjector injector,
+            @NonNull Lifecycle lifecycle,
+            @NonNull Context context,
+            @NonNull WifiManager wifiManager,
+            @NonNull ConnectivityManager connectivityManager,
+            @NonNull Handler mainHandler,
+            @NonNull Handler workerHandler,
+            @NonNull Clock clock,
+            long maxScanAgeMillis,
+            long scanIntervalMillis,
+            String key) {
+        super(injector, lifecycle, context, wifiManager, connectivityManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
         mKey = new StandardWifiEntryKey(key);
         if (mKey.isNetworkRequest()) {

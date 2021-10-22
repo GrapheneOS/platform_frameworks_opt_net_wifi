@@ -22,6 +22,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.TransportInfo;
 import android.net.vcn.VcnTransportInfo;
+import android.os.UserManager;
 import android.text.Annotation;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -97,5 +98,12 @@ class HiddenApiWrapper {
         return transportInfo != null
                 && transportInfo instanceof VcnTransportInfo
                 && ((VcnTransportInfo) transportInfo).getWifiInfo() != null;
+    }
+
+    /**
+     * Returns whether or not the device is in retail demo mode.
+     */
+    static boolean isDemoMode(@NonNull Context context) {
+        return UserManager.isDeviceInDemoMode(context);
     }
 }
