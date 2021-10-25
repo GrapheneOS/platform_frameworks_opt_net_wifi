@@ -30,7 +30,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkScoreManager;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
-import android.os.UserManager;
 import android.os.test.TestLooper;
 
 import androidx.lifecycle.Lifecycle;
@@ -51,12 +50,12 @@ public class NetworkDetailsTrackerTest {
     private static final long MAX_SCAN_AGE_MILLIS = 15_000;
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
+    @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private NetworkScoreManager mMockNetworkScoreManager;
-    @Mock private UserManager mMockUserManager;
     @Mock private Clock mMockClock;
 
     private TestLooper mTestLooper;
@@ -64,7 +63,10 @@ public class NetworkDetailsTrackerTest {
     private NetworkDetailsTracker createTestNetworkDetailsTracker(String key) {
         final Handler testHandler = new Handler(mTestLooper.getLooper());
 
-        return createNetworkDetailsTracker(mMockLifecycle, mMockContext,
+        return createNetworkDetailsTracker(
+                mInjector,
+                mMockLifecycle,
+                mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
                 mMockNetworkScoreManager,
@@ -82,7 +84,6 @@ public class NetworkDetailsTrackerTest {
 
         mTestLooper = new TestLooper();
 
-        when(mMockContext.getSystemService(Context.USER_SERVICE)).thenReturn(mMockUserManager);
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
