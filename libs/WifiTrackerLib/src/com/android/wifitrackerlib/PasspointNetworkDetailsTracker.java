@@ -39,6 +39,7 @@ import android.util.Pair;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
@@ -69,7 +70,26 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String key) {
-        super(lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
+        this(new WifiTrackerInjector(context), lifecycle, context, wifiManager, connectivityManager,
+                networkScoreManager, mainHandler, workerHandler, clock, maxScanAgeMillis,
+                scanIntervalMillis, key);
+    }
+
+    @VisibleForTesting
+    PasspointNetworkDetailsTracker(
+            @NonNull WifiTrackerInjector injector,
+            @NonNull Lifecycle lifecycle,
+            @NonNull Context context,
+            @NonNull WifiManager wifiManager,
+            @NonNull ConnectivityManager connectivityManager,
+            @NonNull NetworkScoreManager networkScoreManager,
+            @NonNull Handler mainHandler,
+            @NonNull Handler workerHandler,
+            @NonNull Clock clock,
+            long maxScanAgeMillis,
+            long scanIntervalMillis,
+            String key) {
+        super(injector, lifecycle, context, wifiManager, connectivityManager, networkScoreManager,
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
 
         Optional<PasspointConfiguration> optionalPasspointConfig =
