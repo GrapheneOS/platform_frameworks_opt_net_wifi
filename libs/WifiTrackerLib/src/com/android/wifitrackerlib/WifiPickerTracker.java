@@ -500,25 +500,28 @@ public class WifiPickerTracker extends BaseWifiTracker {
     private void updateSuggestedWifiEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
 
+        // Get every ScanResultKey that is user shareable
+        final Set<StandardWifiEntryKey> userSharedEntryKeys =
+                mWifiManager.getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(scanResults)
+                        .stream()
+                        .map(StandardWifiEntryKey::new)
+                        .collect(Collectors.toSet());
+
         // Group scans by ScanResultKey key
         final Map<ScanResultKey, List<ScanResult>> scanResultsByKey = scanResults.stream()
                 .filter(scan -> !TextUtils.isEmpty(scan.SSID))
                 .collect(Collectors.groupingBy(ScanResultKey::new));
 
-        // Iterate through current entries and update each entry's scan results
+        // Iterate through current entries and update each entry's scan results and shareability.
         final Set<StandardWifiEntryKey> seenEntryKeys = new ArraySet<>();
         mSuggestedWifiEntryCache.forEach(entry -> {
             final StandardWifiEntryKey entryKey = entry.getStandardWifiEntryKey();
             seenEntryKeys.add(entryKey);
             // Update scan results if available, or set to null.
             entry.updateScanResultInfo(scanResultsByKey.get(entryKey.getScanResultKey()));
+            entry.setUserShareable(userSharedEntryKeys.contains(entryKey));
         });
         // Create new StandardWifiEntry objects for each leftover config with scan results.
-        final Set<StandardWifiEntryKey> userSharedEntryKeys =
-                mWifiManager.getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(scanResults)
-                        .stream()
-                        .map(StandardWifiEntryKey::new)
-                        .collect(Collectors.toSet());
         for (StandardWifiEntryKey entryKey : mSuggestedConfigCache.keySet()) {
             final ScanResultKey scanKey = entryKey.getScanResultKey();
             if (seenEntryKeys.contains(entryKey)
@@ -821,6 +824,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mNetworkRequestEntry = new NetworkRequestEntry(mContext, mMainHandler, entryKey,
                     mWifiManager, mWifiNetworkScoreCache, false /* forSavedNetworksPage */);
             mNetworkRequestEntry.updateConfig(matchingConfigs);
+            updateNetworkRequestEntryScans(mScanResultUpdater.getScanResults());
         }
         mNetworkRequestEntry.updateConnectionInfo(wifiInfo, networkInfo);
     }
