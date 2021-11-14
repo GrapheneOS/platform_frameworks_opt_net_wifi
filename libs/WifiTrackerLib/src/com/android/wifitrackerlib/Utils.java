@@ -35,7 +35,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
 import android.net.NetworkKey;
-import android.net.NetworkScoreManager;
 import android.net.ScoredNetwork;
 import android.net.WifiKey;
 import android.net.wifi.ScanResult;
@@ -44,7 +43,6 @@ import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiNetworkScoreCache;
 import android.os.PersistableBundle;
-import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -74,8 +72,6 @@ import java.util.StringJoiner;
  * Utility methods for WifiTrackerLib.
  */
 public class Utils {
-    /** Copy of the @hide Settings.Global.USE_OPEN_WIFI_PACKAGE constant. */
-    static final String SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE = "use_open_wifi_package";
 
     @VisibleForTesting
     static FeatureFlagUtilsWrapper sFeatureFlagUtilsWrapper = new FeatureFlagUtilsWrapper();
@@ -84,15 +80,6 @@ public class Utils {
         boolean isProviderModelEnabled(Context context) {
             return FeatureFlagUtils.isEnabled(context, FeatureFlagUtils.SETTINGS_PROVIDER_MODEL);
         }
-    }
-
-    private static NetworkScoreManager sNetworkScoreManager;
-
-    private static String getActiveScorerPackage(@NonNull Context context) {
-        if (sNetworkScoreManager == null) {
-            sNetworkScoreManager = context.getSystemService(NetworkScoreManager.class);
-        }
-        return sNetworkScoreManager.getActiveScorerPackage();
     }
 
     // Returns the ScanResult with the best RSSI from a list of ScanResults.
@@ -297,13 +284,6 @@ public class Utils {
      */
     static String getAppLabel(Context context, String packageName) {
         try {
-            String openWifiPackageName = Settings.Global.getString(context.getContentResolver(),
-                    SETTINGS_GLOBAL_USE_OPEN_WIFI_PACKAGE);
-            if (!TextUtils.isEmpty(openWifiPackageName) && TextUtils.equals(packageName,
-                    getActiveScorerPackage(context))) {
-                packageName = openWifiPackageName;
-            }
-
             ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(
                     packageName,
                     0 /* flags */);
