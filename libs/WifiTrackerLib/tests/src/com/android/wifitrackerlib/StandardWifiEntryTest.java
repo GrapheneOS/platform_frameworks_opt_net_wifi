@@ -41,6 +41,7 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -49,6 +50,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
@@ -63,10 +66,14 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.os.UserHandle;
+import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+
+import androidx.core.os.BuildCompat;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -97,9 +104,14 @@ public class StandardWifiEntryTest {
     @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
+    @Mock private UserManager mUserManager;
+    @Mock private DevicePolicyManager mDevicePolicyManager;
 
     private TestLooper mTestLooper;
     private Handler mTestHandler;
+
+    private static final String TEST_PACKAGE_NAME = "com.google.somePackage";
+    private static final int MANAGED_PROFILE_UID = 1100000;
 
     @Before
     public void setUp() {
@@ -132,6 +144,9 @@ public class StandardWifiEntryTest {
 
         when(mMockContext.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
                 .thenReturn(mSubscriptionManager);
+        when(mMockContext.getSystemService(DevicePolicyManager.class))
+                .thenReturn(mDevicePolicyManager);
+        when(mMockInjector.getUserManager()).thenReturn(mUserManager);
     }
 
     /**
@@ -655,6 +670,18 @@ public class StandardWifiEntryTest {
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
         config.setSecurityParams(wifiConfigurationSecureType);
+        return new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+    }
+
+    private StandardWifiEntry getSavedDOStandardWifiEntry(int wifiConfigurationSecureType) {
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(wifiConfigurationSecureType);
+        config.creatorUid = MANAGED_PROFILE_UID;
+        config.creatorName = TEST_PACKAGE_NAME;
         return new StandardWifiEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 new StandardWifiEntryKey(config), Collections.singletonList(config), null,
@@ -1383,4 +1410,37 @@ public class StandardWifiEntryTest {
         assertThat(pskWifiEntry.canEasyConnect()).isFalse();
     }
 
+    @Test
+    public void testCanShare_UserRestrictionSet_returnsFalse() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        when(mMockInjector.isDemoMode()).thenReturn(false);
+        when(mUserManager.hasUserRestrictionForUser(
+                eq(UserManager.DISALLOW_SHARING_ADMIN_CONFIGURED_WIFI), any())).thenReturn(true);
+        when(mDevicePolicyManager.getDeviceOwnerComponentOnAnyUser())
+                .thenReturn(new ComponentName(TEST_PACKAGE_NAME, new String()));
+        when(mDevicePolicyManager.getDeviceOwnerUser())
+                .thenReturn(UserHandle.getUserHandleForUid(MANAGED_PROFILE_UID));
+
+        final StandardWifiEntry pskWifiEntry =
+                getSavedDOStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_PSK);
+
+        assertThat(pskWifiEntry.canShare()).isFalse();
+    }
+
+    @Test
+    public void testCanEasyConnect_UserRestrictionSet_returnsFalse() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        when(mMockInjector.isDemoMode()).thenReturn(false);
+        when(mUserManager.hasUserRestrictionForUser(
+                eq(UserManager.DISALLOW_SHARING_ADMIN_CONFIGURED_WIFI), any())).thenReturn(true);
+        when(mDevicePolicyManager.getDeviceOwnerComponentOnAnyUser())
+                .thenReturn(new ComponentName(TEST_PACKAGE_NAME, new String()));
+        when(mDevicePolicyManager.getDeviceOwnerUser())
+                .thenReturn(UserHandle.getUserHandleForUid(MANAGED_PROFILE_UID));
+
+        final StandardWifiEntry pskWifiEntry =
+                getSavedDOStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_PSK);
+
+        assertThat(pskWifiEntry.canEasyConnect()).isFalse();
+    }
 }
