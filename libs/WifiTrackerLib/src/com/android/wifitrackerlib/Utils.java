@@ -676,7 +676,9 @@ public class Utils {
     }
 
     /**
-     * Check if the SIM is present for target carrier Id.
+     * Check if the SIM is present for target carrier Id. If the carrierId is
+     * {@link TelephonyManager#UNKNOWN_CARRIER_ID}, then this returns true if there is any SIM
+     * present.
      */
     static boolean isSimPresent(@NonNull Context context, int carrierId) {
         SubscriptionManager subscriptionManager =
@@ -686,6 +688,11 @@ public class Utils {
         List<SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();
         if (subInfoList == null || subInfoList.isEmpty()) {
             return false;
+        }
+        if (carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+            // Return true if any SIM is present for UNKNOWN_CARRIER_ID since the framework will
+            // match this to the default data SIM.
+            return true;
         }
         return subInfoList.stream()
                 .anyMatch(info -> info.getCarrierId() == carrierId);

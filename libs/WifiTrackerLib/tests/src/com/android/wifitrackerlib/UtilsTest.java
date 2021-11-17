@@ -275,6 +275,16 @@ public class UtilsTest {
     }
 
     @Test
+    public void testCheckSimPresentWithUnknownCarrierId() {
+        List<SubscriptionInfo> subscriptionInfoList = new ArrayList<>();
+        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
+        when(subscriptionInfo.getCarrierId()).thenReturn(TEST_CARRIER_ID);
+        subscriptionInfoList.add(subscriptionInfo);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
+        assertTrue(isSimPresent(mMockContext, TelephonyManager.UNKNOWN_CARRIER_ID));
+    }
+
+    @Test
     public void testGetCarrierName() {
         when(mSpecifiedTm.getSimCarrierIdName()).thenReturn(TEST_CARRIER_NAME);
         assertEquals(TEST_CARRIER_NAME, getCarrierNameForSubId(mMockContext, TEST_CARRIER_ID));
