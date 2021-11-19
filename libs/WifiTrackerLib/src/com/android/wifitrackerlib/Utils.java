@@ -294,11 +294,13 @@ public class Utils {
     }
 
 
-    static String getDisconnectedDescription(Context context,
+    static String getDisconnectedDescription(
+            @NonNull WifiTrackerInjector injector,
+            Context context,
             WifiConfiguration wifiConfiguration,
             boolean forSavedNetworksPage,
             boolean concise) {
-        if (context == null) {
+        if (context == null || wifiConfiguration == null) {
             return "";
         }
         final StringJoiner sj = new StringJoiner(context.getString(
@@ -307,24 +309,26 @@ public class Utils {
         // For "Saved", "Saved by ...", and "Available via..."
         if (concise) {
             sj.add(context.getString(R.string.wifitrackerlib_wifi_disconnected));
-        } else if (wifiConfiguration != null) {
-            if (forSavedNetworksPage && !wifiConfiguration.isPasspoint()) {
-                final CharSequence appLabel = getAppLabel(context, wifiConfiguration.creatorName);
+        } else if (forSavedNetworksPage && !wifiConfiguration.isPasspoint()) {
+            if (!injector.getNoAttributionAnnotationPackages().contains(
+                    wifiConfiguration.creatorName)) {
+                final CharSequence appLabel = getAppLabel(context,
+                        wifiConfiguration.creatorName);
                 if (!TextUtils.isEmpty(appLabel)) {
                     sj.add(context.getString(R.string.wifitrackerlib_saved_network, appLabel));
                 }
-            } else {
-                if (wifiConfiguration.fromWifiNetworkSuggestion) {
-                    final String suggestionOrSpecifierLabel =
-                            getSuggestionOrSpecifierLabel(context, wifiConfiguration);
-                    if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
-                        sj.add(context.getString(
-                                R.string.wifitrackerlib_available_via_app,
-                                suggestionOrSpecifierLabel));
-                    }
-                } else {
-                    sj.add(context.getString(R.string.wifitrackerlib_wifi_remembered));
+            }
+        } else {
+            if (wifiConfiguration.fromWifiNetworkSuggestion) {
+                final String suggestionOrSpecifierLabel =
+                        getSuggestionOrSpecifierLabel(context, wifiConfiguration);
+                if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
+                    sj.add(context.getString(
+                            R.string.wifitrackerlib_available_via_app,
+                            suggestionOrSpecifierLabel));
                 }
+            } else {
+                sj.add(context.getString(R.string.wifitrackerlib_wifi_remembered));
             }
         }
 
