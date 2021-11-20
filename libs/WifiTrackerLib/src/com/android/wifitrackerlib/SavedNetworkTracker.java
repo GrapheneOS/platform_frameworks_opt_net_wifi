@@ -21,14 +21,21 @@ import static androidx.core.util.Preconditions.checkNotNull;
 import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
+import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
+import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
 
 import static java.util.stream.Collectors.toMap;
 
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
@@ -79,6 +86,9 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     private final List<StandardWifiEntry> mStandardWifiEntryCache = new ArrayList<>();
     // Cache containing saved PasspointWifiEntries. Must be accessed only by the worker thread.
     private final Map<String, PasspointWifiEntry> mPasspointWifiEntryCache = new HashMap<>();
+
+    private NetworkInfo mCurrentNetworkInfo;
+    private WifiEntry mConnectedWifiEntry;
 
     public SavedNetworkTracker(@NonNull Lifecycle lifecycle, @NonNull Context context,
             @NonNull WifiManager wifiManager,
@@ -144,16 +154,26 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
-        updateSavedWifiEntries();
-        updateSubscriptionWifiEntries();
+        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+        final Network currentNetwork = mWifiManager.getCurrentNetwork();
+        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
+        updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
+        updateWifiEntries();
+
+        handleNetworkCapabilitiesChanged(
+                mConnectivityManager.getNetworkCapabilities(currentNetwork));
+        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
+        if (mConnectedWifiEntry != null) {
+            mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
     }
 
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
-        updateSavedWifiEntries();
-        updateSubscriptionWifiEntries();
+        updateWifiEntries();
     }
 
     @WorkerThread
@@ -162,8 +182,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         checkNotNull(intent, "Intent cannot be null!");
         conditionallyUpdateScanResults(intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED,
                 true /* defaultValue */));
-        updateSavedWifiEntries();
-        updateSubscriptionWifiEntries();
+        updateWifiEntries();
     }
 
     @WorkerThread
@@ -172,33 +191,87 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         checkNotNull(intent, "Intent cannot be null!");
         updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
-        updateSavedWifiEntries();
-        updateSubscriptionWifiEntries();
+        updateWifiEntries();
     }
 
-    private void updateSavedWifiEntries() {
+    @WorkerThread
+    @Override
+    protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
+        checkNotNull(intent, "Intent cannot be null!");
+        mCurrentNetworkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+        updateConnectionInfo(mWifiManager.getConnectionInfo(), mCurrentNetworkInfo);
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleRssiChangedAction() {
+        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+        if (mConnectedWifiEntry != null) {
+            mConnectedWifiEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleLinkPropertiesChanged(@Nullable LinkProperties linkProperties) {
+        if (mConnectedWifiEntry != null
+                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            mConnectedWifiEntry.updateLinkProperties(linkProperties);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleNetworkCapabilitiesChanged(@Nullable NetworkCapabilities capabilities) {
+        if (mConnectedWifiEntry != null
+                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            mConnectedWifiEntry.updateNetworkCapabilities(capabilities);
+            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
+    }
+
+    @WorkerThread
+    protected void handleDefaultRouteChanged() {
+        if (mConnectedWifiEntry != null) {
+            mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
+    }
+
+    /**
+     * Update the list returned by {@link #getSavedWifiEntries()} and
+     * {@link #getSubscriptionWifiEntries()} with the current states of the entry caches.
+     */
+    private void updateWifiEntries() {
         synchronized (mLock) {
+            mConnectedWifiEntry = null;
+            for (WifiEntry entry : mStandardWifiEntryCache) {
+                if (entry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
+                    mConnectedWifiEntry = entry;
+                }
+            }
+            for (WifiEntry entry : mSubscriptionWifiEntries) {
+                if (entry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
+                    mConnectedWifiEntry = entry;
+                }
+            }
+            if (mConnectedWifiEntry != null) {
+                mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
+            }
             mSavedWifiEntries.clear();
             mSavedWifiEntries.addAll(mStandardWifiEntryCache);
             Collections.sort(mSavedWifiEntries);
-            if (isVerboseLoggingEnabled()) {
-                Log.v(TAG, "Updated SavedWifiEntries: "
-                        + Arrays.toString(mSavedWifiEntries.toArray()));
-            }
-        }
-        notifyOnSavedWifiEntriesChanged();
-    }
-
-    private void updateSubscriptionWifiEntries() {
-        synchronized (mLock) {
             mSubscriptionWifiEntries.clear();
             mSubscriptionWifiEntries.addAll(mPasspointWifiEntryCache.values());
             Collections.sort(mSubscriptionWifiEntries);
             if (isVerboseLoggingEnabled()) {
+                Log.v(TAG, "Updated SavedWifiEntries: "
+                        + Arrays.toString(mSavedWifiEntries.toArray()));
                 Log.v(TAG, "Updated SubscriptionWifiEntries: "
                         + Arrays.toString(mSubscriptionWifiEntries.toArray()));
             }
         }
+        notifyOnSavedWifiEntriesChanged();
         notifyOnSubscriptionWifiEntriesChanged();
     }
 
@@ -324,6 +397,28 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             mPasspointWifiEntryCache.put(key,
                     new PasspointWifiEntry(mContext, mMainHandler, passpointConfigsByKey.get(key),
                             mWifiManager, true /* forSavedNetworksPage */));
+        }
+    }
+
+    /**
+     * Updates all WifiEntries with the current connection info.
+     * @param wifiInfo WifiInfo of the current connection
+     * @param networkInfo NetworkInfo of the current connection
+     */
+    @WorkerThread
+    private void updateConnectionInfo(@Nullable WifiInfo wifiInfo,
+            @Nullable NetworkInfo networkInfo) {
+        for (WifiEntry entry : mStandardWifiEntryCache) {
+            entry.updateConnectionInfo(wifiInfo, networkInfo);
+            if (entry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
+                mConnectedWifiEntry = entry;
+            }
+        }
+        for (WifiEntry entry : mPasspointWifiEntryCache.values()) {
+            entry.updateConnectionInfo(wifiInfo, networkInfo);
+            if (entry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
+                mConnectedWifiEntry = entry;
+            }
         }
     }
 
