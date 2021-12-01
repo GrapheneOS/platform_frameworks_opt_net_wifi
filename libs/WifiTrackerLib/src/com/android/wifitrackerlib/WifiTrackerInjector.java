@@ -17,21 +17,29 @@
 package com.android.wifitrackerlib;
 
 import android.content.Context;
+import android.os.UserManager;
 
 import androidx.annotation.NonNull;
+
 
 /**
  * Wrapper class for commonly referenced objects and static data.
  */
 class WifiTrackerInjector {
     private final boolean mIsDemoMode;
+    private final UserManager mUserManager;
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     WifiTrackerInjector(@NonNull Context context) {
         mIsDemoMode = HiddenApiWrapper.isDemoMode(context);
+        mUserManager = context.getSystemService(UserManager.class);
     }
 
     boolean isDemoMode() {
         return mIsDemoMode;
+    }
+
+    public UserManager getUserManager() {
+        return mUserManager;
     }
 }
