@@ -55,6 +55,8 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.os.UserHandle;
+import android.os.UserManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -66,6 +68,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import androidx.core.os.BuildCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -120,6 +123,8 @@ public class StandardWifiEntry extends WifiEntry {
     private final boolean mIsWpa3SuiteBSupported;
     private final boolean mIsEnhancedOpenSupported;
 
+    private final UserManager mUserManager;
+
     StandardWifiEntry(
             @NonNull WifiTrackerInjector injector,
             @NonNull Context context, @NonNull Handler callbackHandler,
@@ -132,6 +137,7 @@ public class StandardWifiEntry extends WifiEntry {
         mIsWpa3SaeSupported = wifiManager.isWpa3SaeSupported();
         mIsWpa3SuiteBSupported = wifiManager.isWpa3SuiteBSupported();
         mIsEnhancedOpenSupported = wifiManager.isEnhancedOpenSupported();
+        mUserManager = injector.getUserManager();
     }
 
     StandardWifiEntry(
@@ -423,7 +429,16 @@ public class StandardWifiEntry extends WifiEntry {
             return false;
         }
 
-        if (getWifiConfiguration() == null) {
+        WifiConfiguration wifiConfig = getWifiConfiguration();
+        if (wifiConfig == null) {
+            return false;
+        }
+
+        if (BuildCompat.isAtLeastT() && mUserManager.hasUserRestrictionForUser(
+                UserManager.DISALLOW_SHARING_ADMIN_CONFIGURED_WIFI,
+                UserHandle.getUserHandleForUid(wifiConfig.creatorUid))
+                && Utils.isDeviceOrProfileOwner(wifiConfig.creatorUid,
+                wifiConfig.creatorName, mContext)) {
             return false;
         }
 
@@ -450,11 +465,20 @@ public class StandardWifiEntry extends WifiEntry {
             return false;
         }
 
-        if (getWifiConfiguration() == null) {
+        WifiConfiguration wifiConfig = getWifiConfiguration();
+        if (wifiConfig == null) {
             return false;
         }
 
         if (!mWifiManager.isEasyConnectSupported()) {
+            return false;
+        }
+
+        if (BuildCompat.isAtLeastT() && mUserManager.hasUserRestrictionForUser(
+                UserManager.DISALLOW_SHARING_ADMIN_CONFIGURED_WIFI,
+                UserHandle.getUserHandleForUid(wifiConfig.creatorUid))
+                && Utils.isDeviceOrProfileOwner(wifiConfig.creatorUid,
+                wifiConfig.creatorName, mContext)) {
             return false;
         }
 
