@@ -46,7 +46,6 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -60,16 +59,6 @@ import java.util.StringJoiner;
  * Utility methods for WifiTrackerLib.
  */
 public class Utils {
-
-    @VisibleForTesting
-    static FeatureFlagUtilsWrapper sFeatureFlagUtilsWrapper = new FeatureFlagUtilsWrapper();
-
-    static class FeatureFlagUtilsWrapper {
-        boolean isProviderModelEnabled(Context context) {
-            return HiddenApiWrapper.isProviderModelEnabled(context);
-        }
-    }
-
     // Returns the ScanResult with the best RSSI from a list of ScanResults.
     @Nullable
     public static ScanResult getBestScanResultByLevel(@NonNull List<ScanResult> scanResults) {
@@ -238,8 +227,6 @@ public class Utils {
             boolean isLowQuality) {
         final StringJoiner sj = new StringJoiner(context.getString(
                 R.string.wifitrackerlib_summary_separator));
-        final boolean hideConnected =
-                !isDefaultNetwork && sFeatureFlagUtilsWrapper.isProviderModelEnabled(context);
 
         if (wifiConfiguration != null
                 && (wifiConfiguration.fromWifiNetworkSuggestion
@@ -248,7 +235,7 @@ public class Utils {
             final String suggestionOrSpecifierLabel =
                     getSuggestionOrSpecifierLabel(context, wifiConfiguration);
             if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
-                if (hideConnected) {
+                if (!isDefaultNetwork) {
                     sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
                             suggestionOrSpecifierLabel));
                 } else {
@@ -270,7 +257,7 @@ public class Utils {
         }
 
         // Default to "Connected" if nothing else to display
-        if (sj.length() == 0 && !hideConnected) {
+        if (sj.length() == 0 && isDefaultNetwork) {
             return context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
                     [DetailedState.CONNECTED.ordinal()];
         }

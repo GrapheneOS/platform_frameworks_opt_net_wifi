@@ -122,13 +122,6 @@ public class WifiPickerTrackerTest {
 
     @Before
     public void setUp() {
-        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
-            @Override
-            boolean isProviderModelEnabled(Context context) {
-                return false;
-            }
-        };
-
         MockitoAnnotations.initMocks(this);
 
         mTestLooper = new TestLooper();
