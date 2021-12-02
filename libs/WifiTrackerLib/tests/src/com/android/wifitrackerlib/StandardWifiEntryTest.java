@@ -109,13 +109,6 @@ public class StandardWifiEntryTest {
 
     @Before
     public void setUp() {
-        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
-            @Override
-            boolean isProviderModelEnabled(Context context) {
-                return false;
-            }
-        };
-
         MockitoAnnotations.initMocks(this);
 
         mTestLooper = new TestLooper();
@@ -711,13 +704,7 @@ public class StandardWifiEntryTest {
     }
 
     @Test
-    public void testGetSummary_providerModelConnectedButNotDefault_doesNotShowConnected() {
-        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
-            @Override
-            boolean isProviderModelEnabled(Context context) {
-                return true;
-            }
-        };
+    public void testGetSummary_connectedButNotDefault_doesNotShowConnected() {
         final int networkId = 1;
         final String summarySeparator = " / ";
         final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",

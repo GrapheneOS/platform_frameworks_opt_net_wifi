@@ -77,13 +77,6 @@ public class PasspointWifiEntryTest {
 
     @Before
     public void setUp() {
-        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
-            @Override
-            boolean isProviderModelEnabled(Context context) {
-                return false;
-            }
-        };
-
         MockitoAnnotations.initMocks(this);
 
         mTestLooper = new TestLooper();
@@ -184,13 +177,7 @@ public class PasspointWifiEntryTest {
     }
 
     @Test
-    public void testGetSummary_providerModelConnectedButNotDefault_doesNotShowConnected() {
-        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
-            @Override
-            boolean isProviderModelEnabled(Context context) {
-                return true;
-            }
-        };
+    public void testGetSummary_connectedButNotDefault_doesNotShowConnected() {
         String summarySeparator = " / ";
         String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};

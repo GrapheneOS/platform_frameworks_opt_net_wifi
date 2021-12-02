@@ -53,13 +53,11 @@ import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.text.style.ClickableSpan;
-import android.util.FeatureFlagUtils;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.android.internal.annotations.VisibleForTesting;
 import com.android.settingslib.HelpUtils;
 
 import java.util.ArrayList;
@@ -72,16 +70,6 @@ import java.util.StringJoiner;
  * Utility methods for WifiTrackerLib.
  */
 public class Utils {
-
-    @VisibleForTesting
-    static FeatureFlagUtilsWrapper sFeatureFlagUtilsWrapper = new FeatureFlagUtilsWrapper();
-
-    static class FeatureFlagUtilsWrapper {
-        boolean isProviderModelEnabled(Context context) {
-            return FeatureFlagUtils.isEnabled(context, FeatureFlagUtils.SETTINGS_PROVIDER_MODEL);
-        }
-    }
-
     // Returns the ScanResult with the best RSSI from a list of ScanResults.
     @Nullable
     public static ScanResult getBestScanResultByLevel(@NonNull List<ScanResult> scanResults) {
@@ -301,8 +289,6 @@ public class Utils {
             boolean isLowQuality) {
         final StringJoiner sj = new StringJoiner(context.getString(
                 R.string.wifitrackerlib_summary_separator));
-        final boolean hideConnected =
-                !isDefaultNetwork && sFeatureFlagUtilsWrapper.isProviderModelEnabled(context);
 
         if (wifiConfiguration != null) {
             if (wifiConfiguration.fromWifiNetworkSuggestion
@@ -311,7 +297,7 @@ public class Utils {
                 final String suggestionOrSpecifierLabel =
                         getSuggestionOrSpecifierLabel(context, wifiConfiguration);
                 if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
-                    if (hideConnected) {
+                    if (!isDefaultNetwork) {
                         sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
                                 suggestionOrSpecifierLabel));
                     } else {
@@ -319,7 +305,7 @@ public class Utils {
                                 suggestionOrSpecifierLabel));
                     }
                 }
-            } else if (wifiConfiguration.isEphemeral() && !hideConnected) {
+            } else if (wifiConfiguration.isEphemeral() && isDefaultNetwork) {
                 // For ephemeral networks to show "Automatically connected via ..."
                 if (!TextUtils.isEmpty(recommendationServiceLabel)) {
                     sj.add(String.format(context.getString(
@@ -344,7 +330,7 @@ public class Utils {
         }
 
         // Default to "Connected" if nothing else to display
-        if (sj.length() == 0 && !hideConnected) {
+        if (sj.length() == 0 && isDefaultNetwork) {
             return context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
                     [DetailedState.CONNECTED.ordinal()];
         }
