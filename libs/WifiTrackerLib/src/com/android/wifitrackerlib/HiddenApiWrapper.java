@@ -28,7 +28,6 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ClickableSpan;
-import android.util.FeatureFlagUtils;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -49,13 +48,6 @@ class HiddenApiWrapper {
     static void startCaptivePortalApp(
             @NonNull ConnectivityManager connectivityManager, @NonNull Network network) {
         connectivityManager.startCaptivePortalApp(network);
-    }
-
-    /**
-     * Returns whether or not the provider model is enabled in the given context.
-     */
-    static boolean isProviderModelEnabled(@NonNull Context context) {
-        return FeatureFlagUtils.isEnabled(context, FeatureFlagUtils.SETTINGS_PROVIDER_MODEL);
     }
 
     /**

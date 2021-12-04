@@ -40,13 +40,6 @@ class HiddenApiWrapper {
     }
 
     /**
-     * Returns whether or not the provider model is enabled in the given context.
-     */
-    static boolean isProviderModelEnabled(@NonNull Context context) {
-        return false;
-    }
-
-    /**
      * Find the annotation of specified id in rawText and linkify it with helpUriString.
      */
     static CharSequence linkifyAnnotation(Context context, CharSequence rawText, String id,

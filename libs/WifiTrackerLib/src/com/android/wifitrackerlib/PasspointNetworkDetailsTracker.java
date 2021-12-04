@@ -95,7 +95,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                                 uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId())))
                         .findAny();
         if (optionalPasspointConfig.isPresent()) {
-            mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler,
+            mChosenEntry = new PasspointWifiEntry(mInjector, mContext, mMainHandler,
                     optionalPasspointConfig.get(), mWifiManager,
                     false /* forSavedNetworksPage */);
         } else {
@@ -107,7 +107,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                                             uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey())))
                             .findAny();
             if (optionalWifiConfig.isPresent()) {
-                mChosenEntry = new PasspointWifiEntry(mContext, mMainHandler,
+                mChosenEntry = new PasspointWifiEntry(mInjector, mContext, mMainHandler,
                         optionalWifiConfig.get(), mWifiManager,
                         false /* forSavedNetworksPage */);
             } else {

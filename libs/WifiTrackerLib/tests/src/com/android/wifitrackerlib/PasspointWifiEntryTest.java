@@ -50,6 +50,7 @@ import org.mockito.MockitoSession;
 import java.util.Arrays;
 
 public class PasspointWifiEntryTest {
+    @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
     @Mock private WifiManager mMockWifiManager;
     @Mock private Resources mMockResources;
@@ -64,13 +65,6 @@ public class PasspointWifiEntryTest {
 
     @Before
     public void setUp() {
-        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
-            @Override
-            boolean isProviderModelEnabled(Context context) {
-                return false;
-            }
-        };
-
         MockitoAnnotations.initMocks(this);
 
         mTestLooper = new TestLooper();
@@ -92,8 +86,8 @@ public class PasspointWifiEntryTest {
         when(mMockContext.getString(R.string.wifitrackerlib_wifi_passpoint_expired))
                 .thenReturn(expired);
 
-        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                passpointConfiguration, mMockWifiManager,
+        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector, mMockContext,
+                mTestHandler, passpointConfiguration, mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
         assertThat(passpointWifiEntry.getSummary()).isNotEqualTo(expired);
@@ -105,8 +99,8 @@ public class PasspointWifiEntryTest {
         String expired = "Expired";
         when(mMockContext.getString(R.string.wifitrackerlib_wifi_passpoint_expired))
                 .thenReturn(expired);
-        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                passpointConfiguration, mMockWifiManager,
+        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector, mMockContext,
+                mTestHandler, passpointConfiguration, mMockWifiManager,
                 false /* forSavedNetworksPage */);
         PasspointWifiEntry spyEntry = spy(passpointWifiEntry);
         when(spyEntry.isExpired()).thenReturn(true);
@@ -125,7 +119,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testGetMeteredChoice_afterSetMeteredChoice_getCorrectValue() {
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -157,7 +151,7 @@ public class PasspointWifiEntryTest {
                 new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.updateConnectionInfo(wifiInfo, networkInfo);
@@ -168,13 +162,7 @@ public class PasspointWifiEntryTest {
     }
 
     @Test
-    public void testGetSummary_providerModelConnectedButNotDefault_doesNotShowConnected() {
-        Utils.sFeatureFlagUtilsWrapper = new Utils.FeatureFlagUtilsWrapper() {
-            @Override
-            boolean isProviderModelEnabled(Context context) {
-                return true;
-            }
-        };
+    public void testGetSummary_connectedButNotDefault_doesNotShowConnected() {
         String summarySeparator = " / ";
         String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};
@@ -196,7 +184,7 @@ public class PasspointWifiEntryTest {
                 new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.updateConnectionInfo(wifiInfo, networkInfo);
@@ -216,7 +204,7 @@ public class PasspointWifiEntryTest {
                 new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -242,8 +230,8 @@ public class PasspointWifiEntryTest {
         when(mMockContext.getString(R.string.wifitrackerlib_wifi_security_passpoint))
                 .thenReturn(passpointSecurity);
 
-        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockContext, mTestHandler,
-                passpointConfiguration, mMockWifiManager,
+        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector, mMockContext,
+                mTestHandler, passpointConfiguration, mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
         assertThat(passpointWifiEntry.getSecurityString(false)).isEqualTo(passpointSecurity);
@@ -263,7 +251,7 @@ public class PasspointWifiEntryTest {
                 new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -307,7 +295,7 @@ public class PasspointWifiEntryTest {
         NetworkInfo networkInfo =
                 new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -318,7 +306,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testIsAutoJoinEnabled_nullConfigs_returnsFalse() {
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -329,7 +317,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testCanSignIn_captivePortalCapability_returnsTrue() {
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -344,7 +332,7 @@ public class PasspointWifiEntryTest {
     public void testUpdateNetworkCapabilities_userConnect_autoOpenCaptivePortalOnce() {
         when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mMockConnectivityManager);
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
@@ -391,7 +379,7 @@ public class PasspointWifiEntryTest {
         NetworkInfo networkInfo =
                 new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
         networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.updateConnectionInfo(wifiInfo, networkInfo);
