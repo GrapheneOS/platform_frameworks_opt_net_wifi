@@ -186,7 +186,7 @@ public class StandardWifiEntry extends WifiEntry {
         final @ConnectedState int connectedState = getConnectedState();
         switch (connectedState) {
             case CONNECTED_STATE_DISCONNECTED:
-                connectedStateDescription = getDisconnectedDescription(mContext,
+                connectedStateDescription = getDisconnectedDescription(mInjector, mContext,
                         mTargetWifiConfig,
                         mForSavedNetworksPage,
                         concise);
