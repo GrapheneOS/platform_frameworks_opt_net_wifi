@@ -565,11 +565,11 @@ public class WifiPickerTracker extends BaseWifiTracker {
             // Create PasspointWifiEntry if one doesn't exist for the seen key yet.
             if (!mPasspointWifiEntryCache.containsKey(key)) {
                 if (wifiConfig.fromWifiNetworkSuggestion) {
-                    mPasspointWifiEntryCache.put(key, new PasspointWifiEntry(mContext,
+                    mPasspointWifiEntryCache.put(key, new PasspointWifiEntry(mInjector, mContext,
                             mMainHandler, wifiConfig, mWifiManager,
                             false /* forSavedNetworksPage */));
                 } else if (mPasspointConfigCache.containsKey(key)) {
-                    mPasspointWifiEntryCache.put(key, new PasspointWifiEntry(mContext,
+                    mPasspointWifiEntryCache.put(key, new PasspointWifiEntry(mInjector, mContext,
                             mMainHandler, mPasspointConfigCache.get(key), mWifiManager,
                             false /* forSavedNetworksPage */));
                 } else {
@@ -933,12 +933,12 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 uniqueIdToPasspointWifiEntryKey(cachedWifiConfig.getKey()));
         PasspointWifiEntry connectedEntry;
         if (passpointConfig != null) {
-            connectedEntry = new PasspointWifiEntry(mContext, mMainHandler,
+            connectedEntry = new PasspointWifiEntry(mInjector, mContext, mMainHandler,
                     passpointConfig, mWifiManager,
                     false /* forSavedNetworksPage */);
         } else {
             // Suggested PasspointWifiEntry without a corresponding PasspointConfiguration
-            connectedEntry = new PasspointWifiEntry(mContext, mMainHandler,
+            connectedEntry = new PasspointWifiEntry(mInjector, mContext, mMainHandler,
                     cachedWifiConfig, mWifiManager,
                     false /* forSavedNetworksPage */);
         }
