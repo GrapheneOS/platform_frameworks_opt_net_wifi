@@ -96,12 +96,6 @@
     <!-- Summary for a network suggested by an app. [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_available_via_app">Available via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
 
-    <!-- Status message of Wi-Fi when it is automatically connected by a network recommendation provider. [CHAR LIMIT=NONE] -->
-    <string name="wifitrackerlib_connected_via_network_scorer">Automatically connected via <xliff:g id="name" example="Wifi App">%1$s</xliff:g></string>
-
-    <!-- Status message of Wi-Fi when it is automatically connected by a default network recommendation provider. [CHAR LIMIT=NONE] -->
-    <string name="wifitrackerlib_connected_via_network_scorer_default">Automatically connected via network rating provider</string>
-
     <!-- Summary for connected wifi network with partial internet connectivity [CHAR LIMIT=50] -->
     <string name="wifitrackerlib_wifi_limited_connection">Limited connection</string>
 
@@ -201,24 +195,6 @@
 
     <!-- Help URL, IMSI protection [DO NOT TRANSLATE] -->
     <string name="wifitrackerlib_help_url_imsi_protection" translatable="false"></string>
-
-    <!-- Speed label for very slow network speed -->
-    <string name="wifitrackerlib_speed_label_very_slow">Very Slow</string>
-
-    <!-- Speed label for slow network speed -->
-    <string name="wifitrackerlib_speed_label_slow">Slow</string>
-
-    <!-- Speed label for okay network speed -->
-    <string name="wifitrackerlib_speed_label_okay">OK</string>
-
-    <!-- Speed label for medium network speed -->
-    <string name="wifitrackerlib_speed_label_medium">Medium</string>
-
-    <!-- Speed label for fast network speed -->
-    <string name="wifitrackerlib_speed_label_fast">Fast</string>
-
-    <!-- Speed label for very fast network speed -->
-    <string name="wifitrackerlib_speed_label_very_fast">Very Fast</string>
 
     <!-- Toast message for when the user selects cellular as the internet provider and Wi-Fi auto-connect is temporarily disabled -->
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now">Wi-Fi won\u2019t auto-connect for now</string>
