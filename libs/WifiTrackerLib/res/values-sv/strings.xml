@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Utan datapriser"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Ansluten via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Tillgängligt via <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Automatiskt ansluten via <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Automatiskt ansluten via leverantör av nätverksbetyg"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Begränsad anslutning"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Det går inte att komma åt den privata DNS-servern."</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Ansluten till enheten. Det går inte att ansluta till internet."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Det gick inte att slutföra registreringen. Tryck för att försöka igen."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Registrering har slutförts. Ansluter …"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Det här nätverket får ett SIM-id som kan användas till att spåra enhetens plats. "<annotation id="url">"Läs mer"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Mycket långsam"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Långsam"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Medel"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Snabb"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Mycket snabb"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Du ansluts inte till wifi automatiskt för närvarande"</string>
 </resources>

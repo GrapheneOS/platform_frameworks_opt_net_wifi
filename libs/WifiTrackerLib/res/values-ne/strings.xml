@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"सीमा हटाइएको छ"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> मार्फत कनेक्ट गरियो"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> मार्फत उपलब्ध छ"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"<xliff:g id="NAME">%1$s</xliff:g> मार्फत स्वतः कनेक्ट भयो"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"नेटवर्कको मूल्याङ्कन गर्ने सेवा प्रदायकमार्फत स्वतः कनेक्ट भयो"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"सीमित कनेक्सन"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"निजी DNS सर्भरमाथि पहुँच राख्न सकिँदैन"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"डिभाइसमा कनेक्ट गरियो। इन्टरनेट उपलब्ध छैन।"</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"साइन अप गर्ने कार्य सम्पन्न गर्न सकिएन। फेरि प्रयास गर्न ट्याप गर्नुहोस्।"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"साइन अप गर्ने कार्य सम्पन्न भयो। कनेक्ट गर्दै…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"यो नेटवर्कलाई डिभाइसको स्थान पहिल्याउन प्रयोग गर्न मिल्ने एउटा अद्वितीय SIM कार्ड ID उपलब्ध गराइन्छ। "<annotation id="url">"थप जान्नुहोस्"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"धेरै सुस्त"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"सुस्त"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ठिकै"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"मध्यम"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"छिटो"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"धेरै छिटो"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"केही समयका लागि Wi-Fi स्वतः कनेक्ट हुँदैन"</string>
 </resources>
