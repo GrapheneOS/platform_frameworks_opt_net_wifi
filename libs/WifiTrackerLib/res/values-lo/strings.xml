@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"ບໍ່ໄດ້ວັດແທກ"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"ເຊື່ອມ​ຕໍ່​ຜ່ານ <xliff:g id="NAME">%1$s</xliff:g> ແລ້ວ"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"ສາມາດໃຊ້ໄດ້ຜ່ານ <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"ເຊື່ອມຕໍ່ອັດຕະໂນມັດຜ່ານ <xliff:g id="NAME">%1$s</xliff:g> ແລ້ວ"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"ເຊື່ອມຕໍ່ກັບອັດຕະໂນມັດແລ້ວຜ່ານຜູ້ໃຫ້ບໍລິການຄະແນນເຄືອຂ່າຍ"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"ການເຊື່ອມຕໍ່ຈຳກັດ"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ບໍ່ສາມາດເຂົ້າເຖິງເຊີບເວີ DNS ສ່ວນຕົວໄດ້"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ເຊື່ອມຕໍ່ຫາອຸປະກອນແລ້ວ. ບໍ່ສາມາດໃຫ້ບໍລິການອິນເຕີເນັດໄດ້."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"ບໍ່ສາມາດສຳເລັດການສະໝັກໄດ້. ແຕະເພື່ອລອງໃໝ່."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"ສະໝັກສຳເລັດແລ້ວ. ກຳລັງເຊື່ອມຕໍ່…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"ເຄືອຂ່າຍນີ້ຈະຮັບ ID ຊິມທີ່ສາມາດໃຊ້ເພື່ອຕິດຕາມສະຖານທີ່ອຸປະກອນ "<annotation id="url">"ສຶກສາເພີ່ມເຕີມ"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"ຊ້າຫຼາຍ"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"ຊ້າ"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ຕົກລົງ"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"ປານກາງ"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"ໄວ"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"ໄວຫຼາຍ"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi ຈະບໍ່ເຊື່ອມຕໍ່ອັດຕະໂນມັດສຳລັບຕອນນີ້"</string>
 </resources>

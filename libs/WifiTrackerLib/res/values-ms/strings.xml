@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Tidak bermeter"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Disambungkan melalui <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Tersedia melalui <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Disambungkan secara automatik melalui <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Disambungkan secara automatik melalui pembekal penilaian rangkaian"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Sambungan terhad"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Pelayan DNS peribadi tidak boleh diakses"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Disambungkan pada peranti. Tidak dapat menyediakan Internet."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Tidak dapat menyelesaikan pendaftaran. Ketik untuk mencuba lagi."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Pendaftaran selesai. Menyambung…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Rangkaian ini menerima ID SIM yang boleh digunakan untuk menjejaki lokasi peranti. "<annotation id="url">"Ketahui lebih lanjut"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Sangat Perlahan"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Perlahan"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Sederhana"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Laju"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Sangat Laju"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi tidak akan disambungkan secara automatik buat masa ini"</string>
 </resources>

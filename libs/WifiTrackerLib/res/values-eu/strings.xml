@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Neurtu gabeko sarea"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> bidez konektatuta"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> bidez erabilgarri"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Automatikoki konektatu da <xliff:g id="NAME">%1$s</xliff:g> bidez"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Sare-balorazioen hornitzaile baten bidez automatikoki konektatuta"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Konexio mugatua"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Ezin da atzitu DNS zerbitzari pribatua"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Gailura konektatuta. Ezin da Interenetarako sarbiderik eman."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Ezin izan da erregistratu. Berriro saiatzeko, ukitu hau."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Erregistratu da. Konektatzen…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Gailuaren kokapenaren jarraipena egiteko balio duen SIM ID bat jasotzen du sare honek. "<annotation id="url">"Lortu informazio gehiago"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Oso motela"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Motela"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Ados"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Normala"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Bizkorra"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Oso bizkorra"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Oraingoz ez da automatikoki konektatuko wifira"</string>
 </resources>

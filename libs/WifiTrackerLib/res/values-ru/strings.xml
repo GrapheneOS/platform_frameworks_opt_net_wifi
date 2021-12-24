@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Сеть без тарификации трафика"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Подключено через приложение \"<xliff:g id="NAME">%1$s</xliff:g>\""</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Доступно через приложение \"<xliff:g id="NAME">%1$s</xliff:g>\""</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Автоматически подключено через <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Автоматически подключено через автора рейтинга сетей"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Подключение к сети ограничено"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Доступа к частному DNS-серверу нет"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Подключено к устройству. Нет доступа к интернету."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Не удалось завершить регистрацию. Нажмите, чтобы повторить попытку."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Регистрация завершена. Подключение…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Этой сети будет передан идентификатор SIM-карты, с помощью которого можно отследить местоположение устройства. "<annotation id="url">"Подробнее…"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Очень медленная"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Низкая"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ОК"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Средняя"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Быстрая"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Очень быстрая"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Подключение по Wi-Fi не установится автоматически."</string>
 </resources>

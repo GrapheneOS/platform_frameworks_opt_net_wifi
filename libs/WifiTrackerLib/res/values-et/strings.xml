@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Mittemahupõhine"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Ühendatud rakenduse <xliff:g id="NAME">%1$s</xliff:g> kaudu"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Saadaval rakenduse <xliff:g id="NAME">%1$s</xliff:g> kaudu"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Automaatselt ühendatud teenusepakkuja <xliff:g id="NAME">%1$s</xliff:g> kaudu"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Ühendus loodi automaatselt võrgukvaliteedi hinnangute pakkuja kaudu"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Piiratud ühendus"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Privaatsele DNS-serverile ei pääse juurde"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Seadmega ühendatud. Internetiühendust ei saa luua."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Registreerimist ei saanud lõpule viia. Puudutage, et uuesti proovida."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Registreerimine on lõpule viidud. Ühendamine …"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"See võrk saab SIM-i ID, mida saab kasutada seadme asukoha jälgimiseks. "<annotation id="url">"Lisateave"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Väga aeglane"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Aeglane"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Keskmine"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Kiire"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Väga kiire"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"WiFi-ühendust ei looda praegu automaatselt"</string>
 </resources>

@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Không đo lượng dữ liệu"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Đã kết nối qua <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Được cung cấp qua <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Đã tự động kết nối qua <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Đã tự động kết nối qua nhà cung cấp dịch vụ xếp hạng mạng"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Kết nối giới hạn"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Không thể truy cập máy chủ DNS riêng tư"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Đã kết nối với thiết bị. Không thể cung cấp Internet."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Không thể hoàn tất quá trình đăng ký. Hãy nhấn để thử lại."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Đã đăng ký xong. Đang kết nối…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Mạng này nhận được một mã nhận dạng SIM có thể dùng để theo dõi vị trí của thiết bị. "<annotation id="url">"Tìm hiểu thêm"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Rất chậm"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Chậm"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Khá tốt"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Trung bình"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Nhanh"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Rất nhanh"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Tạm thời, Wi-Fi sẽ không tự động kết nối"</string>
 </resources>

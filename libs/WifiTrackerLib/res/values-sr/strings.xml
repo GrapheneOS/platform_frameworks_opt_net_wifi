@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Без ограничења"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Повезано помоћу апликације <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Доступно преко апликације <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Аутоматски повезано помоћу апликације <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Аутоматски повезано преко добављача оцене мреже"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Ограничена веза"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Приступ приватном DNS серверу није успео"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Уређај је повезан. Пружање интернета није успело."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Довршавање регистрације није успело. Додирните да бисте пробали поново."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Регистрација је довршена. Повезује се…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Ова мрежа добија ИД SIM картице који може да се користи за праћење локације уређаја. "<annotation id="url">"Сазнајте више"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Веома споро"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Споро"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"У реду"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Средње"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Брзо"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Веома брзо"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"WiFi тренутно не може да се аутоматски повеже"</string>
 </resources>
