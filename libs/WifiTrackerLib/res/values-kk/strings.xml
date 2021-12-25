@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Трафик саналмайды"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> арқылы жалғанған"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> арқылы қолжетімді"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"<xliff:g id="NAME">%1$s</xliff:g> арқылы автоматты байланыстырылды."</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Желі рейтингі провайдері арқылы автоматты түрде қосылған"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Шектеулі байланыс"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Жеке DNS серверіне кіру мүмкін емес."</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Құрылғыға қосылды. Интернетке қосылым жоқ."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Тіркелу аяқталмады. Әрекетті қайталау үшін түртіңіз."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Тіркелу аяқталды. Байланыс орнатылуда…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Бұл желіге SIM идентификаторы беріледі, оның көмегімен құрылғының орналасқан жері қадағаланады. "<annotation id="url">"Толығырақ"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Өте баяу"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Баяу"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Иә"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Орташа"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Жылдам"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Өте жылдам"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Қазір Wi-Fi автоматты түрде қосылмайды."</string>
 </resources>

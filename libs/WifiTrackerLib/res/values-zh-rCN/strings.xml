@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"不按流量计费"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"已通过<xliff:g id="NAME">%1$s</xliff:g>连接"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"可通过<xliff:g id="NAME">%1$s</xliff:g>使用"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"已通过<xliff:g id="NAME">%1$s</xliff:g>自动连接"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"已通过网络评分服务提供方自动连接"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"网络连接受限"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"无法访问专用 DNS 服务器"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"已连接到设备，但无法提供互联网连接。"</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"无法完成注册。点按即可重试。"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"注册完毕。正在连接…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"此网络会收到可用于跟踪设备位置的 SIM 卡 ID。"<annotation id="url">"了解详情"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"很慢"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"慢"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"尚可"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"中"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"快"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"很快"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"WLAN 暂时无法自动连接"</string>
 </resources>

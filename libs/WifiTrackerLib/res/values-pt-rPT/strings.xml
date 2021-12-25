@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Com acesso ilimitado"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Ligado através de <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Disponível através de <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Ligado automaticamente através de <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Ligado automaticamente através do fornecedor de classificação de rede"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Ligação limitada."</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Não é possível aceder ao servidor DNS privado."</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Ligado ao dispositivo. Não é possível disponibilizar Internet."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Não foi possível concluir a inscrição. Toque para tentar novamente."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Inscrição concluída. A estabelecer ligação…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Esta rede recebe um ID do SIM que pode ser utilizado para monitorizar a localização do dispositivo. "<annotation id="url">"Saiba mais"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Muito lenta"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Lenta"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Razoável"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Média"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Rápida"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Muito rápida"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Por agora, o Wi-Fi não irá estabelecer ligação automaticamente"</string>
 </resources>
