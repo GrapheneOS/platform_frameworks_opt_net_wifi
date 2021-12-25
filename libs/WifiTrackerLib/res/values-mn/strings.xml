@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Хязгааргүй"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g>-р холбогдсон"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g>-р боломжтой"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"<xliff:g id="NAME">%1$s</xliff:g>-р автоматаар холбогдсон"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Сүлжээний үнэлгээ үзүүлэгчээр автоматаар холбогдсон"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Хязгаарлагдмал холболт"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Хувийн DNS серверт хандах боломжгүй байна"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Төхөөрөмжид холбогдсон байна. Интернэт олгох боломжгүй."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Бүртгэлийг дуусгаж чадсангүй. Дахин оролдохын тулд товшино уу."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Бүртгэлийг дуусгалаа. Холбогдож байна…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Энэ сүлжээ нь төхөөрөмжийн байршлыг тандахад ашиглах боломжтой SIM ID-г хүлээн авдаг. "<annotation id="url">"Нэмэлт мэдээлэл авах"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Маш удаан"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Удаан"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ОК"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Дундаж"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Хурдан"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Маш хурдан"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi одоогоор автоматаар холбогдохгүй"</string>
 </resources>

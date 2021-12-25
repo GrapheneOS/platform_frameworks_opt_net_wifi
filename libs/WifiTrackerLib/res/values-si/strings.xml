@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"මනුගත නොකළ"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> හරහා සම්බන්ධිතයි"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> හරහා ලබා ගත හැකිය"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"<xliff:g id="NAME">%1$s</xliff:g> හරහා ස්වයංක්‍රියව සම්බන්ධ විය"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"ජාල ශ්‍රේණිගත සපයන්නා හරහා ස්වයංක්‍රියව සම්බන්ධ විය"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"සීමිත සම්බන්ධතාව"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"පුද්ගලික DNS සේවාදායකයට ප්‍රවේශ වීමට නොහැකිය"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"උපාංගයට සම්බන්ධයි. අන්තර්ජාලය සැපයීමට නොහැකිය."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"ලියාපදිංචිය සම්පූර්ණ කළ නොහැකි විය. නැවත උත්සාහ කිරීමට තට්ටු කරන්න."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"ලියාපදිංචිය සම්පූර්ණයි. සබැඳෙමින්…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"උපාංග ස්ථානය නිරීක්ෂණය කිරීමට භාවිත කළ හැකි SIM ID එකක් මෙම ජාලයට ලැබේ "<annotation id="url">"තව දැන ගන්න"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"ඉතා මන්දගාමී"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"මන්දගාමී"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"හරි"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"මධ්‍යම"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"වේගවත්"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"ඉතා වේගවත්"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi දැනට ස්වයංක්‍රියව සබැඳි නොවනු ඇත"</string>
 </resources>

@@ -37,8 +37,6 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Hindi nakametro"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Nakakonekta sa pamamagitan ng <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Available sa pamamagitan ng <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Awtomatikong nakakonekta sa pamamagitan ng <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Awtomatikong nakakonekta sa pamamagitan ng provider ng rating ng network"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Limitadong koneksyon"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Hindi ma-access ang pribadong DNS server"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Nakakonekta sa device. Hindi makapagbigay ng internet."</string>
@@ -71,11 +69,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Hindi makumpleto ang pag-sign up. I-tap para subukan ulit."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Kumpleto na ang pag-sign up. Kumokonekta…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Tumatanggap ang network na ito ng SIM ID na magagamit sa pag-track sa lokasyon ng device. "<annotation id="url">"Matuto pa"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Napakabagal"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Mabagal"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"OK"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Katamtaman"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Mabilis"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Napakabilis"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Hindi awtomatikong kokonekta ang Wi-Fi sa ngayon"</string>
 </resources>
