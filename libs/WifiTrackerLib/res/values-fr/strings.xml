@@ -43,7 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Impossible d\'accéder au serveur DNS privé"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Connecté à l\'appareil. Connexion Internet impossible."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Faible qualité"</string>
-    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Aucun"</string>
+    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Aucune"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Expiré"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Appuyez ici pour vous connecter"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Appuyez pour renouveler l\'abonnement et vous connecter"</string>
