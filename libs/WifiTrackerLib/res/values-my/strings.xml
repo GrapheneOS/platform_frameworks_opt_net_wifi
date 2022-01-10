@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"အချက်ပြမှု အားနည်းသည်။ ရောက်တာအနီးသို့ ရွှေ့ကြည့်ပါ။"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"ကွန်ရက်က လက်ခံနိုင်စွမ်းကို ကျော်လွန်နေသည်။ နောက်မှ ထပ်စမ်းကြည့်ပါ။"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"ချိတ်ဆက်၍ မရပါ။ နောက်မှ ထပ်စမ်းကြည့်ပါ။"</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"ကွန်ရက်က ဤစက်ပစ္စည်းနှင့် တွဲဖက်မသုံးနိုင်ပါ"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"ချိတ်ဆက်၍ မရပါ။ နောက်မှ ထပ်စမ်းကြည့်ပါ။"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ချိတ်ဆက်မထားပါ"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"သိမ်းပြီးပါပြီ"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"အခမဲ့ မဟုတ်ပါ"</string>
@@ -59,6 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"အလယ်အလတ်"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"အမြန်"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"အလွန်မြန်"</string>
-    <!-- no translation found for wifitrackerlib_wifi_wont_autoconnect_for_now (4923161724964349851) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi က ယခု အလိုအလျောက် ချိတ်ဆက်မည်မဟုတ်ပါ"</string>
 </resources>

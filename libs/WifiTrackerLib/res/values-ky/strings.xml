@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Начар сигнал. Роутерге жакын жылып көрүңүз."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Тармакка өтө көп түзмөк туташып турат. Кайталаңыз."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Туташпай жатат. Кайталаңыз."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Тармак бул түзмөк менен шайкеш келбейт"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Туташпай жатат. Кайталаңыз."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Ажыратылды"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Сакталды"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Трафик ченелет"</string>
@@ -41,7 +41,7 @@
     <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Тармактар рейтингинин булагы аркылуу автоматтык түрдө туташты"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Байланыш чектелген"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Жеке DNS сервери жеткиликсиз"</string>
-    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Түзмөккө туташты. Интернет жок."</string>
+    <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Түзмөккө туташып турат. Интернет жок."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Начар сапат"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Жок"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Мөөнөтү бүткөн"</string>
@@ -59,6 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Орто"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Ылдам"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Абдан ылдам"</string>
-    <!-- no translation found for wifitrackerlib_wifi_wont_autoconnect_for_now (4923161724964349851) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi азырынча автоматтык түрдө туташпайт"</string>
 </resources>

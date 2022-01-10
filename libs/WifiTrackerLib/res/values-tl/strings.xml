@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Mahinang signal. Subukang mas lumapit sa router."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Lampas na sa kapasidad ang network. Subukan ulit sa ibang pagkakataon."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Hindi makakonekta. Subukan ulit sa ibang pagkakataon."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Hindi compatible ang network sa device na ito"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Hindi makakonekta. Subukan ulit sa ibang pagkakataon."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Nadiskonekta"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Naka-save"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Nakametro"</string>
