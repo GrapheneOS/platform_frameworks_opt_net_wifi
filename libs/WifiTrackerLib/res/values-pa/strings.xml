@@ -30,8 +30,8 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"ਕਮਜ਼ੋਰ ਸਿਗਨਲ। ਰਾਊਟਰ ਦੇ ਨਜ਼ਦੀਕ ਜਾ ਕੇ ਦੇਖੋ।"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"ਨੈੱਟਵਰਕ ਦੀ ਸਮਰੱਥਾ ਪੂਰੀ ਹੋ ਗਈ ਹੈ। ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"ਕਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ। ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"ਨੈੱਟਵਰਕ ਇਸ ਡੀਵਾਈਸ ਦੇ ਅਨੁਰੂਪ ਨਹੀਂ ਹੈ"</string>
-    <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ਡਿਸਕਨੈਕਟ ਹੋਇਆ"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"ਕਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ। ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"</string>
+    <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ਡਿਸਕਨੈਕਟ ਕੀਤਾ"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ਰੱਖਿਅਤ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"ਗੈਰ-ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
@@ -59,6 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"ਮੱਧਮ"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"ਤੇਜ਼"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"ਬਹੁਤ ਤੇਜ਼"</string>
-    <!-- no translation found for wifitrackerlib_wifi_wont_autoconnect_for_now (4923161724964349851) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"ਫ਼ਿਲਹਾਲ ਵਾਈ-ਫਾਈ ਸਵੈ-ਕਨੈਕਟ ਨਹੀਂ ਹੋਵੇਗਾ"</string>
 </resources>

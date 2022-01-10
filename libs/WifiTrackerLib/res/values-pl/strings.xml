@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Słaby sygnał. Przysuń się do routera."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Sieć jest przeciążona. Spróbuj ponownie później."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Nie udało się połączyć. Spróbuj ponownie później."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Sieć niezgodna z tym urządzeniem"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Nie udało się połączyć. Spróbuj ponownie później."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Odłączono"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Zapisano"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Użycie danych jest mierzone"</string>
@@ -59,6 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Średnia"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Szybka"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Bardzo szybka"</string>
-    <!-- no translation found for wifitrackerlib_wifi_wont_autoconnect_for_now (4923161724964349851) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi nie będzie na razie włączać się automatycznie"</string>
 </resources>
