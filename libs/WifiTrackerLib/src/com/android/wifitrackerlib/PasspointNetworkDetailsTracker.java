@@ -215,8 +215,8 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                         osuProviderToPasspointConfig.get(provider);
                 if (provisionedConfig != null && TextUtils.equals(mChosenEntry.getKey(),
                         uniqueIdToPasspointWifiEntryKey(provisionedConfig.getUniqueId()))) {
-                    mOsuWifiEntry = new OsuWifiEntry(mInjector, mContext, mMainHandler, provider,
-                            mWifiManager, false /* forSavedNetworksPage */);
+                    mOsuWifiEntry = new OsuWifiEntry(mContext, mMainHandler, provider, mWifiManager,
+                            false /* forSavedNetworksPage */);
                     mOsuWifiEntry.updateScanResultInfo(osuProviderToScans.get(provider));
                     mOsuWifiEntry.setAlreadyProvisioned(true);
                     mChosenEntry.setOsuWifiEntry(mOsuWifiEntry);

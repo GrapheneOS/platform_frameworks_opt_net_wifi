@@ -32,7 +32,6 @@ import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.ProvisioningCallback;
 import android.os.Handler;
-import android.os.UserManager;
 import android.text.TextUtils;
 import android.util.Pair;
 
@@ -40,7 +39,6 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
-import androidx.core.os.BuildCompat;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,15 +60,11 @@ class OsuWifiEntry extends WifiEntry {
     private String mSsid;
     private String mOsuStatusString;
     private boolean mIsAlreadyProvisioned = false;
-    private boolean mHasAddConfigUserRestriction = false;
-    private final UserManager mUserManager;
 
     /**
      * Create an OsuWifiEntry with the associated OsuProvider
      */
-    OsuWifiEntry(
-            @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
+    OsuWifiEntry(@NonNull Context context, @NonNull Handler callbackHandler,
             @NonNull OsuProvider osuProvider,
             @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
@@ -81,11 +75,6 @@ class OsuWifiEntry extends WifiEntry {
         mContext = context;
         mOsuProvider = osuProvider;
         mKey = osuProviderToOsuWifiEntryKey(osuProvider);
-        mUserManager = injector.getUserManager();
-        if (BuildCompat.isAtLeastT() && mUserManager != null) {
-            mHasAddConfigUserRestriction = mUserManager.hasUserRestriction(
-                    UserManager.DISALLOW_ADD_WIFI_CONFIG);
-        }
     }
 
     @Override
@@ -111,10 +100,6 @@ class OsuWifiEntry extends WifiEntry {
 
     @Override
     public synchronized String getSummary(boolean concise) {
-        if (hasAdminRestrictions()) {
-            return mContext.getString(R.string.wifitrackerlib_admin_restricted_network);
-        }
-
         // TODO(b/70983952): Add verbose summary
         if (mOsuStatusString != null) {
             return mOsuStatusString;
@@ -140,10 +125,6 @@ class OsuWifiEntry extends WifiEntry {
 
     @Override
     public synchronized boolean canConnect() {
-        //check user restriction and whether the network is already provisioned
-        if (hasAdminRestrictions()) {
-            return false;
-        }
         return mLevel != WIFI_LEVEL_UNREACHABLE
                 && getConnectedState() == CONNECTED_STATE_DISCONNECTED;
     }
@@ -207,13 +188,6 @@ class OsuWifiEntry extends WifiEntry {
 
     synchronized void setAlreadyProvisioned(boolean isAlreadyProvisioned) {
         mIsAlreadyProvisioned = isAlreadyProvisioned;
-    }
-
-    private boolean hasAdminRestrictions() {
-        if (mHasAddConfigUserRestriction && !mIsAlreadyProvisioned) {
-            return true;
-        }
-        return false;
     }
 
     class OsuWifiEntryProvisioningCallback extends ProvisioningCallback {
