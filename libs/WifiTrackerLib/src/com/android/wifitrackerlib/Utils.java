@@ -46,6 +46,7 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -967,6 +968,42 @@ public class Utils {
     public static boolean isDeviceOrProfileOwner(int uid, String packageName, Context context) {
         return isDeviceOwner(uid, packageName, context)
                 || isProfileOwner(uid, packageName, context);
+    }
+
+    /**
+     * Unknown security type that cannot be converted to
+     * DevicePolicyManager.WifiSecurity security type.
+     */
+    public static final int DPM_SECURITY_TYPE_UNKNOWN = -1;
+
+    /**
+     * Utility method to convert WifiInfo.SecurityType to DevicePolicyManager.WifiSecurity
+     * @param securityType WifiInfo.SecurityType to convert
+     * @return DevicePolicyManager.WifiSecurity security level, or
+     * {@link WifiInfo#DPM_SECURITY_TYPE_UNKNOWN} for unknown security types
+     */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    public static int convertSecurityTypeToDpmWifiSecurity(int securityType) {
+        switch (securityType) {
+            case WifiInfo.SECURITY_TYPE_OPEN:
+            case WifiInfo.SECURITY_TYPE_OWE:
+                return DevicePolicyManager.WIFI_SECURITY_OPEN;
+            case WifiInfo.SECURITY_TYPE_WEP:
+            case WifiInfo.SECURITY_TYPE_PSK:
+            case WifiInfo.SECURITY_TYPE_SAE:
+            case WifiInfo.SECURITY_TYPE_WAPI_PSK:
+                return DevicePolicyManager.WIFI_SECURITY_PERSONAL;
+            case WifiInfo.SECURITY_TYPE_EAP:
+            case WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE:
+            case WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2:
+            case WifiInfo.SECURITY_TYPE_PASSPOINT_R3:
+            case WifiInfo.SECURITY_TYPE_WAPI_CERT:
+                return DevicePolicyManager.WIFI_SECURITY_ENTERPRISE_EAP;
+            case WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT:
+                return DevicePolicyManager.WIFI_SECURITY_ENTERPRISE_192;
+            default:
+                return DPM_SECURITY_TYPE_UNKNOWN;
+        }
     }
 
 }
