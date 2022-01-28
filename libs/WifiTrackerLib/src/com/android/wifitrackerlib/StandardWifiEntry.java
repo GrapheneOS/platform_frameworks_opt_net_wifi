@@ -44,9 +44,6 @@ import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfigura
 import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultipleSecurityTypes;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
-import android.annotation.SuppressLint;
-import android.app.admin.DevicePolicyManager;
-import android.app.admin.WifiSsidPolicy;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
@@ -122,15 +119,11 @@ public class StandardWifiEntry extends WifiEntry {
 
     private boolean mShouldAutoOpenCaptivePortal = false;
 
-    private boolean mIsAdminRestricted = false;
-    private boolean mHasAddConfigUserRestriction = false;
-
     private final boolean mIsWpa3SaeSupported;
     private final boolean mIsWpa3SuiteBSupported;
     private final boolean mIsEnhancedOpenSupported;
 
     private final UserManager mUserManager;
-    private final DevicePolicyManager mDevicePolicyManager;
 
     StandardWifiEntry(
             @NonNull WifiTrackerInjector injector,
@@ -145,11 +138,6 @@ public class StandardWifiEntry extends WifiEntry {
         mIsWpa3SuiteBSupported = wifiManager.isWpa3SuiteBSupported();
         mIsEnhancedOpenSupported = wifiManager.isEnhancedOpenSupported();
         mUserManager = injector.getUserManager();
-        mDevicePolicyManager = injector.getDevicePolicyManager();
-        updateSecurityTypes();
-        if (BuildCompat.isAtLeastT()) {
-            updateAdminRestrictions();
-        }
     }
 
     StandardWifiEntry(
@@ -186,10 +174,6 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized String getSummary(boolean concise) {
-        if (hasAdminRestrictions()) {
-            return mContext.getString(R.string.wifitrackerlib_admin_restricted_network);
-        }
-
         StringJoiner sj = new StringJoiner(mContext.getString(
                 R.string.wifitrackerlib_summary_separator));
 
@@ -306,9 +290,6 @@ public class StandardWifiEntry extends WifiEntry {
                 || getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
             return false;
         }
-
-        if (hasAdminRestrictions()) return false;
-
         // Allow connection for EAP SIM dependent methods if the SIM of specified carrier ID is
         // active in the device.
         if (mTargetSecurityTypes.contains(SECURITY_TYPE_EAP) && mTargetWifiConfig != null
@@ -951,64 +932,6 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     String getNetworkSelectionDescription() {
         return Utils.getNetworkSelectionDescription(getWifiConfiguration());
-    }
-
-    @SuppressLint("NewApi")
-    private void updateAdminRestrictions() {
-        if (mUserManager != null) {
-            mHasAddConfigUserRestriction = mUserManager.hasUserRestriction(
-                    UserManager.DISALLOW_ADD_WIFI_CONFIG);
-        }
-        if (mDevicePolicyManager != null) {
-            //check minimum security level restriction
-            int adminMinimumSecurityLevel =
-                    mDevicePolicyManager.getMinimumRequiredWifiSecurityLevel();
-            if (adminMinimumSecurityLevel != DevicePolicyManager.WIFI_SECURITY_OPEN) {
-                boolean securityRestrictionPassed = false;
-                for (int type : getSecurityTypes()) {
-                    int securityLevel = Utils.convertSecurityTypeToDpmWifiSecurity(type);
-
-                    // Skip unknown security type since security level cannot be determined.
-                    // If all the security types are unknown when the minimum security level
-                    // restriction is set, the device cannot connect to this network.
-                    if (securityLevel == Utils.DPM_SECURITY_TYPE_UNKNOWN) continue;
-
-                    if (adminMinimumSecurityLevel <= securityLevel) {
-                        securityRestrictionPassed = true;
-                        break;
-                    }
-                }
-                if (!securityRestrictionPassed) {
-                    mIsAdminRestricted = true;
-                    return;
-                }
-            }
-            //check SSID restriction
-            WifiSsidPolicy policy = mDevicePolicyManager.getWifiSsidPolicy();
-            if (policy != null) {
-                int policyType = policy.getPolicyType();
-                Set<String> ssids = policy.getSsids();
-
-                if (policyType == WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_ALLOWLIST
-                        && !ssids.contains(getSsid())) {
-                    mIsAdminRestricted = true;
-                    return;
-                }
-                if (policyType == WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_DENYLIST
-                        && ssids.contains(getSsid())) {
-                    mIsAdminRestricted = true;
-                    return;
-                }
-            }
-        }
-    }
-
-    private boolean hasAdminRestrictions() {
-        if ((mHasAddConfigUserRestriction && !(isSaved() || isSuggestion()))
-                || mIsAdminRestricted) {
-            return true;
-        }
-        return false;
     }
 
     /**
