@@ -16,7 +16,6 @@
 
 package com.android.wifitrackerlib;
 
-import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.os.UserManager;
 import android.util.ArraySet;
@@ -31,14 +30,12 @@ import java.util.Set;
 class WifiTrackerInjector {
     private final boolean mIsDemoMode;
     private final UserManager mUserManager;
-    private final DevicePolicyManager mDevicePolicyManager;
     @NonNull private final Set<String> mNoAttributionAnnotationPackages;
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     WifiTrackerInjector(@NonNull Context context) {
         mIsDemoMode = HiddenApiWrapper.isDemoMode(context);
         mUserManager = context.getSystemService(UserManager.class);
-        mDevicePolicyManager = context.getSystemService(DevicePolicyManager.class);
         mNoAttributionAnnotationPackages = new ArraySet<>();
         String[] noAttributionAnnotationPackages = context.getString(
                 R.string.wifitrackerlib_no_attribution_annotation_packages).split(",");
@@ -53,10 +50,6 @@ class WifiTrackerInjector {
 
     public UserManager getUserManager() {
         return mUserManager;
-    }
-
-    public DevicePolicyManager getDevicePolicyManager() {
-        return mDevicePolicyManager;
     }
 
     /**

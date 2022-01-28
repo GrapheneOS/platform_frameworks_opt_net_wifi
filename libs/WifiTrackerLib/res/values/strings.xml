@@ -109,9 +109,6 @@
     <!-- Summary for Connected wifi network with a low quality connection [CHAR LIMIT=NONE] -->
     <string name="wifi_connected_low_quality">Low quality</string>
 
-    <!-- Summary for admin restricted networks [CHAR LIMIT=NONE] -->
-    <string name="wifitrackerlib_admin_restricted_network">Not allowed by your organization</string>
-
     <!-- Concise terminology for wifi with WPA/WPA2 802.1x EAP security [CHAR LIMIT=40] -->
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2">WPA/WPA2-EAP</string>
 
