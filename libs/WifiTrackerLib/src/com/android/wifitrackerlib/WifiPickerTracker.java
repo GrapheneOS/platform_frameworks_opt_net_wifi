@@ -241,10 +241,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
-        if (mWifiManager.getWifiState() != WifiManager.WIFI_STATE_ENABLED) {
+        if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             updateConnectionInfo(null, null);
         }
+        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         updateWifiEntries();
     }
 
