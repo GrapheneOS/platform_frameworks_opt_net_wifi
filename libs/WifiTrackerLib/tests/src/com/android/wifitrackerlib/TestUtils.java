@@ -23,6 +23,14 @@ import android.net.wifi.WifiConfiguration;
  * Utility methods for testing purposes.
  */
 class TestUtils {
+    public static final int GOOD_RSSI = -50;
+    public static final int OKAY_RSSI = -60;
+    public static final int BAD_RSSI = -70;
+
+    public static final int GOOD_LEVEL = 5;
+    public static final int OKAY_LEVEL = 3;
+    public static final int BAD_LEVEL = 1;
+
     /**
      * Creates a mock scan result with SSID, BSSID, and timestamp.
      */
