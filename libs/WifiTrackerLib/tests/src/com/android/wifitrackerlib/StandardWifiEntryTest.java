@@ -51,6 +51,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import android.app.admin.DevicePolicyManager;
+import android.app.admin.WifiSsidPolicy;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Resources;
@@ -140,6 +141,7 @@ public class StandardWifiEntryTest {
         when(mMockContext.getSystemService(DevicePolicyManager.class))
                 .thenReturn(mDevicePolicyManager);
         when(mMockInjector.getUserManager()).thenReturn(mUserManager);
+        when(mMockInjector.getDevicePolicyManager()).thenReturn(mDevicePolicyManager);
     }
 
     /**
@@ -1192,6 +1194,191 @@ public class StandardWifiEntryTest {
         assertThat(spyEntry.canConnect()).isEqualTo(false);
     }
 
+    @Test
+    public void testCanConnect_allowlistRestriction_returnTrue() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        WifiSsidPolicy policy = WifiSsidPolicy.createAllowlistPolicy(Collections.singleton("ssid"));
+        when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(true);
+    }
+
+    @Test
+    public void testCanConnect_allowlistRestriction_returnFalse() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        WifiSsidPolicy policy = WifiSsidPolicy.createAllowlistPolicy(
+                Collections.singleton("ssid2"));
+        when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(false);
+    }
+
+    @Test
+    public void testCanConnect_denylistRestriction_returnTrue() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        WifiSsidPolicy policy = WifiSsidPolicy.createDenylistPolicy(
+                Collections.singleton("ssid2"));
+        when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(true);
+    }
+
+    @Test
+    public void testCanConnect_denylistRestriction_returnFalse() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        WifiSsidPolicy policy = WifiSsidPolicy.createDenylistPolicy(Collections.singleton("ssid"));
+        when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(false);
+    }
+
+    @Test
+    public void testCanConnect_userRestrictionSet_savedNetwork_returnTrue() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        when(mUserManager.hasUserRestriction(
+                UserManager.DISALLOW_ADD_WIFI_CONFIG)).thenReturn(true);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        when(spyEntry.isSaved()).thenReturn(true);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(true);
+    }
+
+    @Test
+    public void testCanConnect_userRestrictionSet_suggestionNetwork_returnTrue() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        when(mUserManager.hasUserRestriction(
+                UserManager.DISALLOW_ADD_WIFI_CONFIG)).thenReturn(true);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        when(spyEntry.isSuggestion()).thenReturn(true);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(true);
+    }
+
+    @Test
+    public void testCanConnect_UserRestrictionSet_returnFalse() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        when(mUserManager.hasUserRestriction(
+                UserManager.DISALLOW_ADD_WIFI_CONFIG)).thenReturn(true);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        when(spyEntry.isSaved()).thenReturn(false);
+        when(spyEntry.isSuggestion()).thenReturn(false);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(false);
+    }
+
+    @Test
+    public void testCanConnect_SecurityTypeRestriction_returnTrue() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        when(mDevicePolicyManager.getMinimumRequiredWifiSecurityLevel()).thenReturn(
+                DevicePolicyManager.WIFI_SECURITY_PERSONAL);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(true);
+    }
+
+    @Test
+    public void testCanConnect_SecurityTypeRestriction_returnFalse() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
+        scan.capabilities = "PSK";
+        when(mDevicePolicyManager.getMinimumRequiredWifiSecurityLevel()).thenReturn(
+                DevicePolicyManager.WIFI_SECURITY_ENTERPRISE_EAP);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+
+        assertThat(spyEntry.canConnect()).isEqualTo(false);
+    }
 
     @Test
     public void testStandardWifiEntryKeyConstructor_fromConfig_matchesFromScanResultKey() {
