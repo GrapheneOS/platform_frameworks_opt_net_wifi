@@ -604,8 +604,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         // Create a new entry for each OsuProvider not already matched to an OsuWifiEntry
         for (OsuProvider provider : osuProviderToScans.keySet()) {
-            OsuWifiEntry newEntry = new OsuWifiEntry(mContext, mMainHandler, provider, mWifiManager,
-                    false /* forSavedNetworksPage */);
+            OsuWifiEntry newEntry = new OsuWifiEntry(mInjector, mContext, mMainHandler, provider,
+                    mWifiManager, false /* forSavedNetworksPage */);
             newEntry.updateScanResultInfo(osuProviderToScans.get(provider));
             mOsuWifiEntryCache.put(osuProviderToOsuWifiEntryKey(provider), newEntry);
         }
