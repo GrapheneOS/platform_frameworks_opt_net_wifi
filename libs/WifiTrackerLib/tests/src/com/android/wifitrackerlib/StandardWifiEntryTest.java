@@ -1205,7 +1205,8 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
-        WifiSsidPolicy policy = WifiSsidPolicy.createAllowlistPolicy(
+        WifiSsidPolicy policy = new WifiSsidPolicy(
+                WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_ALLOWLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
@@ -1227,7 +1228,8 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
-        WifiSsidPolicy policy = WifiSsidPolicy.createAllowlistPolicy(
+        WifiSsidPolicy policy = new WifiSsidPolicy(
+                WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_ALLOWLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid2".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
@@ -1249,7 +1251,8 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
-        WifiSsidPolicy policy = WifiSsidPolicy.createDenylistPolicy(
+        WifiSsidPolicy policy = new WifiSsidPolicy(
+                WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_DENYLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid2".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
@@ -1271,7 +1274,8 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
-        WifiSsidPolicy policy = WifiSsidPolicy.createDenylistPolicy(
+        WifiSsidPolicy policy = new WifiSsidPolicy(
+                WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_DENYLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
