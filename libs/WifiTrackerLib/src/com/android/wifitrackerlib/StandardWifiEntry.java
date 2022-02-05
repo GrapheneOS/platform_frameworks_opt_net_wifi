@@ -56,6 +56,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiSsid;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.os.UserHandle;
@@ -77,6 +78,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -987,15 +989,17 @@ public class StandardWifiEntry extends WifiEntry {
             WifiSsidPolicy policy = mDevicePolicyManager.getWifiSsidPolicy();
             if (policy != null) {
                 int policyType = policy.getPolicyType();
-                Set<String> ssids = policy.getSsids();
+                Set<WifiSsid> ssids = policy.getSsids();
 
                 if (policyType == WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_ALLOWLIST
-                        && !ssids.contains(getSsid())) {
+                        && !ssids.contains(
+                        WifiSsid.fromBytes(getSsid().getBytes(StandardCharsets.UTF_8)))) {
                     mIsAdminRestricted = true;
                     return;
                 }
                 if (policyType == WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_DENYLIST
-                        && ssids.contains(getSsid())) {
+                        && ssids.contains(
+                        WifiSsid.fromBytes(getSsid().getBytes(StandardCharsets.UTF_8)))) {
                     mIsAdminRestricted = true;
                     return;
                 }
