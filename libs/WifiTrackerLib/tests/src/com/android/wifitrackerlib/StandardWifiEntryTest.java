@@ -66,6 +66,7 @@ import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiSsid;
 import android.os.Handler;
 import android.os.UserHandle;
 import android.os.UserManager;
@@ -73,6 +74,7 @@ import android.os.test.TestLooper;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.util.ArraySet;
 
 import androidx.core.os.BuildCompat;
 
@@ -83,6 +85,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -1202,7 +1205,9 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
-        WifiSsidPolicy policy = WifiSsidPolicy.createAllowlistPolicy(Collections.singleton("ssid"));
+        WifiSsidPolicy policy = WifiSsidPolicy.createAllowlistPolicy(
+                new ArraySet<>(Arrays.asList(
+                        WifiSsid.fromBytes("ssid".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
         StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
                 mMockInjector, mMockContext, mTestHandler,
@@ -1223,7 +1228,8 @@ public class StandardWifiEntryTest {
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
         WifiSsidPolicy policy = WifiSsidPolicy.createAllowlistPolicy(
-                Collections.singleton("ssid2"));
+                new ArraySet<>(Arrays.asList(
+                        WifiSsid.fromBytes("ssid2".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
         StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
                 mMockInjector, mMockContext, mTestHandler,
@@ -1244,7 +1250,8 @@ public class StandardWifiEntryTest {
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
         WifiSsidPolicy policy = WifiSsidPolicy.createDenylistPolicy(
-                Collections.singleton("ssid2"));
+                new ArraySet<>(Arrays.asList(
+                        WifiSsid.fromBytes("ssid2".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
         StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
                 mMockInjector, mMockContext, mTestHandler,
@@ -1264,7 +1271,9 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         ScanResult scan = buildScanResult("ssid", "bssid0", 0, GOOD_RSSI);
         scan.capabilities = "PSK";
-        WifiSsidPolicy policy = WifiSsidPolicy.createDenylistPolicy(Collections.singleton("ssid"));
+        WifiSsidPolicy policy = WifiSsidPolicy.createDenylistPolicy(
+                new ArraySet<>(Arrays.asList(
+                        WifiSsid.fromBytes("ssid".getBytes(StandardCharsets.UTF_8)))));
         when(mDevicePolicyManager.getWifiSsidPolicy()).thenReturn(policy);
         StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
                 mMockInjector, mMockContext, mTestHandler,
