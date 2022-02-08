@@ -41,6 +41,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ব্যক্তিগত DNS ছাৰ্ভাৰ এক্সেছ কৰিব নোৱাৰি"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ডিভাইচৰ সৈতে সংযোগ কৰা হৈছে। ইণ্টাৰনেট সংযোগ প্ৰদান কৰিব নোৱাৰি।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"নিম্ন মানৰ"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"আপোনাৰ প্ৰতিষ্ঠানে অনুমতি নিদিয়ে"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
