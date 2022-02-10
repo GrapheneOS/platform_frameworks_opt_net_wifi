@@ -41,6 +41,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"เข้าถึงเซิร์ฟเวอร์ DNS ส่วนตัวไม่ได้"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"เชื่อมต่ออุปกรณ์แล้ว แต่ไม่มีอินเทอร์เน็ต"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"คุณภาพต่ำ"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"องค์กรของคุณไม่อนุญาต"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
