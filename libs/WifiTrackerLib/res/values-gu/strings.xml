@@ -41,6 +41,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ખાનગી DNS સર્વર ઍક્સેસ કરી શકાતા નથી"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ડિવાઇસ સાથે કનેક્ટેડ છે. ઇન્ટરનેટ સેવા પ્રદાન કરી શકાતી નથી."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ઓછી ક્વૉલિટી"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"તમારી સંસ્થા દ્વારા મંજૂર નથી"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-એન્ટરપ્રાઇઝ"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
