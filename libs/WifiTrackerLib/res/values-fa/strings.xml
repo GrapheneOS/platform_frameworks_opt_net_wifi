@@ -37,12 +37,11 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"محدودشده"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"ازطریق <xliff:g id="NAME">%1$s</xliff:g> متصل شد"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"دردسترس ازطریق <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"به‌طور خودکار ازطریق <xliff:g id="NAME">%1$s</xliff:g> متصل شد"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"به‌طور خودکار ازطریق ارائه‌دهنده رده‌بندی شبکه متصل شد"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"اتصال محدود"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"دسترسی به سرور ساناد خصوصی ممکن نیست"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"به دستگاه متصل است. نمی‌تواند اینترنت ارائه دهد."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"کیفیت پایین"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"سازمان شما آن را مجاز نکرده است"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
@@ -71,11 +70,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"ثبت‌نام تکمیل نشد. برای امتحان مجدد ضربه بزنید."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"ثبت‌نام تکمیل شد. درحال اتصال…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"این شبکه شناسه سیم‌کارتی دریافت می‌کند که می‌توان از آن برای ردیابی مکان دستگاه استفاده کرد. "<annotation id="url">"بیشتر بدانید"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"بسیار آهسته"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"آهسته"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"تأیید"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"متوسط"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"سریع"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"بسیار سریع"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"‏فعلاً Wi-Fi به‌طور خودکار متصل نمی‌شود"</string>
 </resources>

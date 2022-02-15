@@ -37,12 +37,11 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"非計量付費"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"已透過「<xliff:g id="NAME">%1$s</xliff:g>」連線"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"可透過「<xliff:g id="NAME">%1$s</xliff:g>」使用"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"已透過「<xliff:g id="NAME">%1$s</xliff:g>」自動連線"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"已透過連線品質評估供應商自動連線"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"連線能力受限"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"無法存取私人 DNS 伺服器"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"已連上裝置，但無法提供網際網路連線。"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"品質不佳"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"貴機構禁止使用"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
@@ -71,11 +70,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"無法完成註冊程序。輕觸即可重試。"</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"註冊完成。連線中…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"這個網路會收到可用於追蹤裝置位置的 SIM 卡 ID。"<annotation id="url">"瞭解詳情"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"非常慢"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"慢"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"尚可"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"中"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"快"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"非常快"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"目前不會自動連上 Wi-Fi"</string>
 </resources>

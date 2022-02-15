@@ -37,12 +37,11 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Sans compteur"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Connecté via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Disponible via <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Connecté automatiquement via <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Connecté automatiquement via un fournisseur d\'évaluation de l\'état du réseau"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Connexion limitée"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Impossible d\'accéder au serveur DNS privé"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Connecté à l\'appareil. Connexion Internet impossible."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Faible qualité"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Non autorisé par votre organisation"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
@@ -60,7 +59,7 @@
     <string name="wifitrackerlib_wifi_security_sae" msgid="6191706087425911867">"WPA3-Personal"</string>
     <string name="wifitrackerlib_wifi_security_short_owe" msgid="224333285610280433">"OWE"</string>
     <string name="wifitrackerlib_wifi_security_owe" msgid="1018282395106838649">"Enhanced Open"</string>
-    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Aucun"</string>
+    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Aucune"</string>
     <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Expiré"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Appuyez ici pour vous connecter"</string>
@@ -71,11 +70,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Impossible de finaliser l\'inscription. Appuyez ici pour réessayer."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Inscription terminée. Connexion…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Ce réseau reçoit un ID de SIM qui peut être utilisé pour suivre la position de l\'appareil. "<annotation id="url">"En savoir plus"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Très lente"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Lente"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Correcte"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Moyenne"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Rapide"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Très rapide"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Connexion automatique au Wi-Fi désactivée pour le moment"</string>
 </resources>

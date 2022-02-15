@@ -37,12 +37,11 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Nematuojamas"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Prisijungta naudojant programą „<xliff:g id="NAME">%1$s</xliff:g>“"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Pasiekiama naudojant „<xliff:g id="NAME">%1$s</xliff:g>“"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Automatiškai prisijungta per „<xliff:g id="NAME">%1$s</xliff:g>“"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"Automatiškai prisijungta naudojant tinklo įvertinimo paslaugos teikėjo paslaugomis"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Ribotas ryšys"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Privataus DNS serverio negalima pasiekti"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Prisijungta prie įrenginio. Nepavyksta prisijungti prie interneto."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Prastas ryšys"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Jūsų organizacijoje neleidžiama"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA / WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA / „WPA2-Enterprise“"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
@@ -71,11 +70,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Nepavyko užbaigti prisiregistravimo. Jei norite bandyti dar kartą, palieskite."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Prisiregistravimas baigtas. Prisijungiama…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Šis tinklas gauna SIM kortelės ID, kurį galima naudoti įrenginio vietovei stebėti. "<annotation id="url">"Sužinokite daugiau"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Labai lėtas"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Lėtas"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Geras"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Vidutinis"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Spartus"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Labai spartus"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"„Wi-Fi“ šiuo metu nebus prijungtas automatiškai"</string>
 </resources>

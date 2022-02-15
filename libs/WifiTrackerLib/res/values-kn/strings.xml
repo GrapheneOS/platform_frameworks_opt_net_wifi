@@ -37,12 +37,11 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"ಮೀಟರ್ ಮಾಡಲಾಗಿಲ್ಲ"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> ಆ್ಯಪ್ ಮೂಲಕ ಕನೆಕ್ಟ್ ಮಾಡಲಾಗಿದೆ"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> ಮೂಲಕ ಲಭ್ಯವಿದೆ"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"<xliff:g id="NAME">%1$s</xliff:g> ಮೂಲಕ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಕನೆಕ್ಟ್ ಮಾಡಲಾಗಿದೆ"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"ನೆಟ್‌ವರ್ಕ್ ರೇಟಿಂಗ್ ಒದಗಿಸುವವರ ಮೂಲಕ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಕನೆಕ್ಟ್ ಮಾಡಲಾಗಿದೆ"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"ಸೀಮಿತ ಸಂಪರ್ಕ"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ಖಾಸಗಿ DNS ಸರ್ವರ್ ಅನ್ನು ಪ್ರವೇಶಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ಸಾಧನಕ್ಕೆ ಕನೆಕ್ಟ್ ಮಾಡಲಾಗಿದೆ. ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಒದಗಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ಕಳಪೆ ಕನೆಕ್ಷನ್"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"ನಿಮ್ಮ ಸಂಸ್ಥೆಯಿಂದ ಅನುಮತಿಸಲಾಗಿಲ್ಲ"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-ಎಂಟರ್‌ಪ್ರೈಸ್"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
@@ -71,11 +70,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"ಸೈನ್-ಅಪ್ ಪೂರ್ಣಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ಪುನಃ ಪ್ರಯತ್ನಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"ಸೈನ್-ಅಪ್ ಪೂರ್ಣಗೊಂಡಿದೆ. ಕನೆಕ್ಟ್ ಮಾಡಲಾಗುತ್ತಿದೆ…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"ಸಾಧನದ ಸ್ಥಳವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಬಳಸಬಹುದಾದ SIM ಐಡಿಯನ್ನು ಈ ನೆಟ್‌ವರ್ಕ್ ಸ್ವೀಕರಿಸುತ್ತದೆ. "<annotation id="url">"ಇನ್ನಷ್ಟು ತಿಳಿಯಿರಿ"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"ಬಹಳ ನಿಧಾನವಾಗಿದೆ"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"ನಿಧಾನ"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"ಸರಿ"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"ಮಧ್ಯಮ"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"ವೇಗ"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"ಬಹಳ ವೇಗವಾಗಿದೆ"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"ಇದೀಗ ವೈ-ಫೈ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಕನೆಕ್ಟ್ ಆಗುವುದಿಲ್ಲ"</string>
 </resources>

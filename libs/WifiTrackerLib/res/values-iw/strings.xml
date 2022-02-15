@@ -37,12 +37,11 @@
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"שימוש חופשי"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"מחובר דרך <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"זמינה דרך <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"מחובר אוטומטית דרך <xliff:g id="NAME">%1$s</xliff:g>"</string>
-    <string name="wifitrackerlib_connected_via_network_scorer_default" msgid="3436792128688839692">"מחובר אוטומטית דרך ספק של דירוג רשת"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"חיבור מוגבל"</string>
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"‏לא ניתן לגשת לשרת DNS הפרטי"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"יש חיבור למכשיר. לא ניתן לספק חיבור לאינטרנט."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"איכות נמוכה"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"הארגון שלך לא מתיר את האפשרות הזו"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
@@ -71,11 +70,5 @@
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"לא ניתן היה להשלים את ההרשמה. יש להקיש כדי לנסות שוב."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"תהליך ההרשמה הסתיים. בתהליך התחברות…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"‏הרשת הזו מקבלת מזהה SIM שיכול לשמש למעקב אחר מיקום של מכשיר. "<annotation id="url">"למידע נוסף"</annotation></string>
-    <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"איטית מאוד"</string>
-    <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"איטית"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"בסדר"</string>
-    <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"בינונית"</string>
-    <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"מהירה"</string>
-    <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"מהירה מאוד"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"‏ה-Wi-Fi לא יתחבר באופן אוטומטי בינתיים"</string>
 </resources>
