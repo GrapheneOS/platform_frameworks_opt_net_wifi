@@ -44,6 +44,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.ArraySet;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -54,6 +55,7 @@ import androidx.annotation.WorkerThread;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.StringJoiner;
 
 /**
@@ -236,6 +238,17 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         }
 
         return mWifiConfig != null ? sanitizeSsid(mWifiConfig.SSID) : null;
+    }
+
+    synchronized Set<String> getAllUtf8Ssids() {
+        Set<String> allSsids = new ArraySet<>();
+        for (ScanResult scan : mCurrentHomeScanResults) {
+            allSsids.add(scan.SSID);
+        }
+        for (ScanResult scan : mCurrentRoamingScanResults) {
+            allSsids.add(scan.SSID);
+        }
+        return allSsids;
     }
 
     @Override
