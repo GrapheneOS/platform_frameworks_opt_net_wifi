@@ -260,10 +260,10 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             }
             mSavedWifiEntries.clear();
             mSavedWifiEntries.addAll(mStandardWifiEntryCache);
-            Collections.sort(mSavedWifiEntries);
+            Collections.sort(mSavedWifiEntries, WifiEntry.TITLE_COMPARATOR);
             mSubscriptionWifiEntries.clear();
             mSubscriptionWifiEntries.addAll(mPasspointWifiEntryCache.values());
-            Collections.sort(mSubscriptionWifiEntries);
+            Collections.sort(mSubscriptionWifiEntries, WifiEntry.TITLE_COMPARATOR);
             if (isVerboseLoggingEnabled()) {
                 Log.v(TAG, "Updated SavedWifiEntries: "
                         + Arrays.toString(mSavedWifiEntries.toArray()));

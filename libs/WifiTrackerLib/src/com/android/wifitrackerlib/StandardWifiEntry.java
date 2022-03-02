@@ -318,9 +318,8 @@ public class StandardWifiEntry extends WifiEntry {
             if (!mTargetWifiConfig.enterpriseConfig.isAuthenticationSimBased()) {
                 return true;
             }
-            List<SubscriptionInfo> activeSubscriptionInfos = ((SubscriptionManager) mContext
-                    .getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
-                    .getActiveSubscriptionInfoList();
+            List<SubscriptionInfo> activeSubscriptionInfos = mContext
+                    .getSystemService(SubscriptionManager.class).getActiveSubscriptionInfoList();
             if (activeSubscriptionInfos == null || activeSubscriptionInfos.size() == 0) {
                 return false;
             }

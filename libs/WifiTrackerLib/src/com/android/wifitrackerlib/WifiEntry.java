@@ -50,6 +50,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
  * implementing BaseWifiTracker, and rely on the given API for all user-displayable information and
  * actions on the represented network.
  */
-public class WifiEntry implements Comparable<WifiEntry> {
+public class WifiEntry {
     /**
      * Security type based on WifiConfiguration.KeyMgmt
      */
@@ -198,6 +199,25 @@ public class WifiEntry implements Comparable<WifiEntry> {
      * Max ScanResult information displayed of Wi-Fi Verbose Logging.
      */
     protected static final int MAX_VERBOSE_LOG_DISPLAY_SCANRESULT_COUNT = 4;
+
+    /**
+     * Default comparator for sorting WifiEntries on a Wi-Fi picker list.
+     */
+    public static Comparator<WifiEntry> WIFI_PICKER_COMPARATOR =
+            Comparator.comparing((WifiEntry entry) -> entry.getConnectedState()
+                            != CONNECTED_STATE_CONNECTED)
+                    .thenComparing((WifiEntry entry) -> !entry.canConnect())
+                    .thenComparing((WifiEntry entry) -> !entry.isSubscription())
+                    .thenComparing((WifiEntry entry) -> !entry.isSaved())
+                    .thenComparing((WifiEntry entry) -> !entry.isSuggestion())
+                    .thenComparing((WifiEntry entry) -> -entry.getLevel())
+                    .thenComparing((WifiEntry entry) -> entry.getTitle());
+
+    /**
+     * Default comparator for sorting WifiEntries by title.
+     */
+    public static Comparator<WifiEntry> TITLE_COMPARATOR =
+            Comparator.comparing((WifiEntry entry) -> entry.getTitle());
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     final boolean mForSavedNetworksPage;
@@ -998,30 +1018,6 @@ public class WifiEntry implements Comparable<WifiEntry> {
                 }
             });
         }
-    }
-
-    @Override
-    public int compareTo(@NonNull WifiEntry other) {
-        if (getLevel() != WIFI_LEVEL_UNREACHABLE && other.getLevel() == WIFI_LEVEL_UNREACHABLE) {
-            return -1;
-        }
-        if (getLevel() == WIFI_LEVEL_UNREACHABLE && other.getLevel() != WIFI_LEVEL_UNREACHABLE) {
-            return 1;
-        }
-
-        if (isSubscription() && !other.isSubscription()) return -1;
-        if (!isSubscription() && other.isSubscription()) return 1;
-
-        if (isSaved() && !other.isSaved()) return -1;
-        if (!isSaved() && other.isSaved()) return 1;
-
-        if (isSuggestion() && !other.isSuggestion()) return -1;
-        if (!isSuggestion() && other.isSuggestion()) return 1;
-
-        if (getLevel() > other.getLevel()) return -1;
-        if (getLevel() < other.getLevel()) return 1;
-
-        return getTitle().compareTo(other.getTitle());
     }
 
     @Override
