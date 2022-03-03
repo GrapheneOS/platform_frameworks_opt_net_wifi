@@ -19,6 +19,9 @@ package com.android.wifitrackerlib;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
+import static com.android.wifitrackerlib.TestUtils.BAD_RSSI;
+import static com.android.wifitrackerlib.TestUtils.GOOD_LEVEL;
+import static com.android.wifitrackerlib.TestUtils.GOOD_RSSI;
 import static com.android.wifitrackerlib.TestUtils.buildScanResult;
 import static com.android.wifitrackerlib.TestUtils.buildWifiConfiguration;
 
@@ -28,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +45,7 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
@@ -86,6 +91,7 @@ public class WifiPickerTrackerTest {
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private TelephonyManager mMockTelephonyManager;
+    @Mock private SubscriptionManager mMockSubscriptionManager;
     @Mock private Clock mMockClock;
     @Mock private WifiPickerTracker.WifiPickerTrackerCallback mMockCallback;
     @Mock private WifiInfo mMockWifiInfo;
@@ -132,6 +138,12 @@ public class WifiPickerTrackerTest {
         when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
         when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
+        when(mMockWifiManager.calculateSignalLevel(TestUtils.GOOD_RSSI))
+                .thenReturn(TestUtils.GOOD_LEVEL);
+        when(mMockWifiManager.calculateSignalLevel(TestUtils.OKAY_RSSI))
+                .thenReturn(TestUtils.OKAY_LEVEL);
+        when(mMockWifiManager.calculateSignalLevel(TestUtils.BAD_RSSI))
+                .thenReturn(TestUtils.BAD_LEVEL);
         when(mMockConnectivityManager.getNetworkInfo(any())).thenReturn(mMockNetworkInfo);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
         when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
@@ -141,6 +153,8 @@ public class WifiPickerTrackerTest {
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getSystemService(TelephonyManager.class))
                 .thenReturn(mMockTelephonyManager);
+        when(mMockContext.getSystemService(SubscriptionManager.class))
+                .thenReturn(mMockSubscriptionManager);
         when(mMockContext.getString(anyInt())).thenReturn("");
     }
 
@@ -768,6 +782,104 @@ public class WifiPickerTrackerTest {
 
         // getWifiEntries() should be empty now
         assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
+    }
+
+    /**
+     * Verifies that the WifiEntries returned in WifiPickerTracker.getWifiEntries() are returned in
+     * the order defined by the default WifiEntry.WIFI_PICKER_COMPARATOR.
+     */
+    @Test
+    public void testGetWifiEntries_defaultSortingCriteria_returnsEntriesinCorrectOrder() {
+        List<ScanResult> currentScans = new ArrayList<>();
+        List<WifiConfiguration> currentConfiguredNetworks = new ArrayList<>();
+
+        // Set up Passpoint entry
+        final PasspointConfiguration passpointConfig = new PasspointConfiguration();
+        final HomeSp homeSp = new HomeSp();
+        homeSp.setFqdn("fqdn");
+        homeSp.setFriendlyName("friendlyName");
+        passpointConfig.setHomeSp(homeSp);
+        passpointConfig.setCredential(new Credential());
+        when(mMockWifiManager.getPasspointConfigurations())
+                .thenReturn(Collections.singletonList(passpointConfig));
+        final WifiConfiguration wifiConfig = spy(new WifiConfiguration());
+        when(wifiConfig.getKey()).thenReturn(passpointConfig.getUniqueId());
+        final Map<Integer, List<ScanResult>> mapping = new HashMap<>();
+        mapping.put(WifiManager.PASSPOINT_HOME_NETWORK, Collections.singletonList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> allMatchingWifiConfigs =
+                Collections.singletonList(new Pair<>(wifiConfig, mapping));
+        when(mMockWifiManager.getAllMatchingWifiConfigs(any())).thenReturn(allMatchingWifiConfigs);
+
+        // Set up saved entry
+        WifiConfiguration savedConfig = new WifiConfiguration();
+        savedConfig.fromWifiNetworkSuggestion = false;
+        savedConfig.SSID = "\"ssid\"";
+        savedConfig.networkId = 1;
+        currentConfiguredNetworks.add(savedConfig);
+        currentScans.add(buildScanResult("ssid", "bssid", START_MILLIS));
+
+        // Set up suggestion entry
+        WifiConfiguration suggestionConfig = new WifiConfiguration(savedConfig);
+        suggestionConfig.networkId = 2;
+        suggestionConfig.creatorName = "creator1";
+        suggestionConfig.carrierId = 1;
+        suggestionConfig.subscriptionId = 1;
+        suggestionConfig.fromWifiNetworkSuggestion = true;
+        currentConfiguredNetworks.add(suggestionConfig);
+        when(mMockWifiManager.getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(any()))
+                .thenReturn(Arrays.asList(suggestionConfig));
+
+        // Set up high level entry
+        currentScans.add(buildScanResult("high", "bssid", START_MILLIS, GOOD_RSSI));
+
+        // Set up low level entry with high priority title
+        String highPriorityTitle = "A";
+        currentScans.add(buildScanResult(highPriorityTitle, "bssid", START_MILLIS, BAD_RSSI));
+
+        // Set up low level entry with low priority title
+        String lowPriorityTitle = "Z";
+        currentScans.add(buildScanResult(lowPriorityTitle, "bssid", START_MILLIS, BAD_RSSI));
+
+        // Set up EAP-SIM entry without SIM
+        WifiConfiguration eapSimConfig = new WifiConfiguration();
+        eapSimConfig.SSID = "\"eap-sim\"";
+        eapSimConfig.networkId = 3;
+        eapSimConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        eapSimConfig.enterpriseConfig = mock(WifiEnterpriseConfig.class);
+        when(eapSimConfig.enterpriseConfig.isAuthenticationSimBased()).thenReturn(true);
+        currentConfiguredNetworks.add(eapSimConfig);
+        ScanResult eapSimScan = buildScanResult("eap-sim", "bssid", START_MILLIS, GOOD_RSSI);
+        eapSimScan.capabilities = "[EAP/SHA1]";
+        currentScans.add(eapSimScan);
+
+        // Set up WifiManager mocks
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(currentConfiguredNetworks);
+        when(mMockWifiManager.getScanResults()).thenReturn(currentScans);
+
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mTestLooper.dispatchAll();
+
+        List<WifiEntry> entries = wifiPickerTracker.getWifiEntries();
+        assertThat(entries.size()).isEqualTo(7);
+        // Subscription
+        assertThat(entries.get(0).isSubscription()).isTrue();
+        // Saved
+        assertThat(entries.get(1).isSaved()).isTrue();
+        // Suggestion
+        assertThat(entries.get(2).isSuggestion()).isTrue();
+        // High level
+        assertThat(entries.get(3).getLevel()).isEqualTo(GOOD_LEVEL);
+        // High Title
+        assertThat(entries.get(4).getTitle()).isEqualTo(highPriorityTitle);
+        // Low Title
+        assertThat(entries.get(5).getTitle()).isEqualTo(lowPriorityTitle);
+        // Non-connectable
+        assertThat(entries.get(6).canConnect()).isEqualTo(false);
     }
 
     /**
