@@ -453,6 +453,12 @@ public class UtilsTest {
         assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
                 WifiInfo.SECURITY_TYPE_EAP);
 
+        // EAP with passpoint capabilities should only map to EAP for StandardWifiEntry.
+        ScanResult passpointScan = spy(scanResult);
+        when(passpointScan.isPasspointNetwork()).thenReturn(true);
+        assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
+                WifiInfo.SECURITY_TYPE_EAP);
+
         scanResult.capabilities = "[RSN-EAP/SHA1+EAP/SHA256][MFPC]";
         assertThat(getSecurityTypesFromScanResult(scanResult)).containsExactly(
                 WifiInfo.SECURITY_TYPE_EAP, WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE);
