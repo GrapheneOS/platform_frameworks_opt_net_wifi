@@ -87,9 +87,6 @@ public class UtilsTest {
     private static final String LABEL_METERED = "Metered";
     private static final String LABEL_UNMETERED = "Unmetered";
 
-    private static final String SYSTEM_UID_APP_NAME = "systemUidAppName";
-    private static final String APP_LABEL = "appLabel";
-    private static final String SETTINGS_APP_NAME = "com.android.settings";
     private static final int TEST_CARRIER_ID = 1191;
     private static final int TEST_SUB_ID = 1111;
 
@@ -371,7 +368,7 @@ public class UtilsTest {
                 HiddenApiWrapper.linkifyAnnotation(mMockContext, testText, "id", "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
-        assertEquals(output.toString(), testText);
+        assertEquals(output.toString(), testText.toString());
         assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
                 ClickableSpan.class).length, 0);
     }
