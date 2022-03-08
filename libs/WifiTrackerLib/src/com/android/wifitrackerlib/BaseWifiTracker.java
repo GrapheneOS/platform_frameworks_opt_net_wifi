@@ -140,6 +140,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     private final BaseWifiTracker.Scanner mScanner;
     private final BaseWifiTrackerCallback mListener;
 
+    protected final WifiTrackerInjector mInjector;
     protected final Context mContext;
     protected final WifiManager mWifiManager;
     protected final ConnectivityManager mConnectivityManager;
@@ -275,6 +276,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     /**
      * Constructor for BaseWifiTracker.
      *
+     * @param wifiTrackerInjector injector for commonly referenced objects.
      * @param lifecycle Lifecycle this is tied to for lifecycle callbacks.
      * @param context Context for registering broadcast receiver and for resource strings.
      * @param wifiManager Provides all Wi-Fi info.
@@ -286,7 +288,9 @@ public class BaseWifiTracker implements LifecycleObserver {
      * @param maxScanAgeMillis Max age for tracked WifiEntries.
      * @param scanIntervalMillis Interval between initiating scans.
      */
-    BaseWifiTracker(@NonNull Lifecycle lifecycle, @NonNull Context context,
+    BaseWifiTracker(
+            @NonNull WifiTrackerInjector injector,
+            @NonNull Lifecycle lifecycle, @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
             @NonNull NetworkScoreManager networkScoreManager,
@@ -297,6 +301,7 @@ public class BaseWifiTracker implements LifecycleObserver {
             long scanIntervalMillis,
             BaseWifiTrackerCallback listener,
             String tag) {
+        mInjector = injector;
         lifecycle.addObserver(this);
         mContext = context;
         mWifiManager = wifiManager;
