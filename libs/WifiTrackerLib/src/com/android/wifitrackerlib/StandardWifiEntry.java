@@ -26,6 +26,8 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_OPEN;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_OWE;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_PASSPOINT_R3;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_UNKNOWN;
@@ -1179,9 +1181,12 @@ public class StandardWifiEntry extends WifiEntry {
         ScanResultKey(@Nullable String ssid, List<Integer> securityTypes) {
             mSsid = ssid;
             for (int security : securityTypes) {
-                mSecurityTypes.add(security);
                 // Add any security types that merge to the same WifiEntry
                 switch (security) {
+                    case SECURITY_TYPE_PASSPOINT_R1_R2:
+                    case SECURITY_TYPE_PASSPOINT_R3:
+                        // Filter out Passpoint security type from key.
+                        continue;
                     // Group OPEN and OWE networks together
                     case SECURITY_TYPE_OPEN:
                         mSecurityTypes.add(SECURITY_TYPE_OWE);
@@ -1204,6 +1209,7 @@ public class StandardWifiEntry extends WifiEntry {
                         mSecurityTypes.add(SECURITY_TYPE_EAP);
                         break;
                 }
+                mSecurityTypes.add(security);
             }
         }
 
