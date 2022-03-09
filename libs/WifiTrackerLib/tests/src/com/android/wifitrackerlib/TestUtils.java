@@ -18,6 +18,9 @@ package com.android.wifitrackerlib;
 
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiSsid;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * Utility methods for testing purposes.
@@ -34,25 +37,29 @@ class TestUtils {
     /**
      * Creates a mock scan result with SSID, BSSID, and timestamp.
      */
-    static ScanResult buildScanResult(String ssid, String bssid, long timestampMillis) {
+    static ScanResult buildScanResult(String utf8Ssid, String bssid, long timestampMillis) {
         final ScanResult result = new ScanResult();
-        result.SSID = ssid;
+        result.SSID = utf8Ssid;
+        if (utf8Ssid != null) {
+            result.setWifiSsid(WifiSsid.fromBytes(utf8Ssid.getBytes(StandardCharsets.UTF_8)));
+        }
         result.BSSID = bssid;
         result.timestamp = timestampMillis * 1000;
         result.capabilities = "";
         return result;
     }
 
-    static ScanResult buildScanResult(String ssid, String bssid, long timestampMillis, int rssi) {
-        final ScanResult result = buildScanResult(ssid, bssid, timestampMillis);
+    static ScanResult buildScanResult(
+            String utf8Ssid, String bssid, long timestampMillis, int rssi) {
+        final ScanResult result = buildScanResult(utf8Ssid, bssid, timestampMillis);
         result.level = rssi;
         result.capabilities = "";
         return result;
     }
 
-    static WifiConfiguration buildWifiConfiguration(String ssid) {
+    static WifiConfiguration buildWifiConfiguration(String utf8Ssid) {
         final WifiConfiguration config = new WifiConfiguration();
-        config.SSID = "\"" + ssid + "\"";
+        config.SSID = "\"" + utf8Ssid + "\"";
         return config;
     }
 }
