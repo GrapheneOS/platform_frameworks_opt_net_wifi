@@ -386,13 +386,23 @@ public class WifiPickerTracker extends BaseWifiTracker {
                                     || entry == mConnectedWifiEntry)
                             .map(entry -> entry.getStandardWifiEntryKey().getScanResultKey())
                             .collect(Collectors.toSet());
+            Set<String> passpointUtf8Ssids = new ArraySet<>();
+            for (PasspointWifiEntry passpointWifiEntry : mPasspointWifiEntryCache.values()) {
+                passpointUtf8Ssids.addAll(passpointWifiEntry.getAllUtf8Ssids());
+            }
             for (StandardWifiEntry entry : mStandardWifiEntryCache) {
                 if (entry == mConnectedWifiEntry) {
                     continue;
                 }
-                if (!entry.isSaved() && scanResultKeysWithVisibleSuggestions
-                        .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
-                    continue;
+                if (!entry.isSaved()) {
+                    if (scanResultKeysWithVisibleSuggestions
+                            .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
+                        continue;
+                    }
+                    // Filter out any unsaved entries that are already provisioned with Passpoint
+                    if (passpointUtf8Ssids.contains(entry.getSsid())) {
+                        continue;
+                    }
                 }
                 mWifiEntries.add(entry);
             }
