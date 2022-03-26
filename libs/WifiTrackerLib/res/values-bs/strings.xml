@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Slab signal. Približite se ruteru."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Mreža je premašila kapacitet. Pokušajte ponovo kasnije."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Nije se moguće povezati. Pokušajte ponovo kasnije."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Mreža nije kompatibilna s ovim uređajem"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Nije se moguće povezati. Pokušajte ponovo kasnije."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Veza je prekinuta"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Sačuvano"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"S naplatom"</string>
@@ -55,7 +55,7 @@
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Ova mreža prima ID SIM-a koji se može koristiti za praćenje lokacije uređaja. "<annotation id="url">"Saznajte više"</annotation></string>
     <string name="wifitrackerlib_speed_label_very_slow" msgid="6606409259798814244">"Veoma sporo"</string>
     <string name="wifitrackerlib_speed_label_slow" msgid="7327906382011957760">"Sporo"</string>
-    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"UREDU"</string>
+    <string name="wifitrackerlib_speed_label_okay" msgid="6656684124654881956">"Uredu"</string>
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Srednje"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Brzo"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Veoma brzo"</string>
