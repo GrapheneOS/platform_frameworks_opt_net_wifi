@@ -30,11 +30,11 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Signal faible. Rapprochez-vous du routeur."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Le réseau est en surcapacité. Réessayez plus tard."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Connexion impossible. Réessayez plus tard."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"Réseau incompatible avec cet appareil"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Connexion impossible. Réessayez plus tard."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Déconnecté"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Enregistré"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Facturé à l\'usage"</string>
-    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Non facturé à l\'usage"</string>
+    <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Sans compteur"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Connecté via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Disponible via <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_connected_via_network_scorer" msgid="6306655070903763086">"Connecté automatiquement via <xliff:g id="NAME">%1$s</xliff:g>"</string>
@@ -43,7 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Impossible d\'accéder au serveur DNS privé"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Connecté à l\'appareil. Connexion Internet impossible."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Faible qualité"</string>
-    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Aucun"</string>
+    <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Aucune"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Expiré"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"Appuyez ici pour vous connecter"</string>
     <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"Appuyez pour renouveler l\'abonnement et vous connecter"</string>
@@ -59,6 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"Moyenne"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"Rapide"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"Très rapide"</string>
-    <!-- no translation found for wifitrackerlib_wifi_wont_autoconnect_for_now (4923161724964349851) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Connexion automatique au Wi-Fi désactivée pour le moment"</string>
 </resources>
