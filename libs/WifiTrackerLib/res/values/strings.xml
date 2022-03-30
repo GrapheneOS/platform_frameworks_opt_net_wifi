@@ -204,4 +204,19 @@
 
     <!-- [DO NOT TRANSLATE] Comma-separated list of packages whose saved networks should show no attribution annotation. -->
     <string name="wifitrackerlib_no_attribution_annotation_packages">com.google.android.setupwizard,com.google.android.gms</string>
+
+    <!-- Summary for the Wi-Fi standard WIFI_STANDARD_UNKNOWN [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_standard_unknown">Unknown</string>
+    <!-- Summary for the Wi-Fi standard WIFI_STANDARD_LEGACY [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_standard_legacy">Legacy</string>
+    <!-- Summary for the Wi-Fi standard WIFI_STANDARD_11N [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_standard_11n">Wi\u2011Fi 4</string>
+    <!-- Summary for the Wi-Fi standard WIFI_STANDARD_11AC [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_standard_11ac">Wi\u2011Fi 5</string>
+    <!-- Summary for the Wi-Fi standard WIFI_STANDARD_11AX [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_standard_11ax">Wi\u2011Fi 6</string>
+    <!-- Summary for the Wi-Fi standard WIFI_STANDARD_11AD [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_standard_11ad">WiGig</string>
+    <!-- Summary for the Wi-Fi standard WIFI_STANDARD_11BE [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_standard_11be">Wi\u2011Fi 7</string>
 </resources>
