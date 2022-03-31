@@ -668,6 +668,17 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
+    public synchronized String getStandardString() {
+        if (mWifiInfo != null) {
+            return Utils.getStandardString(mContext, mWifiInfo.getWifiStandard());
+        }
+        if (!mTargetScanResults.isEmpty()) {
+            return Utils.getStandardString(mContext, mTargetScanResults.get(0).getWifiStandard());
+        }
+        return "";
+    }
+
+    @Override
     public synchronized boolean shouldEditBeforeConnect() {
         WifiConfiguration wifiConfig = getWifiConfiguration();
         if (wifiConfig == null) {
@@ -945,6 +956,13 @@ public class StandardWifiEntry extends WifiEntry {
         }
         description.append("=").append(scanResult.frequency);
         description.append(",").append(scanResult.level);
+        int wifiStandard = scanResult.getWifiStandard();
+        description.append(",").append(Utils.getStandardString(mContext, wifiStandard));
+        if (BuildCompat.isAtLeastT() && wifiStandard == ScanResult.WIFI_STANDARD_11BE) {
+            description.append(",mldMac=").append(scanResult.getApMldMacAddress());
+            description.append(",linkId=").append(scanResult.getApMloLinkId());
+            description.append(",affLinks=").append(scanResult.getAffiliatedMloLinks());
+        }
         final int ageSeconds = (int) (nowMs - scanResult.timestamp / 1000) / 1000;
         description.append(",").append(ageSeconds).append("s");
         description.append("}");
