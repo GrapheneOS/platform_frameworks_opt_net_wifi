@@ -391,6 +391,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 passpointUtf8Ssids.addAll(passpointWifiEntry.getAllUtf8Ssids());
             }
             for (StandardWifiEntry entry : mStandardWifiEntryCache) {
+                entry.updateAdminRestrictions();
                 if (entry == mConnectedWifiEntry) {
                     continue;
                 }
