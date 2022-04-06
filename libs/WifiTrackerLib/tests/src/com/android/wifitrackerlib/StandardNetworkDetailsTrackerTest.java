@@ -124,7 +124,6 @@ public class StandardNetworkDetailsTrackerTest {
      */
     @Test
     public void testHandleOnStart_scanResultUpdaterUpdateCorrectly() throws Exception {
-        final ScanResult chosen = buildScanResult("ssid", "bssid", START_MILLIS);
         final StandardWifiEntryKey key =
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
         final StandardNetworkDetailsTracker tracker =
@@ -153,9 +152,9 @@ public class StandardNetworkDetailsTrackerTest {
                 createTestStandardNetworkDetailsTracker(key.toString());
 
         tracker.onStart();
+        mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 any(), any(), any());
-        mTestLooper.dispatchAll();
         final WifiEntry wifiEntry = tracker.getWifiEntry();
 
         assertThat(wifiEntry.getLevel()).isEqualTo(WIFI_LEVEL_UNREACHABLE);
@@ -192,9 +191,9 @@ public class StandardNetworkDetailsTrackerTest {
                 createTestStandardNetworkDetailsTracker(key.toString());
 
         tracker.onStart();
+        mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 any(), any(), any());
-        mTestLooper.dispatchAll();
         final WifiEntry wifiEntry = tracker.getWifiEntry();
 
         assertThat(wifiEntry.isSaved()).isFalse();
@@ -233,9 +232,9 @@ public class StandardNetworkDetailsTrackerTest {
         final StandardNetworkDetailsTracker tracker =
                 createTestStandardNetworkDetailsTracker(key.toString());
         tracker.onStart();
+        mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 any(), any(), any());
-        mTestLooper.dispatchAll();
         final WifiEntry wifiEntry = tracker.getWifiEntry();
 
         assertThat(wifiEntry.getLevel()).isNotEqualTo(WIFI_LEVEL_UNREACHABLE);
