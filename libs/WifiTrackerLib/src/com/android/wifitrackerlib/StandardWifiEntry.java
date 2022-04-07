@@ -151,9 +151,7 @@ public class StandardWifiEntry extends WifiEntry {
         mUserManager = injector.getUserManager();
         mDevicePolicyManager = injector.getDevicePolicyManager();
         updateSecurityTypes();
-        if (BuildCompat.isAtLeastT()) {
-            updateAdminRestrictions();
-        }
+        updateAdminRestrictions();
     }
 
     StandardWifiEntry(
@@ -957,7 +955,10 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @SuppressLint("NewApi")
-    private void updateAdminRestrictions() {
+    void updateAdminRestrictions() {
+        if (!BuildCompat.isAtLeastT()) {
+            return;
+        }
         if (mUserManager != null) {
             mHasAddConfigUserRestriction = mUserManager.hasUserRestriction(
                     UserManager.DISALLOW_ADD_WIFI_CONFIG);
@@ -1006,6 +1007,7 @@ public class StandardWifiEntry extends WifiEntry {
                 }
             }
         }
+        mIsAdminRestricted = false;
     }
 
     private boolean hasAdminRestrictions() {
