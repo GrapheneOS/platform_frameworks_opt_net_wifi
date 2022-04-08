@@ -602,6 +602,11 @@ public class WifiEntry {
         return "";
     }
 
+    /** Returns the string displayed for the Wi-Fi standard */
+    public String getStandardString() {
+        return "";
+    }
+
     /** Returns whether subscription of the entry is expired */
     public boolean isExpired() {
         return false;
@@ -957,7 +962,7 @@ public class WifiEntry {
             if (bssid != null) {
                 sj.add(bssid);
             }
-            sj.add("standard = " + mWifiInfo.getWifiStandard());
+            sj.add("standard = " + getStandardString());
             sj.add("rssi = " + mWifiInfo.getRssi());
             sj.add("score = " + mWifiInfo.getScore());
             sj.add(String.format(" tx=%.1f,", mWifiInfo.getSuccessfulTxPacketsPerSecond()));

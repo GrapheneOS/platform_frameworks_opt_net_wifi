@@ -71,18 +71,4 @@
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"साइन-अप करणे पूर्ण झाले. कनेक्ट करत आहे…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"हे नेटवर्क डिव्हाइसच्या स्थानाचा माग ठेवण्यासाठी वापरता येणारा सिम आयडी मिळवते. "<annotation id="url">"अधिक जाणून घ्या"</annotation></string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"वाय-फाय सध्या ऑटो-कनेक्ट होणार नाही"</string>
-    <!-- no translation found for wifitrackerlib_wifi_standard_unknown (8339211498889012019) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_legacy (7760511318791054384) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11n (2642177213395884818) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ac (4347870672254411383) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ax (4071875115186480116) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ad (4955749187120493383) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11be (1886834788680487835) -->
-    <skip />
 </resources>
