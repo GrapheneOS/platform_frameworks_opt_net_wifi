@@ -111,52 +111,29 @@ public class SavedNetworkTrackerTest {
     }
 
     /**
-     * Tests that the wifi state is set correctly after onStart, even if no broadcast was received.
-     */
-    @Test
-    public void testOnStart_setsWifiState() {
-        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
-
-        // Set the wifi state to disabled
-        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_DISABLED);
-        savedNetworkTracker.onStart();
-        mTestLooper.dispatchAll();
-
-        assertThat(savedNetworkTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_DISABLED);
-
-        // Change the wifi state to enabled
-        savedNetworkTracker.onStop();
-        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
-        savedNetworkTracker.onStart();
-        mTestLooper.dispatchAll();
-
-        assertThat(savedNetworkTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_ENABLED);
-    }
-
-    /**
      * Tests that receiving a wifi state change broadcast updates getWifiState().
      */
     @Test
     public void testWifiStateChangeBroadcast_updatesWifiState() {
-        final SavedNetworkTracker wifiPickerTracker = createTestSavedNetworkTracker();
-        wifiPickerTracker.onStart();
+        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
+        savedNetworkTracker.onStart();
         mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 any(), any(), any());
 
         // Set the wifi state to disabled
-        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_DISABLED);
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION));
+                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED));
 
-        assertThat(wifiPickerTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_DISABLED);
+        assertThat(savedNetworkTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_DISABLED);
 
         // Change the wifi state to enabled
-        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION));
+                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_ENABLED));
 
-        assertThat(wifiPickerTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_ENABLED);
+        assertThat(savedNetworkTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_ENABLED);
     }
 
     /**
