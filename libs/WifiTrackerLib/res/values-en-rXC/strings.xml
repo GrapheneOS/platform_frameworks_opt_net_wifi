@@ -71,4 +71,11 @@
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‏‏‎‏‏‎‎‎‎‎‏‏‏‎‎‎‎‎‎‎‏‏‎‏‏‎‏‏‎‏‎‏‏‏‏‏‎‏‏‎‏‏‏‎‏‎‎‎‎‏‎‎‎‏‏‎‎‏‎‎‎Sign-up complete. Connecting…‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‏‎‎‎‏‏‏‏‏‏‎‎‏‏‎‏‏‎‎‏‎‎‏‎‏‎‏‏‏‎‏‏‏‎‏‏‏‎‏‎‏‎‎‎‎‎‏‏‏‏‏‎‏‎‎‏‏‏‏‎‏‎‎This network receives a SIM ID that can be used to track device location. ‎‏‎‎‏‏‎"<annotation id="url">"‎‏‎‎‏‏‏‎Learn more‎‏‎‎‏‏‎"</annotation>"‎‏‎‎‏‏‏‎‎‏‎‎‏‎"</string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‎‎‎‏‎‎‎‏‎‏‎‎‏‎‏‎‎‏‎‏‎‏‏‎‎‎‎‎‎‏‎‎‏‏‏‏‎‎‎‏‎‎‏‏‎‎‏‎‏‎‎‏‏‏‏‎‎‏‏‎‏‏‎Wi-Fi won’t auto-connect for now‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_standard_unknown" msgid="8339211498889012019">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‏‏‎‎‏‏‏‎‏‏‏‎‏‎‏‏‎‏‎‏‎‎‏‎‏‎‏‏‎‎‏‏‎‏‏‎‏‎‎‎‏‎‎‎‎‏‏‏‏‎‎‎‏‏‎‎‏‏‎‎‏‏‎Unknown‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_standard_legacy" msgid="7760511318791054384">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‏‎‏‎‏‏‏‎‏‏‎‎‏‎‏‏‎‏‏‏‏‏‏‏‏‎‏‏‎‏‎‏‏‎‏‏‏‏‏‏‏‏‎‎‎‎‎‏‏‎‎‏‎‎‎‎‏‏‎‎‎‎‎Legacy‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_standard_11n" msgid="2642177213395884818">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‎‎‏‎‎‏‎‏‎‏‎‏‎‏‏‏‎‎‏‏‎‎‎‏‎‏‏‎‏‎‎‏‏‏‏‏‎‎‎‎‏‎‏‏‏‏‏‎‏‏‎‏‏‎‎‎‏‎‎‏‎‎Wi‑Fi 4‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_standard_11ac" msgid="4347870672254411383">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‏‎‎‎‏‎‏‎‏‏‎‏‎‏‏‏‏‎‏‎‏‎‏‎‏‏‏‎‎‏‎‎‏‎‏‎‎‎‏‎‎‎‎‎‎‏‎‎‎‏‎‎‏‏‏‎‏‏‏‎Wi‑Fi 5‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_standard_11ax" msgid="4071875115186480116">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‎‏‏‏‎‎‎‏‎‎‎‎‎‏‎‎‎‏‏‎‏‎‎‏‏‎‏‎‏‏‏‏‏‏‏‎‎‏‎‎‏‏‏‎‎‎‏‎‏‏‎‎‎‏‏‏‏‏‏‎‏‎‎‎Wi‑Fi 6‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_standard_11ad" msgid="4955749187120493383">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‏‏‏‎‎‎‏‎‎‏‏‎‎‎‏‏‎‎‏‎‏‏‎‏‏‏‎‏‎‎‎‎‏‎‎‎‎‎‏‏‎‎‎‏‏‏‏‏‏‎‏‏‏‎‎‏‏‎‏‎‎‎‏‏‏‎WiGig‎‏‎‎‏‎"</string>
+    <string name="wifitrackerlib_wifi_standard_11be" msgid="1886834788680487835">"‎‏‎‎‎‎‎‏‎‏‏‏‎‎‎‎‎‎‏‎‎‏‎‎‎‎‏‏‏‏‏‎‏‏‏‎‏‎‎‎‏‎‏‏‏‏‎‏‏‎‎‎‏‎‎‎‏‏‏‏‏‎‎‏‎‏‎‎‎‏‎‎‏‎‎‏‏‎‎‏‎‏‎‎‏‏‏‎‎‏‏‎‏‏‎Wi‑Fi 7‎‏‎‎‏‎"</string>
 </resources>
