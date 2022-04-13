@@ -83,7 +83,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         return BaseWifiTracker.sVerboseLogging;
     }
 
-    private boolean mIsStarted;
+    private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
 
     // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -97,7 +97,9 @@ public class BaseWifiTracker implements LifecycleObserver {
             }
 
             if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
-                if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) {
+                mWifiState = intent.getIntExtra(
+                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED);
+                if (mWifiState == WifiManager.WIFI_STATE_ENABLED) {
                     mScanner.start();
                 } else {
                     mScanner.stop();
@@ -323,7 +325,6 @@ public class BaseWifiTracker implements LifecycleObserver {
             mContext.unregisterReceiver(mBroadcastReceiver);
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
             mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
-            mIsStarted = false;
         });
     }
 
@@ -338,7 +339,7 @@ public class BaseWifiTracker implements LifecycleObserver {
      */
     @AnyThread
     public int getWifiState() {
-        return mWifiManager.getWifiState();
+        return mWifiState;
     }
 
     /**
