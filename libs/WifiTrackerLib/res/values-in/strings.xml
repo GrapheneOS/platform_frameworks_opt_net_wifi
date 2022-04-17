@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
-    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Hubung-otomatis nonaktif"</string>
+    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Hubungkan otomatis nonaktif"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Disimpan oleh <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Tidak akan terhubung otomatis"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Tidak ada akses internet"</string>
@@ -71,18 +71,11 @@
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Pendaftaran selesai. Menghubungkan …"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Jaringan ini menerima ID SIM yang dapat digunakan untuk melacak lokasi perangkat. "<annotation id="url">"Pelajari lebih lanjut"</annotation></string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi tidak akan terhubung otomatis untuk saat ini"</string>
-    <!-- no translation found for wifitrackerlib_wifi_standard_unknown (8339211498889012019) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_legacy (7760511318791054384) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11n (2642177213395884818) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ac (4347870672254411383) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ax (4071875115186480116) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ad (4955749187120493383) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11be (1886834788680487835) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_standard_unknown" msgid="8339211498889012019">"Tidak diketahui"</string>
+    <string name="wifitrackerlib_wifi_standard_legacy" msgid="7760511318791054384">"Lama"</string>
+    <string name="wifitrackerlib_wifi_standard_11n" msgid="2642177213395884818">"Wi‑Fi 4"</string>
+    <string name="wifitrackerlib_wifi_standard_11ac" msgid="4347870672254411383">"Wi‑Fi 5"</string>
+    <string name="wifitrackerlib_wifi_standard_11ax" msgid="4071875115186480116">"Wi‑Fi 6"</string>
+    <string name="wifitrackerlib_wifi_standard_11ad" msgid="4955749187120493383">"WiGig"</string>
+    <string name="wifitrackerlib_wifi_standard_11be" msgid="1886834788680487835">"Wi‑Fi 7"</string>
 </resources>
