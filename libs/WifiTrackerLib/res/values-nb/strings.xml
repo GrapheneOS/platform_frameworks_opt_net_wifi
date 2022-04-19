@@ -71,18 +71,11 @@
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Registreringen er fullført. Kobler til …"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Dette nettverket mottar en SIM-ID som kan brukes til å spore enhetsposisjonen. "<annotation id="url">"Finn ut mer"</annotation></string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Wi-Fi kobles ikke til automatisk inntil videre"</string>
-    <!-- no translation found for wifitrackerlib_wifi_standard_unknown (8339211498889012019) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_legacy (7760511318791054384) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11n (2642177213395884818) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ac (4347870672254411383) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ax (4071875115186480116) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11ad (4955749187120493383) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_wifi_standard_11be (1886834788680487835) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_standard_unknown" msgid="8339211498889012019">"Ukjent"</string>
+    <string name="wifitrackerlib_wifi_standard_legacy" msgid="7760511318791054384">"En eldre versjon"</string>
+    <string name="wifitrackerlib_wifi_standard_11n" msgid="2642177213395884818">"Wi-Fi 4"</string>
+    <string name="wifitrackerlib_wifi_standard_11ac" msgid="4347870672254411383">"Wi-Fi 5"</string>
+    <string name="wifitrackerlib_wifi_standard_11ax" msgid="4071875115186480116">"Wi-Fi 6"</string>
+    <string name="wifitrackerlib_wifi_standard_11ad" msgid="4955749187120493383">"WiGig"</string>
+    <string name="wifitrackerlib_wifi_standard_11be" msgid="1886834788680487835">"Wi-Fi 7"</string>
 </resources>
