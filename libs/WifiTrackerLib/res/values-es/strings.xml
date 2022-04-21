@@ -32,7 +32,7 @@
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"No se ha podido conectar. Inténtalo de nuevo más tarde."</string>
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"No se ha podido conectar. Inténtalo de nuevo en otro momento."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Desconectado"</string>
-    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Red guardada"</string>
+    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Guardado"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"De uso medido"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"No medida"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Conectado mediante <xliff:g id="NAME">%1$s</xliff:g>"</string>
