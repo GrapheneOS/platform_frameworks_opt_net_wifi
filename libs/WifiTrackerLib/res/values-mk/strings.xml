@@ -32,7 +32,7 @@
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Не може да се поврзе. Обидете се повторно подоцна."</string>
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Не може да се поврзе. Обидете се повторно подоцна."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Не е поврзано"</string>
-    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Зачувана"</string>
+    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Зачувано"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Со ограничен интернет"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Со неограничен интернет"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Поврзано преку <xliff:g id="NAME">%1$s</xliff:g>"</string>
