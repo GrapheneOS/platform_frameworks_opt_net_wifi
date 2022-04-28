@@ -611,7 +611,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         if (canSignIn()) {
             // canSignIn() implies that this WifiEntry is the currently connected network, so use
             // getCurrentNetwork() to start the captive portal app.
-            HiddenApiWrapper.startCaptivePortalApp(
+            NonSdkApiWrapper.startCaptivePortalApp(
                     mContext.getSystemService(ConnectivityManager.class),
                     mWifiManager.getCurrentNetwork());
         }

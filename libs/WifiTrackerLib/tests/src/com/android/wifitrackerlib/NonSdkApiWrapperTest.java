@@ -34,7 +34,7 @@ import android.text.style.ClickableSpan;
 
 import org.junit.Test;
 
-public class HiddenApiWrapperTest {
+public class NonSdkApiWrapperTest {
     @Test
     public void testLinkifyAnnotation_annotation_returnTextWithClickableSpan() {
         final String annotationId = "id";
@@ -45,7 +45,7 @@ public class HiddenApiWrapperTest {
         builder.append(testLink, new Annotation("key", annotationId),
                 Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
-        final CharSequence output = HiddenApiWrapper.linkifyAnnotation(
+        final CharSequence output = NonSdkApiWrapper.linkifyAnnotation(
                 mock(Context.class), builder, annotationId, "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
@@ -64,7 +64,7 @@ public class HiddenApiWrapperTest {
         builder.append(testLink, new Annotation("key", annotationId),
                 Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
-        final CharSequence output = HiddenApiWrapper.linkifyAnnotation(
+        final CharSequence output = NonSdkApiWrapper.linkifyAnnotation(
                 mock(Context.class), builder, annotationId, "");
 
         final SpannableString outputSpannableString = new SpannableString(output);
@@ -74,22 +74,22 @@ public class HiddenApiWrapperTest {
     }
 
     /**
-     * Verifies the functionality of {@link HiddenApiWrapper#isVcnOverWifi}
+     * Verifies the functionality of {@link NonSdkApiWrapper#isVcnOverWifi}
      */
     @Test
     public void testIsVcnOverWifi() {
         NetworkCapabilities networkCapabilities  = mock(NetworkCapabilities.class);
 
-        assertThat(HiddenApiWrapper.isVcnOverWifi(networkCapabilities)).isFalse();
+        assertThat(NonSdkApiWrapper.isVcnOverWifi(networkCapabilities)).isFalse();
 
         VcnTransportInfo vcnTransportInfo = mock(VcnTransportInfo.class);
         when(networkCapabilities.getTransportInfo()).thenReturn(vcnTransportInfo);
 
-        assertThat(HiddenApiWrapper.isVcnOverWifi(networkCapabilities)).isFalse();
+        assertThat(NonSdkApiWrapper.isVcnOverWifi(networkCapabilities)).isFalse();
 
         WifiInfo wifiInfo = mock(WifiInfo.class);
         when(vcnTransportInfo.getWifiInfo()).thenReturn(wifiInfo);
 
-        assertThat(HiddenApiWrapper.isVcnOverWifi(networkCapabilities)).isTrue();
+        assertThat(NonSdkApiWrapper.isVcnOverWifi(networkCapabilities)).isTrue();
     }
 }

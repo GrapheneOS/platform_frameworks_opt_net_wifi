@@ -54,7 +54,7 @@ android_test {
 android_test {
     name: "SdkWifiTrackerLibTests",
     defaults: ["WifiTrackerLibTestDefaults"],
-    exclude_srcs: ["src/**/HiddenApiWrapperTest.java"],
+    exclude_srcs: ["src/**/NonSdkApiWrapperTest.java"],
 
     static_libs: [
         "SdkWifiTrackerLib",
