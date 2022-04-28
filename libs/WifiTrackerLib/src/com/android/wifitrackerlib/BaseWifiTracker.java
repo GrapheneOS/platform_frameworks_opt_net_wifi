@@ -193,7 +193,7 @@ public class BaseWifiTracker implements LifecycleObserver {
                     final boolean oldCellDefault = mIsCellDefaultRoute;
                     // raw Wifi or VPN-over-Wifi or VCN-over-Wifi is default => Wifi is default.
                     mIsWifiDefaultRoute = networkCapabilities.hasTransport(TRANSPORT_WIFI)
-                            || HiddenApiWrapper.isVcnOverWifi(networkCapabilities);
+                            || NonSdkApiWrapper.isVcnOverWifi(networkCapabilities);
                     mIsCellDefaultRoute = !mIsWifiDefaultRoute
                             && networkCapabilities.hasTransport(TRANSPORT_CELLULAR);
                     if (mIsWifiDefaultRoute != oldWifiDefault
@@ -308,8 +308,8 @@ public class BaseWifiTracker implements LifecycleObserver {
                     /* broadcastPermission */ null, mWorkerHandler);
             mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
                     mWorkerHandler);
-            mConnectivityManager.registerDefaultNetworkCallback(mDefaultNetworkCallback,
-                    mWorkerHandler);
+            NonSdkApiWrapper.registerSystemDefaultNetworkCallback(
+                    mConnectivityManager, mDefaultNetworkCallback, mWorkerHandler);
             handleOnStart();
         });
     }

@@ -667,7 +667,7 @@ public class Utils {
         }
 
         // IMSI protection is not provided, return warning message.
-        return HiddenApiWrapper.linkifyAnnotation(context, context.getText(
+        return NonSdkApiWrapper.linkifyAnnotation(context, context.getText(
                 R.string.wifitrackerlib_imsi_protection_warning), "url",
                 context.getString(R.string.wifitrackerlib_help_url_imsi_protection));
     }
