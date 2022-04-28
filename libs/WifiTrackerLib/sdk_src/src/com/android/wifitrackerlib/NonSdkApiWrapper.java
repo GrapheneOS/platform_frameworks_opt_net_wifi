@@ -20,6 +20,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.wifi.WifiInfo;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
@@ -77,5 +78,15 @@ class NonSdkApiWrapper {
         // so we have to use the regular registerDefaultNetworkCallback here.
         // TODO(b/230643853): See if we can add registerSystemDefaultNetworkCallback to the SDK.
         connectivityManager.registerDefaultNetworkCallback(callback, handler);
+    }
+
+    /**
+     * Returns true if the WifiInfo is for the primary network, false otherwise.
+     */
+    static boolean isPrimary(@NonNull WifiInfo wifiInfo) {
+        // TODO(b/230643853): WifiInfo.isPrimary() currently requires NETWORK_SETTINGS permission to
+        //                    access, which SUW does not hold. Always return true (WifiTracker1
+        //                    behavior) until SUW can access this field.
+        return true;
     }
 }
