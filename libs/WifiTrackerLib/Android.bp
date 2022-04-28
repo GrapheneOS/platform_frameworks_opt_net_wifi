@@ -26,8 +26,8 @@ android_library {
 android_library {
     name: "SdkWifiTrackerLib",
     defaults: ["WifiTrackerLibDefaults"],
-    srcs: ["sdk_src/**/HiddenApiWrapper.java"],
-    exclude_srcs: ["src/**/HiddenApiWrapper.java"],
+    srcs: ["sdk_src/**/NonSdkApiWrapper.java"],
+    exclude_srcs: ["src/**/NonSdkApiWrapper.java"],
 
     sdk_version: "system_current",
 }
