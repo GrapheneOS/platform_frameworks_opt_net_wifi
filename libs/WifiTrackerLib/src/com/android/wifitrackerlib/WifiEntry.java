@@ -607,6 +607,11 @@ public class WifiEntry {
         return "";
     }
 
+    /** Returns the string displayed for the Wi-Fi band */
+    public String getBandString() {
+        return "";
+    }
+
     /** Returns whether subscription of the entry is expired */
     public boolean isExpired() {
         return false;

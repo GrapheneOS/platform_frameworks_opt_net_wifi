@@ -677,6 +677,17 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
+    public synchronized String getBandString() {
+        if (mWifiInfo != null) {
+            return Utils.getBandString(mContext, mWifiInfo.getFrequency());
+        }
+        if (!mTargetScanResults.isEmpty()) {
+            return Utils.getBandString(mContext, mTargetScanResults.get(0).frequency);
+        }
+        return "";
+    }
+
+    @Override
     public synchronized boolean shouldEditBeforeConnect() {
         WifiConfiguration wifiConfig = getWifiConfiguration();
         if (wifiConfig == null) {

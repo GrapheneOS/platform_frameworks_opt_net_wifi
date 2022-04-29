@@ -219,4 +219,13 @@
     <string name="wifitrackerlib_wifi_standard_11ad">WiGig</string>
     <!-- Summary for the Wi-Fi standard WIFI_STANDARD_11BE [CHAR LIMIT=50]-->
     <string name="wifitrackerlib_wifi_standard_11be">Wi\u2011Fi 7</string>
+
+    <!-- Summary for an unknown Wi-Fi band [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_band_unknown">Unknown</string>
+    <!-- Summary for the Wi-Fi 2.4Ghz band [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_band_24_ghz">2.4 GHz</string>
+    <!-- Summary for the Wi-Fi 5Ghz band [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_band_5_ghz">5 GHz</string>
+    <!-- Summary for the Wi-Fi 6Ghz band [CHAR LIMIT=50]-->
+    <string name="wifitrackerlib_wifi_band_6_ghz">6 GHz</string>
 </resources>

@@ -1007,8 +1007,7 @@ public class Utils {
     }
 
     /**
-     * Converts a ScanResult.WIFI_STANDARD_ value to a display string if available, or an
-     * empty string if there is no corresponding display string.
+     * Converts a ScanResult.WIFI_STANDARD_ value to a display string.
      */
     public static String getStandardString(@NonNull Context context, int standard) {
         switch (standard) {
@@ -1026,6 +1025,21 @@ public class Utils {
                 return context.getString(R.string.wifitrackerlib_wifi_standard_11be);
             default:
                 return context.getString(R.string.wifitrackerlib_wifi_standard_unknown);
+        }
+    }
+
+    /**
+     * Converts a frequency in MHz to the display string of the corresponding Wi-Fi band.
+     */
+    public static String getBandString(@NonNull Context context, int freqMhz) {
+        if (freqMhz >= WifiEntry.MIN_FREQ_24GHZ && freqMhz < WifiEntry.MAX_FREQ_24GHZ) {
+            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_24_ghz);
+        } else if (freqMhz >= WifiEntry.MIN_FREQ_5GHZ && freqMhz < WifiEntry.MAX_FREQ_5GHZ) {
+            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_5_ghz);
+        } else if (freqMhz >= WifiEntry.MIN_FREQ_6GHZ && freqMhz < WifiEntry.MAX_FREQ_6GHZ) {
+            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_6_ghz);
+        } else {
+            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_unknown);
         }
     }
 }
