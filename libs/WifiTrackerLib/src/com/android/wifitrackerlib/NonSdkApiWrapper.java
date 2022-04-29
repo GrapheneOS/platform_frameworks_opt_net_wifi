@@ -22,6 +22,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.TransportInfo;
 import android.net.vcn.VcnTransportInfo;
+import android.net.wifi.WifiInfo;
 import android.os.Handler;
 import android.os.UserManager;
 import android.text.Annotation;
@@ -108,5 +109,12 @@ class NonSdkApiWrapper {
             @NonNull ConnectivityManager.NetworkCallback callback,
             @NonNull Handler handler) {
         connectivityManager.registerSystemDefaultNetworkCallback(callback, handler);
+    }
+
+    /**
+     * Returns true if the WifiInfo is for the primary network, false otherwise.
+     */
+    static boolean isPrimary(@NonNull WifiInfo wifiInfo) {
+        return wifiInfo.isPrimary();
     }
 }
