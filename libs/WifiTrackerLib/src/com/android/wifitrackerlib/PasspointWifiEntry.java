@@ -49,7 +49,6 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import java.util.ArrayList;
@@ -61,7 +60,6 @@ import java.util.StringJoiner;
 /**
  * WifiEntry representation of a subscribed Passpoint network, uniquely identified by FQDN.
  */
-@VisibleForTesting
 public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntryCallback {
     static final String TAG = "PasspointWifiEntry";
     public static final String KEY_PREFIX = "PasspointWifiEntry:";
