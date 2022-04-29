@@ -20,17 +20,19 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.wifi.WifiInfo;
+import android.os.Handler;
 
 import androidx.annotation.NonNull;
 
 /**
- * Wrapper class to decouple WifiTrackerLibDefaults from @hide API usage at build time.
- * This version avoids @hide APIs for usage in apps that can only access SDK APIs, e.g. SetupWizard.
+ * Wrapper class to decouple WifiTrackerLibDefaults from non-SDK API usage at build time, for use
+ * by apps that build against the SDK (e.g. SetupWizard).
  *
  * Clients may wish to provide their own implementation of these methods when copying this
  * library over to their own codebase.
  */
-class HiddenApiWrapper {
+class NonSdkApiWrapper {
     /**
      * Starts the System captive portal app.
      */
@@ -63,5 +65,28 @@ class HiddenApiWrapper {
     static boolean isDemoMode(@NonNull Context context) {
         // This should be false since SUW is not used in demo mode.
         return false;
+    }
+
+    /**
+     * Registers the system default network callback.
+     */
+    static void registerSystemDefaultNetworkCallback(
+            @NonNull ConnectivityManager connectivityManager,
+            @NonNull ConnectivityManager.NetworkCallback callback,
+            @NonNull Handler handler) {
+        // registerSystemDefaultNetworkCallback does not have visibility to non-updatable modules,
+        // so we have to use the regular registerDefaultNetworkCallback here.
+        // TODO(b/230643853): See if we can add registerSystemDefaultNetworkCallback to the SDK.
+        connectivityManager.registerDefaultNetworkCallback(callback, handler);
+    }
+
+    /**
+     * Returns true if the WifiInfo is for the primary network, false otherwise.
+     */
+    static boolean isPrimary(@NonNull WifiInfo wifiInfo) {
+        // TODO(b/230643853): WifiInfo.isPrimary() currently requires NETWORK_SETTINGS permission to
+        //                    access, which SUW does not hold. Always return true (WifiTracker1
+        //                    behavior) until SUW can access this field.
+        return true;
     }
 }

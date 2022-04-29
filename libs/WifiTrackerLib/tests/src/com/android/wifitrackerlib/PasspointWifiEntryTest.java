@@ -338,19 +338,19 @@ public class PasspointWifiEntryTest {
         NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
 
-        MockitoSession session = mockitoSession().spyStatic(HiddenApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
         try {
             // Simulate user tapping on the network and receiving captive portal capabilities.
             // This should trigger the captive portal app.
             entry.connect(null /* callback */);
             entry.updateNetworkCapabilities(captivePortalCapabilities);
 
-            verify(() -> HiddenApiWrapper.startCaptivePortalApp(any(), any()), times(1));
+            verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
 
             // Update network capabilities again. This should not trigger the captive portal app.
             entry.updateNetworkCapabilities(captivePortalCapabilities);
 
-            verify(() -> HiddenApiWrapper.startCaptivePortalApp(any(), any()), times(1));
+            verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
         } finally {
             session.finishMocking();
         }
