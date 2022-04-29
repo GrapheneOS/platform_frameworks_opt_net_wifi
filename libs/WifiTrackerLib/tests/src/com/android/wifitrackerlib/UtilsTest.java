@@ -365,7 +365,7 @@ public class UtilsTest {
         final CharSequence testText = "test text";
 
         final CharSequence output =
-                HiddenApiWrapper.linkifyAnnotation(mMockContext, testText, "id", "url");
+                NonSdkApiWrapper.linkifyAnnotation(mMockContext, testText, "id", "url");
 
         final SpannableString outputSpannableString = new SpannableString(output);
         assertEquals(output.toString(), testText.toString());
