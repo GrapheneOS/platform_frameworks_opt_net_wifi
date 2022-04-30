@@ -22,6 +22,8 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.TransportInfo;
 import android.net.vcn.VcnTransportInfo;
+import android.net.wifi.WifiInfo;
+import android.os.Handler;
 import android.os.UserManager;
 import android.text.Annotation;
 import android.text.SpannableString;
@@ -35,13 +37,13 @@ import androidx.annotation.NonNull;
 import com.android.settingslib.HelpUtils;
 
 /**
- * Wrapper class to decouple WifiTrackerLibDefaults from @hide API usage at build time.
- * This version uses @hide APIs for usage within the Android platform.
+ * Wrapper class to decouple WifiTrackerLibDefaults from non-SDK API usage at build time.
+ * This version uses non-SDK APIs for usage within the Android platform.
  *
  * Clients of WifiTrackerLib that can only access SDK APIs should use SdkWifiTrackerLib, which
- * replaces this class with the version found in WifiTrackerLib/sdk_src/../HiddenApiWrapper.java.
+ * replaces this class with the version found in WifiTrackerLib/sdk_src/../NonSdkApiWrapper.java.
  */
-class HiddenApiWrapper {
+class NonSdkApiWrapper {
     /**
      * Starts the System captive portal app.
      */
@@ -97,5 +99,22 @@ class HiddenApiWrapper {
      */
     static boolean isDemoMode(@NonNull Context context) {
         return UserManager.isDeviceInDemoMode(context);
+    }
+
+    /**
+     * Registers the default network callback.
+     */
+    static void registerSystemDefaultNetworkCallback(
+            @NonNull ConnectivityManager connectivityManager,
+            @NonNull ConnectivityManager.NetworkCallback callback,
+            @NonNull Handler handler) {
+        connectivityManager.registerSystemDefaultNetworkCallback(callback, handler);
+    }
+
+    /**
+     * Returns true if the WifiInfo is for the primary network, false otherwise.
+     */
+    static boolean isPrimary(@NonNull WifiInfo wifiInfo) {
+        return wifiInfo.isPrimary();
     }
 }

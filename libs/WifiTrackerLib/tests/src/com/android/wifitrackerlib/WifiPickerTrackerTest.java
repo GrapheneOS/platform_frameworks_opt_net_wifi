@@ -30,6 +30,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -611,24 +612,30 @@ public class WifiPickerTrackerTest {
         mTestLooper.dispatchAll();
         verify(mMockConnectivityManager)
                 .registerNetworkCallback(any(), mNetworkCallbackCaptor.capture(), any());
-        verify(mMockConnectivityManager)
-                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
-
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
         // Set cellular to be the default network
         mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
                 new NetworkCapabilities.Builder()
                         .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
 
         // Trigger a validation callback for the non-primary Wifi network.
-        WifiInfo nonPrimaryWifiInfo = Mockito.mock(WifiInfo.class);
-        when(nonPrimaryWifiInfo.isPrimary()).thenReturn(false);
-        when(nonPrimaryWifiInfo.makeCopy(anyLong())).thenReturn(nonPrimaryWifiInfo);
-        NetworkCapabilities nonPrimaryCap = new NetworkCapabilities.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .setTransportInfo(nonPrimaryWifiInfo)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-                .build();
-        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork, nonPrimaryCap);
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(any()));
+            WifiInfo nonPrimaryWifiInfo = Mockito.mock(WifiInfo.class);
+            when(nonPrimaryWifiInfo.makeCopy(anyLong())).thenReturn(nonPrimaryWifiInfo);
+            NetworkCapabilities nonPrimaryCap = new NetworkCapabilities.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                    .setTransportInfo(nonPrimaryWifiInfo)
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                    .build();
+            mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork, nonPrimaryCap);
+        } finally {
+            session.finishMocking();
+        }
 
         // Non-primary Wifi network validation should be ignored.
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isNotEqualTo(lowQuality);
@@ -1360,8 +1367,10 @@ public class WifiPickerTrackerTest {
         final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
         intent.putExtra("subscription", subId);
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
-        verify(mMockConnectivityManager)
-                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
         MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
         assertThat(mergedCarrierEntry.getConnectedState())
                 .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
@@ -1394,17 +1403,19 @@ public class WifiPickerTrackerTest {
         final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
         intent.putExtra("subscription", subId);
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
-        verify(mMockConnectivityManager)
-                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
         MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
         assertThat(mergedCarrierEntry.getConnectedState())
                 .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
         // Wifi isn't default yet, so isDefaultNetwork returns false
         assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
 
-        MockitoSession session = mockitoSession().spyStatic(HiddenApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
         try {
-            doReturn(true).when(() -> HiddenApiWrapper.isVcnOverWifi(any()));
+            doReturn(true).when(() -> NonSdkApiWrapper.isVcnOverWifi(any()));
             mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
                     new NetworkCapabilities.Builder()
                             .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
@@ -1438,8 +1449,10 @@ public class WifiPickerTrackerTest {
         mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 any(), any(), any());
-        verify(mMockConnectivityManager)
-                .registerDefaultNetworkCallback(mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
         // Set the default route to wifi
         mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
                 new NetworkCapabilities.Builder()
