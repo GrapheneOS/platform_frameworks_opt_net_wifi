@@ -36,7 +36,7 @@ class WifiTrackerInjector {
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     WifiTrackerInjector(@NonNull Context context) {
-        mIsDemoMode = HiddenApiWrapper.isDemoMode(context);
+        mIsDemoMode = NonSdkApiWrapper.isDemoMode(context);
         mUserManager = context.getSystemService(UserManager.class);
         mDevicePolicyManager = context.getSystemService(DevicePolicyManager.class);
         mNoAttributionAnnotationPackages = new ArraySet<>();
