@@ -226,7 +226,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         if (!(transportInfo instanceof WifiInfo)) {
             return false;
         }
-        return ((WifiInfo) transportInfo).isPrimary();
+        return NonSdkApiWrapper.isPrimary((WifiInfo) transportInfo);
     }
 
     protected void updateDefaultRouteInfo() {
