@@ -72,7 +72,6 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.core.os.BuildCompat;
 
@@ -97,7 +96,6 @@ import java.util.stream.Collectors;
  *
  * This type of WifiEntry can represent both open and saved networks.
  */
-@VisibleForTesting
 public class StandardWifiEntry extends WifiEntry {
     static final String TAG = "StandardWifiEntry";
     public static final String KEY_PREFIX = "StandardWifiEntry:";
@@ -433,7 +431,7 @@ public class StandardWifiEntry extends WifiEntry {
         if (canSignIn()) {
             // canSignIn() implies that this WifiEntry is the currently connected network, so use
             // getCurrentNetwork() to start the captive portal app.
-            HiddenApiWrapper.startCaptivePortalApp(
+            NonSdkApiWrapper.startCaptivePortalApp(
                     mContext.getSystemService(ConnectivityManager.class),
                     mWifiManager.getCurrentNetwork());
         }

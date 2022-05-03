@@ -49,7 +49,6 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import java.util.ArrayList;
@@ -61,7 +60,6 @@ import java.util.StringJoiner;
 /**
  * WifiEntry representation of a subscribed Passpoint network, uniquely identified by FQDN.
  */
-@VisibleForTesting
 public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntryCallback {
     static final String TAG = "PasspointWifiEntry";
     public static final String KEY_PREFIX = "PasspointWifiEntry:";
@@ -625,7 +623,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         if (canSignIn()) {
             // canSignIn() implies that this WifiEntry is the currently connected network, so use
             // getCurrentNetwork() to start the captive portal app.
-            HiddenApiWrapper.startCaptivePortalApp(
+            NonSdkApiWrapper.startCaptivePortalApp(
                     mContext.getSystemService(ConnectivityManager.class),
                     mWifiManager.getCurrentNetwork());
         }
