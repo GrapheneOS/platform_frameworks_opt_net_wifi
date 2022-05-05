@@ -78,4 +78,12 @@
     <string name="wifitrackerlib_wifi_standard_11ax" msgid="4071875115186480116">"வைஃபை 6"</string>
     <string name="wifitrackerlib_wifi_standard_11ad" msgid="4955749187120493383">"WiGig"</string>
     <string name="wifitrackerlib_wifi_standard_11be" msgid="1886834788680487835">"வைஃபை 7"</string>
+    <!-- no translation found for wifitrackerlib_wifi_band_unknown (5576746583228374334) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_wifi_band_24_ghz (5374362780653321244) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_wifi_band_5_ghz (2179047349922091556) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_wifi_band_6_ghz (6532408050869498777) -->
+    <skip />
 </resources>
