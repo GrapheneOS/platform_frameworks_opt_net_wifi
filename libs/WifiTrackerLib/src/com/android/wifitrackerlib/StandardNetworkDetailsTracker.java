@@ -27,7 +27,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
-import android.net.NetworkInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -50,8 +49,6 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
 
     private final StandardWifiEntryKey mKey;
     private final StandardWifiEntry mChosenEntry;
-    private final boolean mIsNetworkRequest;
-    private NetworkInfo mCurrentNetworkInfo;
 
     public StandardNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
             @NonNull Context context,
@@ -84,11 +81,9 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
         mKey = new StandardWifiEntryKey(key);
         if (mKey.isNetworkRequest()) {
-            mIsNetworkRequest = true;
             mChosenEntry = new NetworkRequestEntry(mInjector, mContext, mMainHandler, mKey,
                     mWifiManager, false /* forSavedNetworksPage */);
         } else {
-            mIsNetworkRequest = false;
             mChosenEntry = new StandardWifiEntry(mInjector, mContext, mMainHandler, mKey,
                     mWifiManager, false /* forSavedNetworksPage */);
         }

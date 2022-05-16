@@ -860,7 +860,7 @@ public class Utils {
         try {
             netPart = InetAddress.getByAddress(array);
         } catch (UnknownHostException e) {
-            throw new RuntimeException("getNetworkPart error - " + e.toString());
+            throw new IllegalArgumentException("getNetworkPart error - " + e.toString());
         }
         return netPart;
     }
@@ -870,7 +870,7 @@ public class Utils {
      */
     public static void maskRawAddress(byte[] array, int prefixLength) {
         if (prefixLength < 0 || prefixLength > array.length * 8) {
-            throw new RuntimeException("IP address with " + array.length
+            throw new IllegalArgumentException("IP address with " + array.length
                     + " bytes has invalid prefix length " + prefixLength);
         }
 
@@ -878,7 +878,9 @@ public class Utils {
         int remainder = prefixLength % 8;
         byte mask = (byte) (0xFF << (8 - remainder));
 
-        if (offset < array.length) array[offset] = (byte) (array[offset] & mask);
+        if (offset < array.length) {
+            array[offset] = (byte) (array[offset] & mask);
+        }
 
         offset++;
 
