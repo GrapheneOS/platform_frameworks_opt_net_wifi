@@ -114,6 +114,8 @@ public class UtilsTest {
         mTestHandler = new Handler(testLooper.getLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
+        when(mMockContext.getText(R.string.wifitrackerlib_imsi_protection_warning))
+                .thenReturn("IMSI");
         when(mMockContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
                 .thenReturn(mCarrierConfigManager);
         when(mMockContext.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
@@ -355,9 +357,45 @@ public class UtilsTest {
         final WifiConfiguration mockWifiConfig = mock(WifiConfiguration.class);
         final WifiEnterpriseConfig mockWifiEnterpriseConfig = mock(WifiEnterpriseConfig.class);
         when(mockWifiEnterpriseConfig.isAuthenticationSimBased()).thenReturn(true);
+        when(mockWifiEnterpriseConfig.getEapMethod()).thenReturn(WifiEnterpriseConfig.Eap.AKA);
         mockWifiConfig.enterpriseConfig = mockWifiEnterpriseConfig;
 
         assertEquals(getImsiProtectionDescription(mMockContext, mockWifiConfig).toString(), "");
+    }
+
+    @Test
+    public void testGetImsiProtectionDescription() {
+        List<SubscriptionInfo> subscriptionInfoList = new ArrayList<>();
+        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
+        when(subscriptionInfo.getCarrierId()).thenReturn(TEST_CARRIER_ID);
+        subscriptionInfoList.add(subscriptionInfo);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
+        final WifiConfiguration mockWifiConfig = mock(WifiConfiguration.class);
+        final WifiEnterpriseConfig mockWifiEnterpriseConfig = mock(WifiEnterpriseConfig.class);
+        when(mockWifiEnterpriseConfig.isAuthenticationSimBased()).thenReturn(true);
+        when(mockWifiEnterpriseConfig.getEapMethod()).thenReturn(WifiEnterpriseConfig.Eap.AKA);
+        mockWifiConfig.enterpriseConfig = mockWifiEnterpriseConfig;
+        mockWifiConfig.carrierId = TEST_CARRIER_ID;
+
+        assertFalse(getImsiProtectionDescription(mMockContext, mockWifiConfig).toString()
+                .isEmpty());
+    }
+
+    @Test
+    public void testGetImsiProtectionDescription_serverCertNetwork_returnEmptyString() {
+        List<SubscriptionInfo> subscriptionInfoList = new ArrayList<>();
+        SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
+        when(subscriptionInfo.getCarrierId()).thenReturn(TEST_CARRIER_ID);
+        subscriptionInfoList.add(subscriptionInfo);
+        when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
+        final WifiConfiguration mockWifiConfig = mock(WifiConfiguration.class);
+        final WifiEnterpriseConfig mockWifiEnterpriseConfig = mock(WifiEnterpriseConfig.class);
+        when(mockWifiEnterpriseConfig.isAuthenticationSimBased()).thenReturn(true);
+        when(mockWifiEnterpriseConfig.isEapMethodServerCertUsed()).thenReturn(true);
+        mockWifiConfig.enterpriseConfig = mockWifiEnterpriseConfig;
+        mockWifiConfig.carrierId = TEST_CARRIER_ID;
+
+        assertEquals("", getImsiProtectionDescription(mMockContext, mockWifiConfig).toString());
     }
 
     @Test
