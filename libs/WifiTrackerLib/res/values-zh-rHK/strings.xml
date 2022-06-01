@@ -41,7 +41,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"無法存取私人 DNS 伺服器"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"已連接裝置，但無法提供互聯網連線。"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"品質欠佳"</string>
-    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"貴機構禁止使用"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"您的機構禁止使用"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
