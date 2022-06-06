@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"O sinal está fraco. Tente se aproximar do roteador."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"A rede está sobrecarregada. Tente novamente mais tarde."</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Não foi possível conectar. Tente novamente mais tarde."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"A rede não é compatível com este dispositivo"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Não foi possível conectar. Tente novamente mais tarde."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Desconectada"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Salva"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Limitada"</string>

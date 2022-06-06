@@ -30,7 +30,7 @@
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"ସିଗନାଲ୍ ଦୁର୍ବଳ ଅଟେ। ରାଉଟର୍ ପାଖକୁ ଯାଇ ଦେଖନ୍ତୁ।"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"ନେଟୱାର୍କ କ୍ଷମତାର ସର୍ବାଧିକ ସୀମାରେ ପହଞ୍ଚିଯାଇଛି। ପରେ ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"ସଂଯୋଗ କରାଯାଇପାରିବ ନାହିଁ। ପରେ ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="2208793323700267293">"ନେଟୱାର୍କ ଏହି ଡିଭାଇସ୍ ସହିତ ସୁସଙ୍ଗତ ନୁହେଁ"</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"ସଂଯୋଗ କରାଯାଇପାରିବ ନାହିଁ। ପରେ ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ବିଚ୍ଛିନ୍ନ କରାଯାଇଛି"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ସେଭ୍ କରାଯାଇଛି"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ମିଟର ହୋଇଥିବା"</string>
@@ -59,6 +59,5 @@
     <string name="wifitrackerlib_speed_label_medium" msgid="2249280306855290094">"ମଧ୍ୟମ"</string>
     <string name="wifitrackerlib_speed_label_fast" msgid="2593921008376044650">"ଦ୍ରୁତ"</string>
     <string name="wifitrackerlib_speed_label_very_fast" msgid="4162759416291355173">"ଅତି ଦ୍ରୁତ"</string>
-    <!-- no translation found for wifitrackerlib_wifi_wont_autoconnect_for_now (4923161724964349851) -->
-    <skip />
+    <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"ବର୍ତ୍ତମାନ ପାଇଁ ୱାଇ-ଫାଇ ସ୍ୱତଃ-ସଂଯୋଗ ହେବ ନାହିଁ"</string>
 </resources>
