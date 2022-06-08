@@ -1427,6 +1427,25 @@ public class WifiPickerTrackerTest {
     }
 
     /**
+     * Tests that a MergedCarrierEntry is returned even if WifiPickerTracker hasn't been initialized
+     * via handleOnStart() yet.
+     */
+    @Test
+    public void testGetMergedCarrierEntry_trackerNotInitialized_entryIsNotNull() {
+        final int subId = 1;
+        MockitoSession session = mockitoSession().spyStatic(SubscriptionManager.class)
+                .startMocking();
+        try {
+            doReturn(subId).when(SubscriptionManager::getDefaultDataSubscriptionId);
+            final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+            MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
+            assertThat(mergedCarrierEntry).isNotNull();
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    /**
      * Tests that roaming from one network to another will update the new network as the default
      * network if the default route did not change away from Wifi during the roam. This happens if
      * the new network was switched to via MBB.

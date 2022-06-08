@@ -85,6 +85,8 @@ public class BaseWifiTracker implements LifecycleObserver {
 
     private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
 
+    private boolean mIsInitialized = false;
+
     // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -311,6 +313,7 @@ public class BaseWifiTracker implements LifecycleObserver {
             NonSdkApiWrapper.registerSystemDefaultNetworkCallback(
                     mConnectivityManager, mDefaultNetworkCallback, mWorkerHandler);
             handleOnStart();
+            mIsInitialized = true;
         });
     }
 
@@ -326,6 +329,15 @@ public class BaseWifiTracker implements LifecycleObserver {
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
             mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
         });
+    }
+
+    /**
+     * Returns true if this WifiTracker has already been initialized in the worker thread via
+     * handleOnStart()
+     */
+    @AnyThread
+    boolean isInitialized() {
+        return mIsInitialized;
     }
 
     /**
