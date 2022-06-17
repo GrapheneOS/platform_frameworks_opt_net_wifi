@@ -52,6 +52,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -76,9 +77,8 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     private PasspointConfiguration mPasspointConfig;
     @Nullable private WifiConfiguration mWifiConfig;
     private List<Integer> mTargetSecurityTypes =
-            List.of(SECURITY_TYPE_PASSPOINT_R1_R2, SECURITY_TYPE_PASSPOINT_R3);
+            Arrays.asList(SECURITY_TYPE_PASSPOINT_R1_R2, SECURITY_TYPE_PASSPOINT_R3);
 
-    private boolean mIsRoaming = false;
     private OsuWifiEntry mOsuWifiEntry;
     private boolean mShouldAutoOpenCaptivePortal = false;
 
@@ -511,7 +511,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             @Nullable List<ScanResult> homeScanResults,
             @Nullable List<ScanResult> roamingScanResults)
             throws IllegalArgumentException {
-        mIsRoaming = false;
         mWifiConfig = wifiConfig;
         mCurrentHomeScanResults.clear();
         mCurrentRoamingScanResults.clear();
@@ -523,14 +522,12 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         }
         if (mWifiConfig != null) {
             List<ScanResult> currentScanResults = new ArrayList<>();
-            ScanResult bestScanResult = null;
             if (homeScanResults != null && !homeScanResults.isEmpty()) {
                 currentScanResults.addAll(homeScanResults);
             } else if (roamingScanResults != null && !roamingScanResults.isEmpty()) {
                 currentScanResults.addAll(roamingScanResults);
-                mIsRoaming = true;
             }
-            bestScanResult = getBestScanResultByLevel(currentScanResults);
+            ScanResult bestScanResult = getBestScanResultByLevel(currentScanResults);
             if (bestScanResult != null) {
                 mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
             }

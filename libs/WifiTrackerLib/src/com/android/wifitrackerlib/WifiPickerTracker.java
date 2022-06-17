@@ -716,7 +716,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
         mStandardWifiConfigCache.clear();
         mSuggestedConfigCache.clear();
         mNetworkRequestConfigCache.clear();
-        final List<WifiConfiguration> networkRequestConfigs = new ArrayList<>();
         for (WifiConfiguration config : configs) {
             if (config.carrierMerged) {
                 continue;

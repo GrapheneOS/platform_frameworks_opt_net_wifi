@@ -33,6 +33,10 @@ import androidx.annotation.NonNull;
  * library over to their own codebase.
  */
 class NonSdkApiWrapper {
+    private NonSdkApiWrapper() {
+        // Empty constructor to make this class non-instantiable.
+    }
+
     /**
      * Starts the System captive portal app.
      */

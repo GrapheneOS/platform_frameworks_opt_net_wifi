@@ -190,7 +190,6 @@ public class SavedNetworkTrackerTest {
                 any(), any(), any());
 
         assertThat(savedNetworkTracker.getSavedWifiEntries().stream()
-                .filter(entry -> entry.mForSavedNetworksPage)
                 .map(WifiEntry::getTitle)
                 .collect(Collectors.toSet()))
                 .containsExactly("ssid0", "ssid1", "ssid2");

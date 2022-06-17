@@ -44,6 +44,10 @@ import com.android.settingslib.HelpUtils;
  * replaces this class with the version found in WifiTrackerLib/sdk_src/../NonSdkApiWrapper.java.
  */
 class NonSdkApiWrapper {
+    private NonSdkApiWrapper() {
+        // Empty constructor to make this class non-instantiable.
+    }
+
     /**
      * Starts the System captive portal app.
      */
