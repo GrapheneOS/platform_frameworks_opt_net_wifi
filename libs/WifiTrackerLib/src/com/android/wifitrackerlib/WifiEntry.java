@@ -39,7 +39,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import java.lang.annotation.Retention;
@@ -219,8 +218,7 @@ public class WifiEntry {
     public static Comparator<WifiEntry> TITLE_COMPARATOR =
             Comparator.comparing((WifiEntry entry) -> entry.getTitle());
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
-    final boolean mForSavedNetworksPage;
+    protected final boolean mForSavedNetworksPage;
 
     protected final WifiManager mWifiManager;
 
@@ -910,7 +908,7 @@ public class WifiEntry {
                             new byte[]{(byte) 255, (byte) 255, (byte) 255, (byte) 255});
                     mConnectedInfo.subnetMask = getNetworkPart(
                             all, addr.getPrefixLength()).getHostAddress();
-                } catch (UnknownHostException e) {
+                } catch (UnknownHostException | IllegalArgumentException e) {
                     // Leave subnet null;
                 }
             } else if (addr.getAddress() instanceof Inet6Address) {

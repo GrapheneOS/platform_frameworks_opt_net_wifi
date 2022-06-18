@@ -25,7 +25,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
-import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -55,7 +54,6 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
     private final PasspointWifiEntry mChosenEntry;
     private OsuWifiEntry mOsuWifiEntry;
-    private NetworkInfo mCurrentNetworkInfo;
     private WifiConfiguration mCurrentWifiConfig;
 
     public PasspointNetworkDetailsTracker(@NonNull Lifecycle lifecycle,
