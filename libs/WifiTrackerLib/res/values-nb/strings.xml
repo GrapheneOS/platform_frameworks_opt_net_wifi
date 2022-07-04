@@ -75,7 +75,7 @@
     <string name="wifitrackerlib_wifi_standard_legacy" msgid="7760511318791054384">"En eldre versjon"</string>
     <string name="wifitrackerlib_wifi_standard_11n" msgid="2642177213395884818">"Wi-Fi 4"</string>
     <string name="wifitrackerlib_wifi_standard_11ac" msgid="4347870672254411383">"Wi-Fi 5"</string>
-    <string name="wifitrackerlib_wifi_standard_11ax" msgid="4071875115186480116">"Wi-Fi 6"</string>
+    <string name="wifitrackerlib_wifi_standard_11ax" msgid="4071875115186480116">"Wifi 6"</string>
     <string name="wifitrackerlib_wifi_standard_11ad" msgid="4955749187120493383">"WiGig"</string>
     <string name="wifitrackerlib_wifi_standard_11be" msgid="1886834788680487835">"Wi-Fi 7"</string>
 </resources>
