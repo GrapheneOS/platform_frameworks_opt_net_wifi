@@ -63,7 +63,7 @@
     <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"ਮਿਆਦ ਮੁੱਕ ਗਈ"</string>
     <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"ਸਾਈਨ-ਅੱਪ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ"</string>
-    <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"ਗਾਹਕੀ ਦੇ ਨਵੀਨੀਕਰਨ ਅਤੇ ਕਨੈਕਟ ਹੋਣ ਲਈ ਟੈਪ ਕਰੋ"</string>
+    <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"ਸਬਸਕ੍ਰਿਪਸ਼ਨ ਦੇ ਨਵੀਨੀਕਰਨ ਅਤੇ ਕਨੈਕਟ ਹੋਣ ਲਈ ਟੈਪ ਕਰੋ"</string>
     <string name="wifitrackerlib_osu_opening_provider" msgid="7128677439450712558">"<xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g> ਖੋਲ੍ਹਿਆ ਜਾ ਰਿਹਾ ਹੈ"</string>
     <string name="wifitrackerlib_osu_connect_failed" msgid="3872233609000700930">"ਕਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ"</string>
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"ਸਾਈਨ-ਅੱਪ ਮੁਕੰਮਲ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…"</string>
