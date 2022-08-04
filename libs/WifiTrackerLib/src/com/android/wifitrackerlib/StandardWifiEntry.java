@@ -1009,7 +1009,7 @@ public class StandardWifiEntry extends WifiEntry {
                 }
             }
             //check SSID restriction
-            WifiSsidPolicy policy = mDevicePolicyManager.getWifiSsidPolicy();
+            WifiSsidPolicy policy = NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager);
             if (policy != null) {
                 int policyType = policy.getPolicyType();
                 Set<WifiSsid> ssids = policy.getSsids();

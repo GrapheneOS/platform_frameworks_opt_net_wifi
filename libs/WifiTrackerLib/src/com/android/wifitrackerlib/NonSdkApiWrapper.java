@@ -16,6 +16,8 @@
 
 package com.android.wifitrackerlib;
 
+import android.app.admin.DevicePolicyManager;
+import android.app.admin.WifiSsidPolicy;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -33,6 +35,7 @@ import android.text.style.ClickableSpan;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.core.os.BuildCompat;
 
 import com.android.settingslib.HelpUtils;
 
@@ -116,5 +119,15 @@ class NonSdkApiWrapper {
      */
     static boolean isPrimary(@NonNull WifiInfo wifiInfo) {
         return wifiInfo.isPrimary();
+    }
+
+    /**
+     * Returns the WifiSsidPolicy of the device.
+     */
+    static WifiSsidPolicy getWifiSsidPolicy(@NonNull DevicePolicyManager devicePolicyManager) {
+        if (BuildCompat.isAtLeastT()) {
+            return devicePolicyManager.getWifiSsidPolicy();
+        }
+        return null;
     }
 }
