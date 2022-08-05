@@ -35,6 +35,7 @@ import android.text.style.ClickableSpan;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.os.BuildCompat;
 
 import com.android.settingslib.HelpUtils;
@@ -122,8 +123,9 @@ class NonSdkApiWrapper {
     }
 
     /**
-     * Returns the WifiSsidPolicy of the device.
+     * Returns the {@link WifiSsidPolicy} of the device.
      */
+    @Nullable
     static WifiSsidPolicy getWifiSsidPolicy(@NonNull DevicePolicyManager devicePolicyManager) {
         if (BuildCompat.isAtLeastT()) {
             return devicePolicyManager.getWifiSsidPolicy();
