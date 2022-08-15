@@ -945,6 +945,84 @@ public class WifiPickerTrackerTest {
     }
 
     /**
+     * Tests that a suggestion entry is returned after a user shared suggestion config is added.
+     */
+    @Test
+    public void testGetWifiEntries_userSharedSuggestionConfigAdded_returnsSuggestion() {
+        // Start out with non-saved network.
+        when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        assertThat(wifiPickerTracker.getWifiEntries().size()).isEqualTo(1);
+        WifiEntry wifiEntry = wifiPickerTracker.getWifiEntries().get(0);
+        assertThat(wifiEntry.getTitle()).isEqualTo("ssid");
+        assertThat(wifiEntry.isSuggestion()).isFalse();
+
+        // Update configs with suggestion config.
+        WifiConfiguration suggestionConfig = new WifiConfiguration();
+        suggestionConfig.SSID = "\"ssid\"";
+        suggestionConfig.networkId = 2;
+        suggestionConfig.creatorName = "creator1";
+        suggestionConfig.carrierId = 1;
+        suggestionConfig.subscriptionId = 1;
+        suggestionConfig.fromWifiNetworkSuggestion = true;
+        when(mMockWifiManager.getWifiConfigForMatchedNetworkSuggestionsSharedWithUser(any()))
+                .thenReturn(Arrays.asList(suggestionConfig));
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks()).thenReturn(
+                Arrays.asList(suggestionConfig));
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
+
+        // Non-saved network should turn into suggestion
+        assertThat(wifiPickerTracker.getWifiEntries().size()).isEqualTo(1);
+        wifiEntry = wifiPickerTracker.getWifiEntries().get(0);
+        assertThat(wifiEntry.getTitle()).isEqualTo("ssid");
+        assertThat(wifiEntry.isSuggestion()).isTrue();
+    }
+
+    /**
+     * Tests that a suggestion entry is not returned after a non-shared suggestion config is added.
+     */
+    @Test
+    public void testGetWifiEntries_nonSharedSuggestionConfigAdded_returnsNotSuggestion() {
+        // Start out with non-saved network.
+        when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        assertThat(wifiPickerTracker.getWifiEntries().size()).isEqualTo(1);
+        WifiEntry wifiEntry = wifiPickerTracker.getWifiEntries().get(0);
+        assertThat(wifiEntry.getTitle()).isEqualTo("ssid");
+        assertThat(wifiEntry.isSuggestion()).isFalse();
+
+        // Update configs with non-shared suggestion config.
+        WifiConfiguration suggestionConfig = new WifiConfiguration();
+        suggestionConfig.SSID = "\"ssid\"";
+        suggestionConfig.networkId = 2;
+        suggestionConfig.creatorName = "creator1";
+        suggestionConfig.carrierId = 1;
+        suggestionConfig.subscriptionId = 1;
+        suggestionConfig.fromWifiNetworkSuggestion = true;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks()).thenReturn(
+                Arrays.asList(suggestionConfig));
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
+
+        // Non-saved network should not turn into suggestion
+        assertThat(wifiPickerTracker.getWifiEntries().size()).isEqualTo(1);
+        wifiEntry = wifiPickerTracker.getWifiEntries().get(0);
+        assertThat(wifiEntry.getTitle()).isEqualTo("ssid");
+        assertThat(wifiEntry.isSuggestion()).isFalse();
+    }
+
+    /**
      * Tests that a suggestion entry created before scan results are available will be updated to
      * user shareable after scans become available.
      */
