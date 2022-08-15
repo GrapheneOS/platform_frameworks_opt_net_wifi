@@ -1492,4 +1492,53 @@ public class WifiPickerTrackerTest {
         assertThat(connectedEntry.getWifiConfiguration()).isEqualTo(config2);
         assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isTrue();
     }
+
+    /**
+     * Verifies that the BroadcastReceiver and network callbacks are unregistered by the onStop()
+     * worker thread runnable.
+     */
+    @Test
+    public void testBroadcastReceiverAndNetworkCallbacks_onStopRunnable_unregistersCallbacks() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+
+        wifiPickerTracker.onStop();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).unregisterReceiver(mBroadcastReceiverCaptor.getValue());
+        verify(mMockConnectivityManager).unregisterNetworkCallback(
+                mDefaultNetworkCallbackCaptor.getValue());
+        verify(mMockConnectivityManager).unregisterNetworkCallback(
+                mDefaultNetworkCallbackCaptor.getValue());
+    }
+
+    /**
+     * Verifies that the BroadcastReceiver and network callbacks are unregistered by onDestroyed().
+     */
+    @Test
+    public void testBroadcastReceiverAndNetworkCallbacks_onDestroyed_unregistersCallbacks() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+
+        wifiPickerTracker.onStop();
+        wifiPickerTracker.onDestroyed();
+        verify(mMockContext).unregisterReceiver(mBroadcastReceiverCaptor.getValue());
+        verify(mMockConnectivityManager).unregisterNetworkCallback(
+                mDefaultNetworkCallbackCaptor.getValue());
+        verify(mMockConnectivityManager).unregisterNetworkCallback(
+                mDefaultNetworkCallbackCaptor.getValue());
+    }
 }
