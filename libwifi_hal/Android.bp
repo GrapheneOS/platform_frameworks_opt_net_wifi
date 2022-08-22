@@ -270,57 +270,6 @@ soong_config_module_type {
     ],
 }
 
-// libwifi-hal-bcm
-
-wifi_cc_prebuilt_library_static {
-    name: "libwifi-hal-bcm",
-    proprietary: true,
-    arch: {
-        arm: {
-            srcs: [":make-libwifi-hal-bcm_32"],
-        },
-        arm64: {
-            srcs: [":make-libwifi-hal-bcm"],
-        },
-    },
-    installable: false,
-    licenses: ["libwifi_hal_apache20_license"],
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            bcmdhd: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-wifi_makefile_goal {
-    name: "make-libwifi-hal-bcm",
-    product_out_path: "obj/STATIC_LIBRARIES/libwifi-hal-bcm_intermediates/libwifi-hal-bcm.a",
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            bcmdhd: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-wifi_makefile_goal {
-    name: "make-libwifi-hal-bcm_32",
-    product_out_path: "obj_arm/STATIC_LIBRARIES/libwifi-hal-bcm_intermediates/libwifi-hal-bcm.a",
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            bcmdhd: {
-                enabled: true,
-            },
-        },
-    },
-}
-
 // libwifi-hal-qcom
 
 wifi_cc_prebuilt_library_static {
