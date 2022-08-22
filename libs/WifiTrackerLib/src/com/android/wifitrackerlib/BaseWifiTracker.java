@@ -325,10 +325,30 @@ public class BaseWifiTracker implements LifecycleObserver {
     public void onStop() {
         mWorkerHandler.post(() -> {
             mScanner.stop();
+            try {
+                mContext.unregisterReceiver(mBroadcastReceiver);
+                mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
+                mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
+            } catch (IllegalArgumentException e) {
+                // Already unregistered in onDestroyed().
+            }
+        });
+    }
+
+    /**
+     * Unregisters the broadcast receiver network callbacks in case the Activity is destroyed before
+     * the worker thread runnable posted in onStop() runs.
+     */
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    @MainThread
+    public void onDestroyed() {
+        try {
             mContext.unregisterReceiver(mBroadcastReceiver);
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
             mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
-        });
+        } catch (IllegalArgumentException e) {
+            // Already unregistered in onStop() worker thread runnable.
+        }
     }
 
     /**
@@ -439,7 +459,6 @@ public class BaseWifiTracker implements LifecycleObserver {
     /**
      * Scanner to handle starting scans every SCAN_INTERVAL_MILLIS
      */
-    @WorkerThread
     private class Scanner extends Handler {
         private static final int SCAN_RETRY_TIMES = 3;
 
