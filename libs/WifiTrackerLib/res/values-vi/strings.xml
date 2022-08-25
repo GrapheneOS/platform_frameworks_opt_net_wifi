@@ -24,6 +24,7 @@
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"Sự cố xác thực"</string>
     <string name="wifitrackerlib_wifi_check_password_try_again" msgid="2327777719175574699">"Kiểm tra mật khẩu và thử lại"</string>
     <string name="wifitrackerlib_wifi_disabled_network_failure" msgid="3046956554224277166">"Lỗi cấu hình IP"</string>
+    <string name="wifitrackerlib_wifi_disabled_transition_disable_indication" msgid="6416221593061166867">"Không sử dụng được với cài đặt bảo mật hiện tại"</string>
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"Đã tắt"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Điểm truy cập đã tạm thời đạt đến giới hạn số lượng thiết bị truy cập"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Tình trạng mạng kém tạm thời"</string>
