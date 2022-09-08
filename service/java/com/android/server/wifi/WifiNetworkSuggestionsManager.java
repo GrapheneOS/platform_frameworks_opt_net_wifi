@@ -668,7 +668,7 @@ public class WifiNetworkSuggestionsManager {
             if (!config.isEnterprise()) {
                 continue;
             }
-            mWifiKeyStore.removeKeys(config.enterpriseConfig);
+            mWifiKeyStore.removeKeys(config.enterpriseConfig, false);
         }
         // Clear the scan cache.
         removeFromScanResultMatchInfoMap(removingSuggestions);

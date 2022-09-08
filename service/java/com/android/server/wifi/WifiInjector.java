@@ -786,4 +786,9 @@ public class WifiInjector {
     public String getWifiStackPackageName() {
         return mContext.getPackageName();
     }
+
+    @NonNull
+    public WifiKeyStore getWifiKeyStore() {
+        return mWifiKeyStore;
+    }
 }
