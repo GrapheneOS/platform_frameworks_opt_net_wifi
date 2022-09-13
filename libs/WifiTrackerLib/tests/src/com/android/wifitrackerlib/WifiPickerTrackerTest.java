@@ -520,6 +520,39 @@ public class WifiPickerTrackerTest {
     }
 
     /**
+     * Tests that connecting to a network will update getConnectedEntry() to return the connected
+     * WifiEntry if the framework times out and gives us an empty list of configs.
+     */
+    @Test
+    public void testGetConnectedEntry_connectToNetworkWithoutConfigs_returnsConnectedEntry() {
+        // Simulate the framework timing out and giving us an empty list of configs.
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.emptyList());
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        // Populate the correct list of configs.
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_NETWORK_INFO, mMockNetworkInfo));
+
+        verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNotNull();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getTitle()).isEqualTo("ssid");
+    }
+
+    /**
      * Tests that disconnecting from a network will update getConnectedEntry() to return null.
      */
     @Test
