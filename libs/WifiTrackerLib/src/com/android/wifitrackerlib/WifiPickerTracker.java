@@ -793,6 +793,14 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void updateConnectionInfo(@Nullable WifiInfo wifiInfo,
             @Nullable NetworkInfo networkInfo) {
+        if (wifiInfo != null && mStandardWifiConfigCache.size()
+                + mSuggestedConfigCache.size() + mPasspointWifiConfigCache.size()
+                + mNetworkRequestConfigCache.size() == 0) {
+            // We're connected but don't have any configured networks, so fetch the list of configs
+            // again. This can happen when we fetch the configured networks after SSR, but the Wifi
+            // thread times out waiting for driver restart and returns an empty list of networks.
+            updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
+        }
         for (WifiEntry entry : mStandardWifiEntryCache) {
             entry.updateConnectionInfo(wifiInfo, networkInfo);
         }
