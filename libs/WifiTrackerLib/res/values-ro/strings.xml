@@ -29,9 +29,9 @@
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"Punctul de acces este temporar plin"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"Momentan, conexiunea la rețea este slabă"</string>
     <string name="wifitrackerlib_wifi_mbo_oce_assoc_disallowed_insufficient_rssi" msgid="5078611817423181773">"Semnal slab. Apropiați-vă de router."</string>
-    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Capacitatea rețelei a fost depășită. Încercați din nou mai târziu."</string>
-    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Nu se poate conecta. Încercați din nou mai târziu."</string>
-    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Nu se poate conecta. Reîncercați mai târziu."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_max_num_sta_associated" msgid="4418848919914618807">"Capacitatea rețelei a fost depășită. Încearcă din nou mai târziu."</string>
+    <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"Nu se poate conecta. Încearcă din nou mai târziu."</string>
+    <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Nu se poate conecta. Reîncearcă mai târziu."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Deconectată"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Salvată"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Contorizată"</string>
@@ -68,9 +68,9 @@
     <string name="wifitrackerlib_osu_opening_provider" msgid="7128677439450712558">"Se deschide <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_osu_connect_failed" msgid="3872233609000700930">"Nu s-a putut conecta"</string>
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Se finalizează înscrierea…"</string>
-    <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Nu s-a putut finaliza înscrierea. Atingeți pentru a încerca din nou."</string>
+    <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Nu s-a putut finaliza înscrierea. Atinge pentru a încerca din nou."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Înscrierea a fost finalizată. Se conectează…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Această rețea primește un cod SIM care se poate folosi pentru a urmări locația dispozitivului. "<annotation id="url">"Aflați mai multe"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Această rețea primește un cod SIM care se poate folosi pentru a urmări locația dispozitivului. "<annotation id="url">"Află mai multe"</annotation></string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Deocamdată, Wi-Fi nu se poate conecta automat"</string>
     <string name="wifitrackerlib_wifi_standard_unknown" msgid="8339211498889012019">"Necunoscut"</string>
     <string name="wifitrackerlib_wifi_standard_legacy" msgid="7760511318791054384">"Vechi"</string>
