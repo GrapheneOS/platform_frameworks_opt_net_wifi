@@ -4221,7 +4221,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         // Let the final post inside the |factoryReset| method run to completion.
         mLooper.dispatchAll();
-
+        verify(mWifiApConfigStore).setApConfiguration(null);
         verify(mWifiConfigManager).removeNetwork(
                 openNetwork.networkId, Binder.getCallingUid(), TEST_PACKAGE_NAME);
         verify(mWifiConfigManager).removeNetwork(
