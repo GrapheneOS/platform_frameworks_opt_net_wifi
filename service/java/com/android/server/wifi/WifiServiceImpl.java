@@ -2987,6 +2987,9 @@ public class WifiServiceImpl extends BaseWifiService {
             }
 
             mWifiInjector.getClientModeImplHandler().post(() -> {
+                EventLog.writeEvent(0x534e4554, "241927115", -1,
+                        "Reset SoftApConfiguration to default configuration");
+                mWifiApConfigStore.setApConfiguration(null);
                 mWifiInjector.getWifiConfigManager().clearDeletedEphemeralNetworks();
                 mClientModeImpl.clearNetworkRequestUserApprovedAccessPoints();
                 mWifiNetworkSuggestionsManager.clear();

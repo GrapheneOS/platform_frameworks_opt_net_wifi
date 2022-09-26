@@ -3662,6 +3662,7 @@ public class WifiServiceImplTest {
         mWifiServiceImpl.factoryReset(TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
 
+        verify(mWifiApConfigStore).setApConfiguration(null);
         verify(mClientModeImpl).syncRemoveNetwork(mAsyncChannel, openNetwork.networkId);
         verify(mClientModeImpl).syncRemoveNetwork(mAsyncChannel, eapNetwork.networkId);
         verify(mWifiKeyStore).removeKeys(eapNetwork.enterpriseConfig, true);
