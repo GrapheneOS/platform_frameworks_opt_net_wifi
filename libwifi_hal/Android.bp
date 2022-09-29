@@ -49,7 +49,7 @@ soong_config_module_type {
 
 soong_config_string_variable {
     name: "board_wlan_device",
-    values: ["bcmdhd", "qcwcn", "mrvl", "MediaTek", "realtek", "emulator", "slsi"],
+    values: ["bcmdhd", "synadhd", "qcwcn", "mrvl", "MediaTek", "realtek", "emulator", "slsi"],
 }
 
 wifi_cc_defaults {
