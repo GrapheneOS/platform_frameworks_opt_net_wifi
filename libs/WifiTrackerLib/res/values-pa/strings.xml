@@ -24,6 +24,7 @@
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"ਪ੍ਰਮਾਣੀਕਰਨ ਸਮੱਸਿਆ"</string>
     <string name="wifitrackerlib_wifi_check_password_try_again" msgid="2327777719175574699">"ਪਾਸਵਰਡ ਦੀ ਜਾਂਚ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ"</string>
     <string name="wifitrackerlib_wifi_disabled_network_failure" msgid="3046956554224277166">"IP ਸੰਰੂਪਣ ਅਸਫਲਤਾ"</string>
+    <string name="wifitrackerlib_wifi_disabled_transition_disable_indication" msgid="6416221593061166867">"ਮੌਜੂਦਾ ਸੁਰੱਖਿਆ ਸੈਟਿੰਗਾਂ ਨਾਲ ਉਪਲਬਧ ਨਹੀਂ ਹੈ"</string>
     <string name="wifitrackerlib_wifi_disabled_generic" msgid="4278806060337007814">"ਬੰਦ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifitrackerlib_wifi_ap_unable_to_handle_new_sta" msgid="931922372010639716">"ਪਹੁੰਚ ਬਿੰਦੂ ਅਸਥਾਈ ਤੌਰ \'ਤੇ ਸੰਪੂਰਨ ਰੁਝੇਂਵੇਂ ਵਿੱਚ ਹੈ"</string>
     <string name="wifitrackerlib_wifi_poor_channel_conditions" msgid="26484680900376236">"ਅਸਥਾਈ ਖਰਾਬ ਨੈੱਟਵਰਕ ਸਥਿਤੀ"</string>

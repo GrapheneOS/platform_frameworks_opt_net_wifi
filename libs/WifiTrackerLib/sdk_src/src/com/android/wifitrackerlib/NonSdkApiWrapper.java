@@ -26,6 +26,7 @@ import android.net.wifi.WifiInfo;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Wrapper class to decouple WifiTrackerLibDefaults from non-SDK API usage at build time, for use
@@ -93,8 +94,9 @@ class NonSdkApiWrapper {
     }
 
     /**
-     * Returns the WifiSsidPolicy of the device.
+     * Returns the {@link WifiSsidPolicy} of the device.
      */
+    @Nullable
     static WifiSsidPolicy getWifiSsidPolicy(@NonNull DevicePolicyManager devicePolicyManager) {
         // Return null since SUW does not have QUERY_ADMIN_POLICY permission.
         return null;
