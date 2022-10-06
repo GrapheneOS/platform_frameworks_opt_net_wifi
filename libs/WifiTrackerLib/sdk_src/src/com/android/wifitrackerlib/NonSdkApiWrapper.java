@@ -16,6 +16,8 @@
 
 package com.android.wifitrackerlib;
 
+import android.app.admin.DevicePolicyManager;
+import android.app.admin.WifiSsidPolicy;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -24,6 +26,7 @@ import android.net.wifi.WifiInfo;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Wrapper class to decouple WifiTrackerLibDefaults from non-SDK API usage at build time, for use
@@ -88,5 +91,14 @@ class NonSdkApiWrapper {
         //                    access, which SUW does not hold. Always return true (WifiTracker1
         //                    behavior) until SUW can access this field.
         return true;
+    }
+
+    /**
+     * Returns the {@link WifiSsidPolicy} of the device.
+     */
+    @Nullable
+    static WifiSsidPolicy getWifiSsidPolicy(@NonNull DevicePolicyManager devicePolicyManager) {
+        // Return null since SUW does not have QUERY_ADMIN_POLICY permission.
+        return null;
     }
 }

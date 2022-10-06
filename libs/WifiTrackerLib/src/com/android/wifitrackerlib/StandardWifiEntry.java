@@ -259,6 +259,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
+    @Nullable
     public synchronized String getMacAddress() {
         if (mWifiInfo != null) {
             final String wifiInfoMac = mWifiInfo.getMacAddress();
@@ -295,6 +296,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
+    @Nullable
     public synchronized WifiConfiguration getWifiConfiguration() {
         if (!isSaved()) {
             return null;
@@ -1009,7 +1011,7 @@ public class StandardWifiEntry extends WifiEntry {
                 }
             }
             //check SSID restriction
-            WifiSsidPolicy policy = mDevicePolicyManager.getWifiSsidPolicy();
+            WifiSsidPolicy policy = NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager);
             if (policy != null) {
                 int policyType = policy.getPolicyType();
                 Set<WifiSsid> ssids = policy.getSsids();

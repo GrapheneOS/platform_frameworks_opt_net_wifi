@@ -32,7 +32,7 @@
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"No se ha podido conectar. Inténtalo de nuevo más tarde."</string>
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"No se ha podido conectar. Inténtalo de nuevo en otro momento."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Desconectado"</string>
-    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Guardado"</string>
+    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Red guardada"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"De uso medido"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"No medida"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Conectado mediante <xliff:g id="NAME">%1$s</xliff:g>"</string>
@@ -41,7 +41,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"No se ha podido acceder al servidor DNS privado"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Conectado al dispositivo. Sin acceso a Internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Calidad baja"</string>
-    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"No permitido por tu organización"</string>
+    <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"No permitidas por tu organización"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
