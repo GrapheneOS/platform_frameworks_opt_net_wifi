@@ -186,10 +186,6 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized String getSummary(boolean concise) {
-        if (hasAdminRestrictions()) {
-            return mContext.getString(R.string.wifitrackerlib_admin_restricted_network);
-        }
-
         StringJoiner sj = new StringJoiner(mContext.getString(
                 R.string.wifitrackerlib_summary_separator));
 
