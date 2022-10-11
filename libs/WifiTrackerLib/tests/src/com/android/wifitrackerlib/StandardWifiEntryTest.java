@@ -909,11 +909,58 @@ public class StandardWifiEntryTest {
     public void testGetMeteredChoice_afterSetMeteredChoice_getCorrectValue() {
         StandardWifiEntry entry =
                 getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_PSK);
+        WifiConfiguration oldConfig = new WifiConfiguration(entry.getWifiConfiguration());
+        assertThat(oldConfig.meteredOverride).isEqualTo(WifiConfiguration.METERED_OVERRIDE_NONE);
+        // Simulate the privacy being updated by someone else, but we haven't gotten the
+        // CONFIGURED_NETWORKS_CHANGED broadcast yet.
+        assertThat(oldConfig.macRandomizationSetting).isEqualTo(
+                WifiConfiguration.RANDOMIZATION_AUTO);
+        oldConfig.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(oldConfig));
 
         entry.setMeteredChoice(WifiEntry.METERED_CHOICE_METERED);
 
         assertThat(entry.getMeteredChoice()).isEqualTo(WifiEntry.METERED_CHOICE_METERED);
+        ArgumentCaptor<WifiConfiguration> configCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        verify(mMockWifiManager).save(configCaptor.capture(), any());
+        // Metered choice value should be updated.
+        assertThat(configCaptor.getValue().meteredOverride)
+                .isEqualTo(WifiConfiguration.METERED_OVERRIDE_METERED);
+        // Privacy value should not be overwritten by our stale config.
+        assertThat(configCaptor.getValue().macRandomizationSetting)
+                .isEqualTo(WifiConfiguration.RANDOMIZATION_NONE);
     }
+
+    @Test
+    public void testGetPrivacy_afterSetPrivacy_getCorrectValue() {
+        StandardWifiEntry entry =
+                getSavedStandardWifiEntry(WifiConfiguration.SECURITY_TYPE_PSK);
+        WifiConfiguration oldConfig = new WifiConfiguration(entry.getWifiConfiguration());
+        assertThat(oldConfig.macRandomizationSetting).isEqualTo(
+                WifiConfiguration.RANDOMIZATION_AUTO);
+        // Simulate the metered choice being updated by someone else, but we haven't gotten the
+        // CONFIGURED_NETWORKS_CHANGED broadcast yet.
+        assertThat(oldConfig.meteredOverride).isEqualTo(WifiConfiguration.METERED_OVERRIDE_NONE);
+        oldConfig.meteredOverride = WifiConfiguration.METERED_OVERRIDE_METERED;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(oldConfig));
+
+        entry.setPrivacy(WifiEntry.PRIVACY_DEVICE_MAC);
+
+        assertThat(entry.getMeteredChoice()).isEqualTo(WifiEntry.METERED_CHOICE_METERED);
+        ArgumentCaptor<WifiConfiguration> configCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        verify(mMockWifiManager).save(configCaptor.capture(), any());
+        // Privacy choice value should be updated.
+        assertThat(configCaptor.getValue().macRandomizationSetting)
+                .isEqualTo(WifiConfiguration.RANDOMIZATION_NONE);
+        // Metered choice value should not be overwritten by our stale config.
+        assertThat(configCaptor.getValue().meteredOverride)
+                .isEqualTo(WifiConfiguration.METERED_OVERRIDE_METERED);
+    }
+
 
     @Test
     public void testCanSignIn_captivePortalCapability_returnsTrue() {
