@@ -486,7 +486,10 @@ public class PasspointManager {
         }
         newProvider.enableVerboseLogging(mVerboseLoggingEnabled ? 1 : 0);
         mProviders.put(config.getUniqueId(), newProvider);
-        mWifiConfigManager.saveToStore(true /* forceWrite */);
+        if (!isFromSuggestion) {
+            // Suggestions will be handled by the WifiNetworkSuggestionsManager
+            mWifiConfigManager.saveToStore(true /* forceWrite */);
+        }
         if (!isFromSuggestion && newProvider.getPackageName() != null) {
             startTrackingAppOpsChange(newProvider.getPackageName(), uid);
         }
@@ -524,7 +527,10 @@ public class PasspointManager {
                 provider.getWifiConfig().getKey());
         String uniqueId = provider.getConfig().getUniqueId();
         mProviders.remove(uniqueId);
-        mWifiConfigManager.saveToStore(true /* forceWrite */);
+        if (!provider.isFromSuggestion()) {
+            // Suggestions will be handled by the WifiNetworkSuggestionsManager
+            mWifiConfigManager.saveToStore(true /* forceWrite */);
+        }
 
         // Stop monitoring the package if there is no Passpoint profile installed by the package
         if (mAppOpsChangedListenerPerApp.containsKey(packageName)

@@ -1637,6 +1637,38 @@ public class WifiNetworkSuggestionsManagerTest extends WifiBaseTest {
     }
 
     /**
+     * Verify triggering of config store write after successful addition of network suggestions.
+     * And store write is failure because out of memory.
+     */
+    @Test
+    public void testAddNetworkSuggestionsConfigStoreWriteFailedByOOM() {
+        when(mWifiConfigManager.saveToStore(anyBoolean())).thenThrow(new OutOfMemoryError())
+                .thenReturn(true);
+        WifiNetworkSuggestion networkSuggestion = new WifiNetworkSuggestion(
+                WifiConfigurationTestUtil.createOpenNetwork(), null, false, false, true, true);
+
+        List<WifiNetworkSuggestion> networkSuggestionList =
+                new ArrayList<WifiNetworkSuggestion>() {{
+                    add(networkSuggestion);
+                }};
+        assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_ERROR_INTERNAL,
+                mWifiNetworkSuggestionsManager.add(networkSuggestionList, TEST_UID_1,
+                        TEST_PACKAGE_1, TEST_FEATURE));
+
+        // Verify config store interactions.
+        verify(mWifiConfigManager, times(2)).saveToStore(true);
+        assertTrue(mDataSource.hasNewDataToSerialize());
+
+        Map<String, PerAppInfo> networkSuggestionsMapToWrite = mDataSource.toSerialize();
+        assertEquals(1, networkSuggestionsMapToWrite.size());
+        assertEquals(0, networkSuggestionsMapToWrite.get(TEST_PACKAGE_1)
+                .extNetworkSuggestions.size());
+
+        // Ensure that the new data flag has been reset after read.
+        assertFalse(mDataSource.hasNewDataToSerialize());
+    }
+
+    /**
      * Verify triggering of config store write after successful removal of network suggestions.
      */
     @Test
