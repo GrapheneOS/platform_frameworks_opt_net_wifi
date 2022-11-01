@@ -81,6 +81,7 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -982,7 +983,8 @@ public class StandardWifiEntry extends WifiEntry {
         if (BuildCompat.isAtLeastT() && wifiStandard == ScanResult.WIFI_STANDARD_11BE) {
             description.append(",mldMac=").append(scanResult.getApMldMacAddress());
             description.append(",linkId=").append(scanResult.getApMloLinkId());
-            description.append(",affLinks=").append(scanResult.getAffiliatedMloLinks());
+            description.append(",affLinks=").append(
+                    Arrays.toString(scanResult.getAffiliatedMloLinks().toArray()));
         }
         final int ageSeconds = (int) (nowMs - scanResult.timestamp / 1000) / 1000;
         description.append(",").append(ageSeconds).append("s");
