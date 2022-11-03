@@ -40,6 +40,7 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
+import androidx.core.os.BuildCompat;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -48,6 +49,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -972,6 +974,12 @@ public class WifiEntry {
             sj.add(String.format("%.1f,", mWifiInfo.getRetriedTxPacketsPerSecond()));
             sj.add(String.format("%.1f ", mWifiInfo.getLostTxPacketsPerSecond()));
             sj.add(String.format("rx=%.1f", mWifiInfo.getSuccessfulRxPacketsPerSecond()));
+            if (BuildCompat.isAtLeastT() && mWifiInfo.getApMldMacAddress() != null) {
+                sj.add("mldMac = " + mWifiInfo.getApMldMacAddress());
+                sj.add("linkId = " + mWifiInfo.getApMloLinkId());
+                sj.add("affLinks = " + Arrays.toString(
+                        mWifiInfo.getAffiliatedMloLinks().toArray()));
+            }
         }
         return sj.toString();
     }
