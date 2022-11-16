@@ -22,6 +22,7 @@ import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.NetworkCapabilities;
@@ -163,6 +164,16 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
         if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             chosenEntry.updateNetworkCapabilities(capabilities);
             chosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleConnectivityReportAvailable(
+            @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
+        final WifiEntry chosenEntry = getWifiEntry();
+        if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            chosenEntry.updateConnectivityReport(connectivityReport);
         }
     }
 

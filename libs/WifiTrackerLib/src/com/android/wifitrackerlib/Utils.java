@@ -26,6 +26,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
@@ -229,7 +230,8 @@ public class Utils {
             WifiConfiguration wifiConfiguration,
             NetworkCapabilities networkCapabilities,
             boolean isDefaultNetwork,
-            boolean isLowQuality) {
+            boolean isLowQuality,
+            ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
         final StringJoiner sj = new StringJoiner(context.getString(
                 R.string.wifitrackerlib_summary_separator));
 
@@ -255,8 +257,8 @@ public class Utils {
         }
 
         // For displaying network capability info, such as captive portal or no internet
-        String networkCapabilitiesInformation =
-                getCurrentNetworkCapabilitiesInformation(context,  networkCapabilities);
+        String networkCapabilitiesInformation = getCurrentNetworkCapabilitiesInformation(
+                context,  networkCapabilities, connectivityReport);
         if (!TextUtils.isEmpty(networkCapabilitiesInformation)) {
             sj.add(networkCapabilitiesInformation);
         }
@@ -514,8 +516,9 @@ public class Utils {
         return description.toString();
     }
 
-    static String getCurrentNetworkCapabilitiesInformation(Context context,
-            NetworkCapabilities networkCapabilities) {
+    static String getCurrentNetworkCapabilitiesInformation(@Nullable Context context,
+            @Nullable NetworkCapabilities networkCapabilities,
+            @Nullable ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
         if (context == null || networkCapabilities == null) {
             return "";
         }
@@ -531,6 +534,9 @@ public class Utils {
         }
 
         if (!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+            if (connectivityReport == null) {
+                return context.getString(R.string.wifitrackerlib_checking_for_internet_access);
+            }
             if (networkCapabilities.isPrivateDnsBroken()) {
                 return context.getString(R.string.wifitrackerlib_private_dns_broken);
             }
