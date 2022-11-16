@@ -35,10 +35,12 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
@@ -146,6 +148,80 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         synchronized (mLock) {
             return new ArrayList<>(mSubscriptionWifiEntries);
         }
+    }
+
+    /** Check whether or not CA certificate is set.
+     *
+     * WifiEnterpriseConfig::hasCaCertificate() is only available
+     * after API level 33.
+     */
+    private static boolean hasCaCertificate(WifiEnterpriseConfig ec) {
+        if (ec.getCaCertificateAliases() != null) return true;
+        if (ec.getCaCertificates() != null) return true;
+        if (!TextUtils.isEmpty(ec.getCaPath())) return true;
+        return false;
+    }
+
+    private static boolean isCertificateUsedByConfiguration(
+            WifiConfiguration config, String certAlias) {
+        if (TextUtils.isEmpty(certAlias)) return false;
+        if (config == null) return false;
+        if (config.enterpriseConfig == null) return false;
+        WifiEnterpriseConfig ec = config.enterpriseConfig;
+        if (!ec.isEapMethodServerCertUsed()) return false;
+        if (!hasCaCertificate(ec) && TextUtils.isEmpty(ec.getClientCertificateAlias())) {
+            return false;
+        }
+
+        String[] aliases = ec.getCaCertificateAliases();
+        for (String s: aliases) {
+            if (!TextUtils.isEmpty(s) && certAlias.equals(s)) {
+                return true;
+            }
+        }
+        String clientAlias = ec.getClientCertificateAlias();
+        if (!TextUtils.isEmpty(clientAlias)
+                && certAlias.equals(clientAlias)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check whether or not a certifiate is required by saved networks or network suggestions.
+     */
+    @AnyThread
+    public boolean isCertificateRequired(String certAlias) {
+        // Configurations from Wi-Fi Network Suggestion
+        List<WifiConfiguration> configurations = mWifiManager.getNetworkSuggestions()
+                .stream().map(s -> s.getWifiConfiguration())
+                .collect(Collectors.toList());
+        // Configurations from regular Wi-Fi configurations.
+        configurations.addAll(mWifiManager.getConfiguredNetworks());
+
+        return configurations.stream()
+                .anyMatch(c -> isCertificateUsedByConfiguration(c, certAlias));
+    }
+
+    /**
+     * Returns a list of network names which requires the certificate alias.
+     *
+     * @return a list of network names.
+     */
+    @AnyThread
+    @NonNull
+    public List<String> getCertificateRequesterNames(String certAlias) {
+        // Configurations from Wi-Fi Network Suggestion
+        List<WifiConfiguration> configurations = mWifiManager.getNetworkSuggestions()
+                .stream().map(s -> s.getWifiConfiguration())
+                .collect(Collectors.toList());
+        // Configurations from regular Wi-Fi configurations.
+        configurations.addAll(mWifiManager.getConfiguredNetworks());
+
+        return configurations.stream()
+                .filter(c -> isCertificateUsedByConfiguration(c, certAlias))
+                .map(c -> c.SSID).collect(Collectors.toSet())
+                .stream().collect(Collectors.toList());
     }
 
     @WorkerThread
