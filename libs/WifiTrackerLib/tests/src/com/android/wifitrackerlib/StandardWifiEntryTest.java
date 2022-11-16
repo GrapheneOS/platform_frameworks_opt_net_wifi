@@ -55,6 +55,7 @@ import android.app.admin.WifiSsidPolicy;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Resources;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.MacAddress;
@@ -783,6 +784,13 @@ public class StandardWifiEntryTest {
         // Not validated, Not Default
         entry.updateConnectionInfo(wifiInfo, networkInfo);
 
+        // Validation attempt not complete, should not show X level icon yet.
+        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
+
+        // Validation attempt complete, should show X level icon now.
+        ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport = mock(
+                ConnectivityDiagnosticsManager.ConnectivityReport.class);
+        entry.updateConnectivityReport(connectivityReport);
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
         // Not Validated, Default
