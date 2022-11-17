@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
@@ -73,6 +74,7 @@ public class SavedNetworkTrackerTest {
     @Mock private Context mMockContext;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
+    @Mock private ConnectivityDiagnosticsManager mMockConnectivityDiagnosticsManager;
     @Mock private Clock mMockClock;
     @Mock private SavedNetworkTracker.SavedNetworkTrackerCallback mMockCallback;
     @Mock private WifiInfo mMockWifiInfo;
@@ -112,6 +114,8 @@ public class SavedNetworkTrackerTest {
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
         when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
         when(mMockConnectivityManager.getNetworkInfo(any())).thenReturn(mMockNetworkInfo);
+        when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
+                .thenReturn(mMockConnectivityDiagnosticsManager);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
     }
 

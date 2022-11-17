@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -66,6 +67,7 @@ public class StandardNetworkDetailsTrackerTest {
     @Mock private Context mMockContext;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
+    @Mock private ConnectivityDiagnosticsManager mMockConnectivityDiagnosticsManager;
     @Mock private Clock mMockClock;
 
     private TestLooper mTestLooper;
@@ -102,6 +104,8 @@ public class StandardNetworkDetailsTrackerTest {
         when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
+        when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
+                .thenReturn(mMockConnectivityDiagnosticsManager);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
     }
 
