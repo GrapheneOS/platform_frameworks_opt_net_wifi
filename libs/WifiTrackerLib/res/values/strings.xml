@@ -17,6 +17,9 @@
     <!-- Summary text separator for short descriptions (eg. "Fast / Connected"). [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_summary_separator">" / "</string>
 
+    <!-- Summary for the connected network when checking if the network has internet access -->
+    <string name="wifitrackerlib_checking_for_internet_access">Checking for internet access...</string>
+
     <!-- Strings for labeling Wi-Fi Auto-Connection is disabled. Wi-Fi Auto-Connection is a feature
          for users to specify if a Wi-Fi network will be auto connected when it's reachable. [CHAR LIMIT=60] -->
     <string name="wifitrackerlib_auto_connect_disable">Auto-connect is off</string>
