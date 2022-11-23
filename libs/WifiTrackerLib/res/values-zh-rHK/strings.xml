@@ -17,6 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
+    <string name="wifitrackerlib_checking_for_internet_access" msgid="4787495471423429472">"正在檢查網際網路連線..."</string>
     <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"自動連線功能已關閉"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"由「<xliff:g id="NAME">%1$s</xliff:g>」儲存"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"不會自動連線"</string>
