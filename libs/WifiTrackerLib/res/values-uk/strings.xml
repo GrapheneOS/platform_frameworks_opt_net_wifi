@@ -17,6 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
+    <string name="wifitrackerlib_checking_for_internet_access" msgid="4787495471423429472">"Перевірка з’єднання з Інтернетом…"</string>
     <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Автоматичне підключення вимкнено"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Збережено додатком <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Не підключатиметься автоматично"</string>
