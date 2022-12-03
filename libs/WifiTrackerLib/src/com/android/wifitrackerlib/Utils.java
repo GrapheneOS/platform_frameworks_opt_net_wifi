@@ -75,7 +75,7 @@ public class Utils {
 
     // Returns a list of WifiInfo SECURITY_TYPE_* supported by a ScanResult.
     @NonNull
-    static List<Integer> getSecurityTypesFromScanResult(@NonNull ScanResult scanResult) {
+    public static List<Integer> getSecurityTypesFromScanResult(@NonNull ScanResult scanResult) {
         List<Integer> securityTypes = new ArrayList<>();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             for (int securityType : scanResult.getSecurityTypes()) {
