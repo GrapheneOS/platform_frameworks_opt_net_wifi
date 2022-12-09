@@ -154,6 +154,9 @@ wifi_cc_defaults {
             bcmdhd: {
                 whole_static_libs: ["libwifi-hal-bcm"],
             },
+            synadhd: {
+                whole_static_libs: ["libwifi-hal-syna"],
+            },
             qcwcn: {
                 whole_static_libs: ["libwifi-hal-qcom"],
             },
@@ -186,6 +189,10 @@ wifi_cc_defaults {
     soong_config_variables: {
         board_wlan_device: {
             bcmdhd: {
+                shared_libs: ["libcrypto"],
+                defaults: ["google_wifi_config_lib_defaults"],
+            },
+            synadhd: {
                 shared_libs: ["libcrypto"],
                 defaults: ["google_wifi_config_lib_defaults"],
             },
@@ -285,6 +292,38 @@ soong_config_module_type {
     properties: [
         "enabled",
     ],
+}
+
+// libwifi-hal-syna
+
+wifi_cc_prebuilt_library_static {
+    name: "libwifi-hal-syna",
+    proprietary: true,
+    srcs: [":make-libwifi-hal-syna"],
+    compile_multilib: "first",
+    installable: false,
+    licenses: ["libwifi_hal_apache20_license"],
+    enabled: false,
+    soong_config_variables: {
+        board_wlan_device: {
+            synadhd: {
+                enabled: true,
+            },
+        },
+    },
+}
+
+wifi_makefile_goal {
+    name: "make-libwifi-hal-syna",
+    product_out_path: "obj/STATIC_LIBRARIES/libwifi-hal-syna_intermediates/libwifi-hal-syna.a",
+    enabled: false,
+    soong_config_variables: {
+        board_wlan_device: {
+            synadhd: {
+                enabled: true,
+            },
+        },
+    },
 }
 
 // libwifi-hal-qcom

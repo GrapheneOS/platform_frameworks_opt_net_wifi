@@ -759,6 +759,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             // Remove if the suggestion does not have a config anymore.
             return !entry.isSuggestion();
         });
+        // Update suggestion scans to make sure we mark which suggestions are user-shareable.
+        updateSuggestedWifiEntryScans(mScanResultUpdater.getScanResults());
 
         if (mNetworkRequestEntry != null) {
             mNetworkRequestEntry.updateConfig(

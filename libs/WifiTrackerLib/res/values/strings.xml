@@ -46,6 +46,9 @@
     <!-- Status for networked disabled from a DNS or DHCP failure [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_wifi_disabled_network_failure">IP configuration failure</string>
 
+    <!-- Status for networks disabled due to transition disable indication [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_wifi_disabled_transition_disable_indication">Unavailable with current security settings</string>
+
     <!-- Status for networks disabled for unknown reason [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_wifi_disabled_generic">Disabled</string>
 
