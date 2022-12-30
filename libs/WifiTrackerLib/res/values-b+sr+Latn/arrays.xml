@@ -22,16 +22,16 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string-array name="wifitrackerlib_wifi_status">
     <item msgid="4878873480828298657"></item>
-    <item msgid="5782995872855767551">"Тражи се…"</item>
-    <item msgid="9055468790485684083">"Повезује се…"</item>
-    <item msgid="6099499723199990208">"Потврђује се идентитет…"</item>
-    <item msgid="6794055951297347103">"Преузима се IP адреса…"</item>
-    <item msgid="5450920562291300229">"Повезано је"</item>
-    <item msgid="6332116533879646145">"Суспендовано"</item>
-    <item msgid="294459081501073818">"Прекида се веза…"</item>
-    <item msgid="1577368920272598676">"Веза је прекинута"</item>
-    <item msgid="7655843177582495451">"Није успело"</item>
-    <item msgid="8953752690917593623">"Блокирано"</item>
-    <item msgid="4400457817750243671">"Привремено избегавање лоше везе"</item>
+    <item msgid="5782995872855767551">"Traži se…"</item>
+    <item msgid="9055468790485684083">"Povezuje se…"</item>
+    <item msgid="6099499723199990208">"Potvrđuje se identitet…"</item>
+    <item msgid="6794055951297347103">"Preuzima se IP adresa…"</item>
+    <item msgid="5450920562291300229">"Povezano je"</item>
+    <item msgid="6332116533879646145">"Suspendovano"</item>
+    <item msgid="294459081501073818">"Prekida se veza…"</item>
+    <item msgid="1577368920272598676">"Veza je prekinuta"</item>
+    <item msgid="7655843177582495451">"Nije uspelo"</item>
+    <item msgid="8953752690917593623">"Blokirano"</item>
+    <item msgid="4400457817750243671">"Privremeno izbegavanje loše veze"</item>
   </string-array>
 </resources>
