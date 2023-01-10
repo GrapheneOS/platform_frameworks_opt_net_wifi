@@ -194,7 +194,8 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                             mWifiConfig,
                             mNetworkCapabilities,
                             mIsDefaultNetwork,
-                            mIsLowQuality);
+                            mIsLowQuality,
+                            mConnectivityReport);
                     break;
                 default:
                     Log.e(TAG, "getConnectedState() returned unknown state: " + connectedState);

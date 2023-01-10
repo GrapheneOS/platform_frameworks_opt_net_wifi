@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toMap;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
@@ -227,6 +228,16 @@ public class SavedNetworkTracker extends BaseWifiTracker {
                 && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             mConnectedWifiEntry.updateNetworkCapabilities(capabilities);
             mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleConnectivityReportAvailable(
+            @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
+        if (mConnectedWifiEntry != null
+                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
+            mConnectedWifiEntry.updateConnectivityReport(connectivityReport);
         }
     }
 

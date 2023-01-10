@@ -24,6 +24,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
@@ -129,6 +130,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     protected final Context mContext;
     protected final WifiManager mWifiManager;
     protected final ConnectivityManager mConnectivityManager;
+    protected final ConnectivityDiagnosticsManager mConnectivityDiagnosticsManager;
     protected final Handler mMainHandler;
     protected final Handler mWorkerHandler;
     protected final long mMaxScanAgeMillis;
@@ -137,6 +139,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     protected boolean mIsWifiValidated;
     protected boolean mIsWifiDefaultRoute;
     protected boolean mIsCellDefaultRoute;
+    protected Network mPrimaryNetwork;
 
     // Network request for listening on changes to Wifi link properties and network capabilities
     // such as captive portal availability.
@@ -156,6 +159,7 @@ public class BaseWifiTracker implements LifecycleObserver {
                             mConnectivityManager.getNetworkCapabilities(network))) {
                         return;
                     }
+                    mPrimaryNetwork = network;
                     handleLinkPropertiesChanged(lp);
                 }
 
@@ -166,6 +170,7 @@ public class BaseWifiTracker implements LifecycleObserver {
                     if (!isPrimaryWifiNetwork(networkCapabilities)) {
                         return;
                     }
+                    mPrimaryNetwork = network;
                     final boolean oldWifiValidated = mIsWifiValidated;
                     mIsWifiValidated = networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED);
                     if (isVerboseLoggingEnabled() && mIsWifiValidated != oldWifiValidated) {
@@ -182,6 +187,7 @@ public class BaseWifiTracker implements LifecycleObserver {
                         return;
                     }
                     mIsWifiValidated = false;
+                    mPrimaryNetwork = null;
                 }
             };
 
@@ -219,6 +225,16 @@ public class BaseWifiTracker implements LifecycleObserver {
                     handleDefaultRouteChanged();
                 }
             };
+
+    private final ConnectivityDiagnosticsManager.ConnectivityDiagnosticsCallback
+            mConnectivityDiagnosticsCallback =
+            new ConnectivityDiagnosticsManager.ConnectivityDiagnosticsCallback() {
+        @Override
+        public void onConnectivityReportAvailable(
+                @NonNull ConnectivityDiagnosticsManager.ConnectivityReport report) {
+            handleConnectivityReportAvailable(report);
+        }
+    };
 
     private boolean isPrimaryWifiNetwork(@Nullable NetworkCapabilities networkCapabilities) {
         if (networkCapabilities == null) {
@@ -277,6 +293,8 @@ public class BaseWifiTracker implements LifecycleObserver {
         mContext = context;
         mWifiManager = wifiManager;
         mConnectivityManager = connectivityManager;
+        mConnectivityDiagnosticsManager =
+                context.getSystemService(ConnectivityDiagnosticsManager.class);
         mMainHandler = mainHandler;
         mWorkerHandler = workerHandler;
         mMaxScanAgeMillis = maxScanAgeMillis;
@@ -310,6 +328,8 @@ public class BaseWifiTracker implements LifecycleObserver {
                     /* broadcastPermission */ null, mWorkerHandler);
             mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
                     mWorkerHandler);
+            mConnectivityDiagnosticsManager.registerConnectivityDiagnosticsCallback(mNetworkRequest,
+                    command -> mWorkerHandler.post(command), mConnectivityDiagnosticsCallback);
             NonSdkApiWrapper.registerSystemDefaultNetworkCallback(
                     mConnectivityManager, mDefaultNetworkCallback, mWorkerHandler);
             handleOnStart();
@@ -325,10 +345,34 @@ public class BaseWifiTracker implements LifecycleObserver {
     public void onStop() {
         mWorkerHandler.post(() -> {
             mScanner.stop();
+            try {
+                mContext.unregisterReceiver(mBroadcastReceiver);
+                mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
+                mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
+                mConnectivityDiagnosticsManager.unregisterConnectivityDiagnosticsCallback(
+                        mConnectivityDiagnosticsCallback);
+            } catch (IllegalArgumentException e) {
+                // Already unregistered in onDestroyed().
+            }
+        });
+    }
+
+    /**
+     * Unregisters the broadcast receiver network callbacks in case the Activity is destroyed before
+     * the worker thread runnable posted in onStop() runs.
+     */
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    @MainThread
+    public void onDestroyed() {
+        try {
             mContext.unregisterReceiver(mBroadcastReceiver);
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
             mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
-        });
+            mConnectivityDiagnosticsManager.unregisterConnectivityDiagnosticsCallback(
+                    mConnectivityDiagnosticsCallback);
+        } catch (IllegalArgumentException e) {
+            // Already unregistered in onStop() worker thread runnable.
+        }
     }
 
     /**
@@ -420,6 +464,15 @@ public class BaseWifiTracker implements LifecycleObserver {
     }
 
     /**
+     * Handle network capability changes for the current connected Wifi network.
+     */
+    @WorkerThread
+    protected void handleConnectivityReportAvailable(
+            @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
+        // Do nothing.
+    }
+
+    /**
      * Handle when the default route changes. Whether Wifi is the default route is stored in
      * mIsWifiDefaultRoute.
      */
@@ -439,7 +492,6 @@ public class BaseWifiTracker implements LifecycleObserver {
     /**
      * Scanner to handle starting scans every SCAN_INTERVAL_MILLIS
      */
-    @WorkerThread
     private class Scanner extends Handler {
         private static final int SCAN_RETRY_TIMES = 3;
 

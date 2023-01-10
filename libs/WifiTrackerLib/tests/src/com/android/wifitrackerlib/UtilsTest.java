@@ -432,6 +432,36 @@ public class UtilsTest {
     }
 
     @Test
+    public void testGetNetworkSelectionDescription_disabledTransitionDisableIndication() {
+        String expected = " (NETWORK_SELECTION_PERMANENTLY_DISABLED 1:02:03) "
+                + "NETWORK_SELECTION_DISABLED_TRANSITION_DISABLE_INDICATION=1";
+        WifiConfiguration wifiConfig = spy(new WifiConfiguration());
+        NetworkSelectionStatus.Builder statusBuilder = new NetworkSelectionStatus.Builder();
+        NetworkSelectionStatus networkSelectionStatus;
+        try {
+            networkSelectionStatus = spy(statusBuilder
+                    .setNetworkSelectionStatus(
+                            NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED)
+                    .setNetworkSelectionDisableReason(
+                            Utils.DISABLED_TRANSITION_DISABLE_INDICATION)
+                    .build());
+        } catch (IllegalArgumentException e) {
+            // This reason will be added after T formally,
+            // and only in the latest T mainline module.
+            // This test will fail with older mainline module due to IllegalArgumentException.
+            return;
+        }
+        doReturn(1).when(networkSelectionStatus).getDisableReasonCounter(
+                Utils.DISABLED_TRANSITION_DISABLE_INDICATION);
+        long now = System.currentTimeMillis();
+        // Network selection disable time is 1:02:03 ago.
+        doReturn(now - (60 * 60 + 2 * 60 + 3) * 1000).when(networkSelectionStatus).getDisableTime();
+        when(wifiConfig.getNetworkSelectionStatus()).thenReturn(networkSelectionStatus);
+
+        assertThat(getNetworkSelectionDescription(wifiConfig)).isEqualTo(expected);
+    }
+
+    @Test
     public void testGetSecurityTypeFromWifiConfiguration_returnsCorrectSecurityTypes() {
         for (int securityType = WifiInfo.SECURITY_TYPE_OPEN;
                 securityType <= WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE; securityType++) {
