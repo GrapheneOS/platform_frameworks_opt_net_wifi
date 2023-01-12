@@ -26,6 +26,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
@@ -74,7 +75,7 @@ public class Utils {
 
     // Returns a list of WifiInfo SECURITY_TYPE_* supported by a ScanResult.
     @NonNull
-    static List<Integer> getSecurityTypesFromScanResult(@NonNull ScanResult scanResult) {
+    public static List<Integer> getSecurityTypesFromScanResult(@NonNull ScanResult scanResult) {
         List<Integer> securityTypes = new ArrayList<>();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             for (int securityType : scanResult.getSecurityTypes()) {
@@ -229,7 +230,8 @@ public class Utils {
             WifiConfiguration wifiConfiguration,
             NetworkCapabilities networkCapabilities,
             boolean isDefaultNetwork,
-            boolean isLowQuality) {
+            boolean isLowQuality,
+            ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
         final StringJoiner sj = new StringJoiner(context.getString(
                 R.string.wifitrackerlib_summary_separator));
 
@@ -255,8 +257,9 @@ public class Utils {
         }
 
         // For displaying network capability info, such as captive portal or no internet
-        String networkCapabilitiesInformation =
-                getCurrentNetworkCapabilitiesInformation(context,  networkCapabilities);
+        String networkCapabilitiesInformation = getCurrentNetworkCapabilitiesInformation(
+                context,  networkCapabilities, connectivityReport,
+                wifiConfiguration != null && wifiConfiguration.isNoInternetAccessExpected());
         if (!TextUtils.isEmpty(networkCapabilitiesInformation)) {
             sj.add(networkCapabilitiesInformation);
         }
@@ -514,8 +517,10 @@ public class Utils {
         return description.toString();
     }
 
-    static String getCurrentNetworkCapabilitiesInformation(Context context,
-            NetworkCapabilities networkCapabilities) {
+    static String getCurrentNetworkCapabilitiesInformation(@Nullable Context context,
+            @Nullable NetworkCapabilities networkCapabilities,
+            @Nullable ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport,
+            boolean noInternetExpected) {
         if (context == null || networkCapabilities == null) {
             return "";
         }
@@ -531,11 +536,23 @@ public class Utils {
         }
 
         if (!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+            if (connectivityReport == null && !noInternetExpected) {
+                return context.getString(R.string.wifitrackerlib_checking_for_internet_access);
+            }
             if (networkCapabilities.isPrivateDnsBroken()) {
                 return context.getString(R.string.wifitrackerlib_private_dns_broken);
             }
-            return context.getString(
-                R.string.wifitrackerlib_wifi_connected_cannot_provide_internet);
+            if (noInternetExpected) {
+                return context.getString(
+                        R.string.wifitrackerlib_wifi_connected_cannot_provide_internet);
+            }
+            // Connected / No internet access
+            final StringJoiner sj = new StringJoiner(context.getString(
+                    R.string.wifitrackerlib_summary_separator));
+            sj.add(context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
+                    [DetailedState.CONNECTED.ordinal()]);
+            sj.add(context.getString(R.string.wifitrackerlib_wifi_no_internet));
+            return sj.toString();
         }
         return "";
     }
