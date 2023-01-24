@@ -30,10 +30,12 @@ import android.net.ConnectivityDiagnosticsManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
+import android.net.wifi.MloLink;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiScanner;
 import android.os.Build;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
@@ -48,6 +50,7 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.core.os.BuildCompat;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -1072,5 +1075,45 @@ public class Utils {
         } else {
             return context.getResources().getString(R.string.wifitrackerlib_wifi_band_unknown);
         }
+    }
+
+    /**
+     * Converts the band info in WifiInfo to the display string of the corresponding Wi-Fi band(s).
+     */
+    public static String getBandString(@NonNull Context context, @NonNull WifiInfo wifiInfo) {
+        if (!BuildCompat.isAtLeastU()) {
+            return getBandString(context, wifiInfo.getFrequency());
+        }
+
+        StringJoiner sj = new StringJoiner(
+                context.getResources().getString(R.string.wifitrackerlib_multiband_separator));
+        wifiInfo.getAssociatedMloLinks().stream()
+                .filter((link) -> link.getState() == MloLink.MLO_LINK_STATE_ACTIVE)
+                .map(MloLink::getBand)
+                .distinct()
+                .sorted()
+                .forEach((band) -> {
+                    switch (band) {
+                        case WifiScanner.WIFI_BAND_24_GHZ:
+                            sj.add(context.getResources()
+                                    .getString(R.string.wifitrackerlib_wifi_band_24_ghz));
+                            break;
+                        case WifiScanner.WIFI_BAND_5_GHZ:
+                            sj.add(context.getResources()
+                                    .getString(R.string.wifitrackerlib_wifi_band_5_ghz));
+                            break;
+                        case WifiScanner.WIFI_BAND_6_GHZ:
+                            sj.add(context.getResources()
+                                    .getString(R.string.wifitrackerlib_wifi_band_6_ghz));
+                            break;
+                        default:
+                            sj.add(context.getResources()
+                                    .getString(R.string.wifitrackerlib_wifi_band_unknown));
+                    }
+                });
+        if (sj.length() == 0) {
+            return getBandString(context, wifiInfo.getFrequency());
+        }
+        return sj.toString();
     }
 }
