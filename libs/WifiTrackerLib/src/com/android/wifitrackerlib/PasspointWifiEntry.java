@@ -475,7 +475,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @Override
     public synchronized String getBandString() {
         if (mWifiInfo != null) {
-            return Utils.getBandString(mContext, mWifiInfo.getFrequency());
+            return Utils.getBandString(mContext, mWifiInfo);
         }
         if (!mCurrentHomeScanResults.isEmpty()) {
             return Utils.getBandString(mContext, mCurrentHomeScanResults.get(0).frequency);
