@@ -21,6 +21,7 @@ import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSess
 import static com.android.wifitrackerlib.TestUtils.GOOD_RSSI;
 import static com.android.wifitrackerlib.TestUtils.buildScanResult;
 import static com.android.wifitrackerlib.TestUtils.buildWifiConfiguration;
+import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -58,6 +60,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 
@@ -93,6 +96,9 @@ public class SavedNetworkTrackerTest {
     private TestLooper mTestLooper;
 
     private final ArgumentCaptor<ConnectivityManager.NetworkCallback> mNetworkCallbackCaptor =
+            ArgumentCaptor.forClass(ConnectivityManager.NetworkCallback.class);
+    private final ArgumentCaptor<ConnectivityManager.NetworkCallback>
+            mDefaultNetworkCallbackCaptor =
             ArgumentCaptor.forClass(ConnectivityManager.NetworkCallback.class);
     private final ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
@@ -475,7 +481,7 @@ public class SavedNetworkTrackerTest {
         mTestLooper.dispatchAll();
 
         WifiEntry entry = savedNetworkTracker.getSavedWifiEntries().get(0);
-        assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
     }
 
     /**
@@ -505,7 +511,7 @@ public class SavedNetworkTrackerTest {
         mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
                 mMockNetwork, mMockNetworkCapabilities);
 
-        assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
     }
 
     /**
@@ -530,7 +536,7 @@ public class SavedNetworkTrackerTest {
                 any(), mNetworkCallbackCaptor.capture(), any());
 
         final WifiEntry entry = savedNetworkTracker.getSavedWifiEntries().get(0);
-        assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
 
         mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
 
@@ -571,7 +577,7 @@ public class SavedNetworkTrackerTest {
         }
         assertThat(originalEntry).isNotNull();
         assertThat(originalEntry.getConnectedState())
-                .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+                .isEqualTo(CONNECTED_STATE_CONNECTED);
         assertThat(mbbEntry).isNotNull();
         assertThat(mbbEntry.getConnectedState())
                 .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
@@ -590,7 +596,7 @@ public class SavedNetworkTrackerTest {
                     .onCapabilitiesChanged(mbbNetwork, mbbNetworkCapabilities);
             // Original network should still be connected.
             assertThat(originalEntry.getConnectedState())
-                    .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+                    .isEqualTo(CONNECTED_STATE_CONNECTED);
             assertThat(mbbEntry.getConnectedState())
                     .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
 
@@ -605,13 +611,13 @@ public class SavedNetworkTrackerTest {
             assertThat(originalEntry.getConnectedState())
                     .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
             assertThat(mbbEntry.getConnectedState())
-                    .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+                    .isEqualTo(CONNECTED_STATE_CONNECTED);
 
             // Original network is lost. MBB network should still be connected
             assertThat(originalEntry.getConnectedState())
                     .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
             assertThat(mbbEntry.getConnectedState())
-                    .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+                    .isEqualTo(CONNECTED_STATE_CONNECTED);
         } finally {
             session.finishMocking();
         }
@@ -642,5 +648,65 @@ public class SavedNetworkTrackerTest {
         assertFalse(savedNetworkTracker.isCertificateRequired(TEST_CACERT_NOT_REQUIRED_ALIAS));
         assertEquals(0, savedNetworkTracker
                 .getCertificateRequesterNames(TEST_CACERT_NOT_REQUIRED_ALIAS).size());
+    }
+
+    /**
+     * Tests that a connected WifiEntry's isDefaultNetwork() will reflect updates from the default
+     * network changing.
+     */
+    @Test
+    public void testGetConnectedEntry_defaultNetworkChanges_isDefaultNetworkChanges() {
+        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager)
+                .registerNetworkCallback(any(), mNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+
+        WifiEntry connectedWifiEntry = savedNetworkTracker.getSavedWifiEntries().get(0);
+        assertThat(connectedWifiEntry).isNotNull();
+        assertThat(connectedWifiEntry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+
+        // No default
+        assertThat(connectedWifiEntry.isDefaultNetwork()).isFalse();
+
+        // Cell is default
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(Mockito.mock(Network.class),
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
+        assertThat(connectedWifiEntry.isDefaultNetwork()).isFalse();
+
+        // Other Wi-Fi network is default
+        Network otherWifiNetwork = mock(Network.class);
+        WifiInfo otherWifiInfo = mock(WifiInfo.class);
+        when(otherWifiInfo.getNetworkId()).thenReturn(2);
+        NetworkCapabilities otherNetworkCapabilities = mock(NetworkCapabilities.class);
+        when(otherNetworkCapabilities.getTransportInfo()).thenReturn(otherWifiInfo);
+        when(otherNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
+                .thenReturn(true);
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(otherWifiNetwork,
+                otherNetworkCapabilities);
+        assertThat(connectedWifiEntry.isDefaultNetwork()).isFalse();
+
+        // This Wi-Fi network is default
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
+                mMockNetworkCapabilities);
+        assertThat(connectedWifiEntry.isDefaultNetwork()).isTrue();
+
+        // Lose the default network
+        mDefaultNetworkCallbackCaptor.getValue().onLost(mock(Network.class));
+        assertThat(connectedWifiEntry.isDefaultNetwork()).isFalse();
     }
 }

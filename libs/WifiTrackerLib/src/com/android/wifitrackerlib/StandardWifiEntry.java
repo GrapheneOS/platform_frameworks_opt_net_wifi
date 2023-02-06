@@ -207,7 +207,7 @@ public class StandardWifiEntry extends WifiEntry {
                         mTargetWifiConfig,
                         mNetworkCapabilities,
                         mIsDefaultNetwork,
-                        mIsLowQuality,
+                        isLowQuality(),
                         mConnectivityReport);
                 break;
             default:

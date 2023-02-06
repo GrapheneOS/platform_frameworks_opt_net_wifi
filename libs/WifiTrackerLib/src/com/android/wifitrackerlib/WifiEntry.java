@@ -246,7 +246,7 @@ public class WifiEntry {
     protected boolean mCalledDisconnect = false;
 
     protected boolean mIsDefaultNetwork;
-    protected boolean mIsLowQuality;
+    protected boolean mIsCellDefaultNetwork;
 
     private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
 
@@ -354,6 +354,17 @@ public class WifiEntry {
      */
     public boolean isDefaultNetwork() {
         return mIsDefaultNetwork;
+    }
+
+    /**
+     * Returns whether this network is considered low quality.
+     */
+    public boolean isLowQuality() {
+        if (mNetworkCapabilities == null) {
+            return false;
+        }
+        return mNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                && mIsCellDefaultNetwork;
     }
 
     /**
@@ -682,7 +693,7 @@ public class WifiEntry {
                     .append(", isDefaultNetwork:")
                     .append(mIsDefaultNetwork)
                     .append(", isLowQuality:")
-                    .append(mIsLowQuality);
+                    .append(isLowQuality());
         }
         return sb.toString();
     }
@@ -924,7 +935,6 @@ public class WifiEntry {
         mConnectedInfo = null;
         mConnectivityReport = null;
         mIsDefaultNetwork = false;
-        mIsLowQuality = false;
         if (mCalledDisconnect) {
             mCalledDisconnect = false;
             mCallbackHandler.post(() -> {
@@ -936,6 +946,29 @@ public class WifiEntry {
             });
         }
         updateSecurityTypes();
+        notifyOnUpdated();
+    }
+
+    /**
+     * Updates this WifiEntry as the default network if it matches.
+     */
+    @WorkerThread
+    synchronized void onDefaultNetworkCapabilitiesChanged(
+            @NonNull Network network,
+            @NonNull NetworkCapabilities capabilities) {
+        onNetworkCapabilitiesChanged(network, capabilities);
+        mIsCellDefaultNetwork = Utils.getWifiInfo(capabilities) == null
+                && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR);
+        mIsDefaultNetwork = network.equals(mNetwork);
+        notifyOnUpdated();
+    }
+
+    /**
+     * Notifies this WifiEntry that the default network was lost.
+     */
+    synchronized void onDefaultNetworkLost() {
+        mIsCellDefaultNetwork = false;
+        mIsDefaultNetwork = false;
         notifyOnUpdated();
     }
 
@@ -989,17 +1022,6 @@ public class WifiEntry {
                 .map(InetAddress::getHostAddress).collect(Collectors.toList());
 
         notifyOnUpdated();
-    }
-
-    @WorkerThread
-    synchronized void setIsDefaultNetwork(boolean isDefaultNetwork) {
-        mIsDefaultNetwork = isDefaultNetwork;
-        notifyOnUpdated();
-    }
-
-    @WorkerThread
-    synchronized void setIsLowQuality(boolean isLowQuality) {
-        mIsLowQuality = isLowQuality;
     }
 
     // Method for WifiTracker to update a connected WifiEntry's validation status.

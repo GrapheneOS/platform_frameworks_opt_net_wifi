@@ -175,8 +175,6 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                 handleLinkPropertiesChanged(currentNetwork, linkProperties);
             }
         }
-        mChosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-        mChosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
     }
 
     @WorkerThread
