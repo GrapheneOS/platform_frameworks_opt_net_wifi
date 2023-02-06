@@ -201,12 +201,11 @@ public class WifiKeyStore {
      * Remove enterprise keys from the network config.
      *
      * @param config Config corresponding to the network.
-     * @param forceRemove remove keys regardless of the key installer.
      */
-    public void removeKeys(WifiEnterpriseConfig config, boolean forceRemove) {
+    public void removeKeys(WifiEnterpriseConfig config) {
         Preconditions.checkNotNull(mKeyStore);
         // Do not remove keys that were manually installed by the user
-        if (forceRemove || config.isAppInstalledDeviceKeyAndCert()) {
+        if (config.isAppInstalledDeviceKeyAndCert()) {
             String client = config.getClientCertificateAlias();
             // a valid client certificate is configured
             if (!TextUtils.isEmpty(client)) {
@@ -220,7 +219,7 @@ public class WifiKeyStore {
         }
 
         // Do not remove CA certs that were manually installed by the user
-        if (forceRemove || config.isAppInstalledCaCert()) {
+        if (config.isAppInstalledCaCert()) {
             String[] aliases = config.getCaCertificateAliases();
             if (aliases == null || aliases.length == 0) {
                 return;

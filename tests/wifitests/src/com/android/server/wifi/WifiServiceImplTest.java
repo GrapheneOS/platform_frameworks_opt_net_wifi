@@ -316,7 +316,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
     @Mock WifiSettingsConfigStore mWifiSettingsConfigStore;
     @Mock WifiScanAlwaysAvailableSettingsCompatibility mScanAlwaysAvailableSettingsCompatibility;
     @Mock PackageInfo mPackageInfo;
-    @Mock WifiKeyStore mWifiKeyStore;
 
     WifiLog mLog = new LogcatLog(TAG);
 
@@ -410,7 +409,6 @@ public class WifiServiceImplTest extends WifiBaseTest {
         when(mScanRequestProxy.startScan(anyInt(), anyString())).thenReturn(true);
         when(mLohsCallback.asBinder()).thenReturn(mock(IBinder.class));
         when(mWifiSettingsConfigStore.get(eq(WIFI_VERBOSE_LOGGING_ENABLED))).thenReturn(true);
-        when(mWifiInjector.getWifiKeyStore()).thenReturn(mWifiKeyStore);
 
         mWifiServiceImpl = makeWifiServiceImpl();
         mDppCallback = new IDppCallback() {
@@ -4196,11 +4194,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         final String fqdn = "example.com";
-        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        openNetwork.networkId = TEST_NETWORK_ID;
-        WifiConfiguration eapNetwork = WifiConfigurationTestUtil.createEapNetwork(
-                WifiEnterpriseConfig.Eap.TLS, WifiEnterpriseConfig.Phase2.NONE);
-        eapNetwork.networkId = TEST_NETWORK_ID + 1;
+        WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork();
         PasspointConfiguration config = new PasspointConfiguration();
         HomeSp homeSp = new HomeSp();
         homeSp.setFqdn(fqdn);
@@ -4211,7 +4205,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
 
         mWifiServiceImpl.mClientModeImplChannel = mAsyncChannel;
         when(mWifiConfigManager.getSavedNetworks(anyInt()))
-                .thenReturn(Arrays.asList(openNetwork, eapNetwork));
+                .thenReturn(Arrays.asList(network));
         when(mPasspointManager.getProviderConfigs(anyInt(), anyBoolean()))
                 .thenReturn(Arrays.asList(config));
 
@@ -4223,10 +4217,7 @@ public class WifiServiceImplTest extends WifiBaseTest {
         mLooper.dispatchAll();
         verify(mWifiApConfigStore).setApConfiguration(null);
         verify(mWifiConfigManager).removeNetwork(
-                openNetwork.networkId, Binder.getCallingUid(), TEST_PACKAGE_NAME);
-        verify(mWifiConfigManager).removeNetwork(
-                eapNetwork.networkId, Binder.getCallingUid(), TEST_PACKAGE_NAME);
-        verify(mWifiKeyStore).removeKeys(eapNetwork.enterpriseConfig, true);
+                network.networkId, Binder.getCallingUid(), TEST_PACKAGE_NAME);
         verify(mPasspointManager).removeProvider(anyInt(), anyBoolean(), eq(config.getUniqueId()),
                 isNull());
         verify(mPasspointManager).clearAnqpRequestsAndFlushCache();
