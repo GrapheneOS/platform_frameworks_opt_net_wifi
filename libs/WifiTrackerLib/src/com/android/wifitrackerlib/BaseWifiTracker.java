@@ -144,6 +144,7 @@ public class BaseWifiTracker implements LifecycleObserver {
             .clearCapabilities()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .addTransportType(TRANSPORT_WIFI)
+            .addTransportType(TRANSPORT_CELLULAR) // For VCN-over-Wifi
             .build();
 
     private final ConnectivityManager.NetworkCallback mNetworkCallback =
