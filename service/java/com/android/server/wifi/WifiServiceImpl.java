@@ -3444,14 +3444,7 @@ public class WifiServiceImpl extends BaseWifiService {
         List<WifiConfiguration> networks = mWifiThreadRunner.call(
                 () -> mWifiConfigManager.getSavedNetworks(Process.WIFI_UID),
                 Collections.emptyList());
-        EventLog.writeEvent(0x534e4554, "231985227", -1,
-                "Remove certs for factory reset");
         for (WifiConfiguration network : networks) {
-            if (network.isEnterprise()) {
-                mWifiThreadRunner.run(() ->
-                        mWifiInjector.getWifiKeyStore()
-                                .removeKeys(network.enterpriseConfig, true));
-            }
             removeNetwork(network.networkId, packageName);
         }
         // Delete all Passpoint configurations
