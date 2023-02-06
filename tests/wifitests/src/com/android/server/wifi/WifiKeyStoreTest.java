@@ -96,7 +96,7 @@ public class WifiKeyStoreTest {
     public void testRemoveKeysForAppInstalledCerts() {
         when(mWifiEnterpriseConfig.isAppInstalledDeviceKeyAndCert()).thenReturn(true);
         when(mWifiEnterpriseConfig.isAppInstalledCaCert()).thenReturn(true);
-        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig, false);
+        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig);
 
         // Method calls the KeyStore#delete method 4 times, user key, user cert, and 2 CA cert
         verify(mKeyStore).delete(Credentials.USER_PRIVATE_KEY + USER_CERT_ALIAS, Process.WIFI_UID);
@@ -115,7 +115,7 @@ public class WifiKeyStoreTest {
     public void testRemoveKeysForMixedInstalledCerts1() {
         when(mWifiEnterpriseConfig.isAppInstalledDeviceKeyAndCert()).thenReturn(true);
         when(mWifiEnterpriseConfig.isAppInstalledCaCert()).thenReturn(false);
-        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig, false);
+        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig);
 
         // Method calls the KeyStore#delete method 2 times: user key and user cert
         verify(mKeyStore).delete(Credentials.USER_PRIVATE_KEY + USER_CERT_ALIAS, Process.WIFI_UID);
@@ -131,7 +131,7 @@ public class WifiKeyStoreTest {
     public void testRemoveKeysForMixedInstalledCerts2() {
         when(mWifiEnterpriseConfig.isAppInstalledDeviceKeyAndCert()).thenReturn(false);
         when(mWifiEnterpriseConfig.isAppInstalledCaCert()).thenReturn(true);
-        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig, false);
+        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig);
 
         // Method calls the KeyStore#delete method 2 times: 2 CA certs
         verify(mKeyStore).delete(Credentials.CA_CERTIFICATE + USER_CA_CERT_ALIAS[0],
@@ -148,27 +148,7 @@ public class WifiKeyStoreTest {
     public void testRemoveKeysForUserInstalledCerts() {
         when(mWifiEnterpriseConfig.isAppInstalledDeviceKeyAndCert()).thenReturn(false);
         when(mWifiEnterpriseConfig.isAppInstalledCaCert()).thenReturn(false);
-        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig, false);
-        verifyNoMoreInteractions(mKeyStore);
-    }
-
-    /**
-     * Verifies that keys and certs are removed when they were not installed by the user
-     * when forceRemove is true.
-     */
-    @Test
-    public void testForceRemoveKeysForUserInstalledCerts() throws Exception {
-        when(mWifiEnterpriseConfig.isAppInstalledDeviceKeyAndCert()).thenReturn(false);
-        when(mWifiEnterpriseConfig.isAppInstalledCaCert()).thenReturn(false);
-        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig, true);
-
-        // KeyStore#delete() is called three time for user cert, user key, and 2 CA cert.
-        verify(mKeyStore).delete(Credentials.USER_PRIVATE_KEY + USER_CERT_ALIAS, Process.WIFI_UID);
-        verify(mKeyStore).delete(Credentials.USER_CERTIFICATE + USER_CERT_ALIAS, Process.WIFI_UID);
-        verify(mKeyStore).delete(Credentials.CA_CERTIFICATE + USER_CA_CERT_ALIAS[0],
-                Process.WIFI_UID);
-        verify(mKeyStore).delete(Credentials.CA_CERTIFICATE + USER_CA_CERT_ALIAS[1],
-                Process.WIFI_UID);
+        mWifiKeyStore.removeKeys(mWifiEnterpriseConfig);
         verifyNoMoreInteractions(mKeyStore);
     }
 

@@ -2948,13 +2948,7 @@ public class WifiServiceImpl extends BaseWifiService {
                 List<WifiConfiguration> networks = mClientModeImpl.syncGetConfiguredNetworks(
                         Binder.getCallingUid(), mClientModeImplChannel, Process.WIFI_UID);
                 if (networks != null) {
-                    EventLog.writeEvent(0x534e4554, "231985227", -1,
-                            "Remove certs for factory reset");
                     for (WifiConfiguration config : networks) {
-                        if (config.isEnterprise()) {
-                            mWifiInjector.getWifiKeyStore().removeKeys(
-                                    config.enterpriseConfig, true);
-                        }
                         removeNetwork(config.networkId, packageName);
                     }
                 }

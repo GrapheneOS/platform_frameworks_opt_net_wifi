@@ -259,7 +259,6 @@ public class WifiServiceImplTest {
     @Mock WifiScoreCard mWifiScoreCard;
     @Mock PasspointManager mPasspointManager;
     @Mock IDppCallback mDppCallback;
-    @Mock WifiKeyStore mWifiKeyStore;
 
     @Spy FakeWifiLog mLog;
 
@@ -400,7 +399,6 @@ public class WifiServiceImplTest {
         when(mContext.checkPermission(eq(android.Manifest.permission.NETWORK_MANAGED_PROVISIONING),
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
         when(mScanRequestProxy.startScan(anyInt(), anyString())).thenReturn(true);
-        when(mWifiInjector.getWifiKeyStore()).thenReturn(mWifiKeyStore);
 
         ArgumentCaptor<SoftApCallback> softApCallbackCaptor =
                 ArgumentCaptor.forClass(SoftApCallback.class);
@@ -3537,11 +3535,7 @@ public class WifiServiceImplTest {
                 anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mWifiPermissionsUtil.checkNetworkSettingsPermission(anyInt())).thenReturn(true);
         final String fqdn = "example.com";
-        WifiConfiguration openNetwork = WifiConfigurationTestUtil.createOpenNetwork();
-        openNetwork.networkId = TEST_NETWORK_ID;
-        WifiConfiguration eapNetwork = WifiConfigurationTestUtil.createEapNetwork(
-                WifiEnterpriseConfig.Eap.TLS, WifiEnterpriseConfig.Phase2.NONE);
-        eapNetwork.networkId = TEST_NETWORK_ID + 1;
+        WifiConfiguration network = WifiConfigurationTestUtil.createOpenNetwork();
         PasspointConfiguration config = new PasspointConfiguration();
         HomeSp homeSp = new HomeSp();
         homeSp.setFqdn(fqdn);
@@ -3549,16 +3543,14 @@ public class WifiServiceImplTest {
 
         mWifiServiceImpl.mClientModeImplChannel = mAsyncChannel;
         when(mClientModeImpl.syncGetConfiguredNetworks(anyInt(), any(), anyInt()))
-                .thenReturn(Arrays.asList(openNetwork, eapNetwork));
+                .thenReturn(Arrays.asList(network));
         when(mClientModeImpl.syncGetPasspointConfigs(any())).thenReturn(Arrays.asList(config));
 
         mWifiServiceImpl.factoryReset(TEST_PACKAGE_NAME);
         mLooper.dispatchAll();
 
         verify(mWifiApConfigStore).setApConfiguration(null);
-        verify(mClientModeImpl).syncRemoveNetwork(mAsyncChannel, openNetwork.networkId);
-        verify(mClientModeImpl).syncRemoveNetwork(mAsyncChannel, eapNetwork.networkId);
-        verify(mWifiKeyStore).removeKeys(eapNetwork.enterpriseConfig, true);
+        verify(mClientModeImpl).syncRemoveNetwork(mAsyncChannel, network.networkId);
         verify(mClientModeImpl).syncRemovePasspointConfig(mAsyncChannel, fqdn);
         verify(mWifiConfigManager).clearDeletedEphemeralNetworks();
         verify(mClientModeImpl).clearNetworkRequestUserApprovedAccessPoints();

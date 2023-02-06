@@ -342,7 +342,7 @@ public class WifiNetworkSuggestionsManagerTest {
         assertEquals(WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS,
                 mWifiNetworkSuggestionsManager.remove(Arrays.asList(removingSuggestion),
                         TEST_UID_1, TEST_PACKAGE_1));
-        verify(mWifiKeyStore).removeKeys(any(), eq(false));
+        verify(mWifiKeyStore).removeKeys(any());
     }
     /**
      * Verify successful replace (add,remove, add) of network suggestions.

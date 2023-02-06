@@ -745,9 +745,4 @@ public class WifiInjector {
     public IpMemoryStore getIpMemoryStore() {
         return mIpMemoryStore;
     }
-
-    @NonNull
-    public WifiKeyStore getWifiKeyStore() {
-        return mWifiKeyStore;
-    }
 }
