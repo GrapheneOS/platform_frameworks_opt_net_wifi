@@ -848,4 +848,9 @@ public class WifiInjector {
     public DeviceConfigFacade getDeviceConfigFacade() {
         return mDeviceConfigFacade;
     }
+
+    @NonNull
+    public WifiKeyStore getWifiKeyStore() {
+        return mWifiKeyStore;
+    }
 }
