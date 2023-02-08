@@ -481,7 +481,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             return Utils.getBandString(mContext, mCurrentHomeScanResults.get(0).frequency);
         }
         if (!mCurrentRoamingScanResults.isEmpty()) {
-            return Utils.getBandString(mContext, mCurrentHomeScanResults.get(0).frequency);
+            return Utils.getBandString(mContext, mCurrentRoamingScanResults.get(0).frequency);
         }
         return "";
     }
