@@ -22,8 +22,6 @@ import static com.android.wifitrackerlib.OsuWifiEntry.osuProviderToOsuWifiEntryK
 import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
-import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
-import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTING;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 
@@ -90,10 +88,12 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
     // Lock object for data returned by the public API
     private final Object mLock = new Object();
-    // List representing return value of the getWifiEntries() API
-    @GuardedBy("mLock") private final List<WifiEntry> mWifiEntries = new ArrayList<>();
-    // Reference to the WifiEntry representing the network that is currently connected to
-    private WifiEntry mConnectedWifiEntry;
+    // List representing the return value of the getActiveWifiEntries() API
+    @GuardedBy("mLock")
+    @NonNull private final List<WifiEntry> mActiveWifiEntries = new ArrayList<>();
+    // List representing the return value of the getWifiEntries() API
+    @GuardedBy("mLock")
+    @NonNull private final List<WifiEntry> mWifiEntries = new ArrayList<>();
     // NetworkRequestEntry representing a network that was connected through the NetworkRequest API
     private NetworkRequestEntry mNetworkRequestEntry;
 
@@ -171,15 +171,36 @@ public class WifiPickerTracker extends BaseWifiTracker {
     }
 
     /**
-     * Returns the WifiEntry representing the current connection.
+     * Returns the WifiEntry representing the current primary connection.
      */
     @AnyThread
     public @Nullable WifiEntry getConnectedWifiEntry() {
-        return mConnectedWifiEntry;
+        synchronized (mLock) {
+            if (mActiveWifiEntries.isEmpty()) {
+                return null;
+            }
+            // Primary entry is sorted to be first.
+            WifiEntry primaryWifiEntry = mActiveWifiEntries.get(0);
+            if (!primaryWifiEntry.isPrimaryNetwork()) {
+                return null;
+            }
+            return primaryWifiEntry;
+        }
     }
 
     /**
-     * Returns a list of in-range WifiEntries.
+     * Returns a list of all connected/connecting Wi-Fi entries, including the primary and any
+     * secondary connections.
+     */
+    @AnyThread
+    public @NonNull List<WifiEntry> getActiveWifiEntries() {
+        synchronized (mLock) {
+            return new ArrayList<>(mActiveWifiEntries);
+        }
+    }
+
+    /**
+     * Returns a list of disconnected, in-range WifiEntries.
      *
      * The currently connected entry is omitted and may be accessed through
      * {@link #getConnectedWifiEntry()}
@@ -241,7 +262,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
     }
 
     private void clearAllWifiEntries() {
-        mConnectedWifiEntry = null;
         mStandardWifiEntryCache.clear();
         mSuggestedWifiEntryCache.clear();
         mPasspointWifiEntryCache.clear();
@@ -408,34 +428,21 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     protected void updateWifiEntries() {
         synchronized (mLock) {
-            mConnectedWifiEntry = mStandardWifiEntryCache.stream().filter(entry -> {
-                final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
-                return connectedState == CONNECTED_STATE_CONNECTED
-                        || connectedState == CONNECTED_STATE_CONNECTING;
-            }).findAny().orElse(null /* other */);
-            if (mConnectedWifiEntry == null) {
-                mConnectedWifiEntry = mSuggestedWifiEntryCache.stream().filter(entry -> {
-                    final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
-                    return connectedState == CONNECTED_STATE_CONNECTED
-                            || connectedState == CONNECTED_STATE_CONNECTING;
-                }).findAny().orElse(null /* other */);
+            mActiveWifiEntries.clear();
+            mActiveWifiEntries.addAll(mStandardWifiEntryCache);
+            mActiveWifiEntries.addAll(mSuggestedWifiEntryCache);
+            mActiveWifiEntries.addAll(mPasspointWifiEntryCache.values());
+            if (mNetworkRequestEntry != null) {
+                mActiveWifiEntries.add(mNetworkRequestEntry);
             }
-            if (mConnectedWifiEntry == null) {
-                mConnectedWifiEntry = mPasspointWifiEntryCache.values().stream().filter(entry -> {
-                    final @WifiEntry.ConnectedState int connectedState = entry.getConnectedState();
-                    return connectedState == CONNECTED_STATE_CONNECTED
-                            || connectedState == CONNECTED_STATE_CONNECTING;
-                }).findAny().orElse(null /* other */);
-            }
-            if (mConnectedWifiEntry == null && mNetworkRequestEntry != null
-                    && mNetworkRequestEntry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
-                mConnectedWifiEntry = mNetworkRequestEntry;
-            }
+            mActiveWifiEntries.removeIf(entry ->
+                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED);
+            mActiveWifiEntries.sort(WifiEntry.WIFI_PICKER_COMPARATOR);
             mWifiEntries.clear();
             final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =
                     mSuggestedWifiEntryCache.stream()
                             .filter(entry -> entry.isUserShareable()
-                                    || entry == mConnectedWifiEntry)
+                                    || mActiveWifiEntries.contains(entry))
                             .map(entry -> entry.getStandardWifiEntryKey().getScanResultKey())
                             .collect(Collectors.toSet());
             Set<String> passpointUtf8Ssids = new ArraySet<>();
@@ -444,7 +451,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             }
             for (StandardWifiEntry entry : mStandardWifiEntryCache) {
                 entry.updateAdminRestrictions();
-                if (entry == mConnectedWifiEntry) {
+                if (mActiveWifiEntries.contains(entry)) {
                     continue;
                 }
                 if (!entry.isSaved()) {
@@ -471,7 +478,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             Collections.sort(mWifiEntries, WifiEntry.WIFI_PICKER_COMPARATOR);
             if (isVerboseLoggingEnabled()) {
-                Log.v(TAG, "Connected WifiEntry: " + mConnectedWifiEntry);
+                Log.v(TAG, "Connected WifiEntries: "
+                        + Arrays.toString(mActiveWifiEntries.toArray()));
                 Log.v(TAG, "Updated WifiEntries: " + Arrays.toString(mWifiEntries.toArray()));
             }
         }
