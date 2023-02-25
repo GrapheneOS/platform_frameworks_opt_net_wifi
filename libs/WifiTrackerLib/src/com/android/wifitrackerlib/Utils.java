@@ -226,15 +226,16 @@ public class Utils {
         }
     }
 
-    static String getConnectedDescription(Context context,
-            WifiConfiguration wifiConfiguration,
-            NetworkCapabilities networkCapabilities,
+    static String getConnectedDescription(@NonNull Context context,
+            @Nullable WifiConfiguration wifiConfiguration,
+            @Nullable NetworkCapabilities networkCapabilities,
             boolean isDefaultNetwork,
             boolean isLowQuality,
-            ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
+            @Nullable ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
         final StringJoiner sj = new StringJoiner(context.getString(
                 R.string.wifitrackerlib_summary_separator));
 
+        boolean shouldShowConnected = isDefaultNetwork;
         if (wifiConfiguration != null
                 && (wifiConfiguration.fromWifiNetworkSuggestion
                 || wifiConfiguration.fromWifiNetworkSpecifier)) {
@@ -249,25 +250,58 @@ public class Utils {
                     sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
                             suggestionOrSpecifierLabel));
                 }
+                shouldShowConnected = false;
             }
         }
 
         if (isLowQuality) {
             sj.add(context.getString(R.string.wifi_connected_low_quality));
+            shouldShowConnected = false;
         }
 
         // For displaying network capability info, such as captive portal or no internet
-        String networkCapabilitiesInformation = getCurrentNetworkCapabilitiesInformation(
-                context,  networkCapabilities, connectivityReport,
-                wifiConfiguration != null && wifiConfiguration.isNoInternetAccessExpected());
-        if (!TextUtils.isEmpty(networkCapabilitiesInformation)) {
-            sj.add(networkCapabilitiesInformation);
+        if (networkCapabilities != null) {
+            if (networkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) {
+                // "Sign in to network"
+                sj.add(context.getString(context.getResources()
+                        .getIdentifier("network_available_sign_in", "string", "android")));
+                shouldShowConnected = false;
+            } else if (networkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)) {
+                // "Limited connection..."
+                sj.add(context.getString(
+                        R.string.wifitrackerlib_wifi_limited_connection));
+                shouldShowConnected = false;
+            } else if (!networkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+                boolean noInternetExpected = wifiConfiguration != null
+                        && wifiConfiguration.isNoInternetAccessExpected();
+                if (connectivityReport == null && !noInternetExpected) {
+                    // "Checking for internet access..."
+                    sj.add(context.getString(R.string.wifitrackerlib_checking_for_internet_access));
+                    shouldShowConnected = false;
+                } else if (networkCapabilities.isPrivateDnsBroken()) {
+                    // "Private DNS server cannot be accessed"
+                    sj.add(context.getString(R.string.wifitrackerlib_private_dns_broken));
+                    shouldShowConnected = false;
+                } else if (noInternetExpected) {
+                    // "Connected to device. Can't provide internet."
+                    sj.add(context.getString(
+                            R.string.wifitrackerlib_wifi_connected_cannot_provide_internet));
+                    shouldShowConnected = false;
+                } else {
+                    // "No internet access"
+                    sj.add(context.getString(R.string.wifitrackerlib_wifi_no_internet));
+                }
+            }
         }
 
-        // Default to "Connected" if nothing else to display
-        if (sj.length() == 0 && isDefaultNetwork) {
-            return context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
-                    [DetailedState.CONNECTED.ordinal()];
+        // Show "Connected" first if we haven't hidden it due to other strings.
+        if (shouldShowConnected) {
+            return new StringJoiner(context.getString(R.string.wifitrackerlib_summary_separator))
+                    .add(context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
+                            [DetailedState.CONNECTED.ordinal()]).merge(sj).toString();
         }
 
         return sj.toString();
@@ -515,46 +549,6 @@ public class Utils {
                     .append(disableReasonCounter);
         }
         return description.toString();
-    }
-
-    static String getCurrentNetworkCapabilitiesInformation(@Nullable Context context,
-            @Nullable NetworkCapabilities networkCapabilities,
-            @Nullable ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport,
-            boolean noInternetExpected) {
-        if (context == null || networkCapabilities == null) {
-            return "";
-        }
-
-        if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) {
-            return context.getString(context.getResources()
-                    .getIdentifier("network_available_sign_in", "string", "android"));
-        }
-
-        if (networkCapabilities.hasCapability(
-                NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)) {
-            return context.getString(R.string.wifitrackerlib_wifi_limited_connection);
-        }
-
-        if (!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
-            if (connectivityReport == null && !noInternetExpected) {
-                return context.getString(R.string.wifitrackerlib_checking_for_internet_access);
-            }
-            if (networkCapabilities.isPrivateDnsBroken()) {
-                return context.getString(R.string.wifitrackerlib_private_dns_broken);
-            }
-            if (noInternetExpected) {
-                return context.getString(
-                        R.string.wifitrackerlib_wifi_connected_cannot_provide_internet);
-            }
-            // Connected / No internet access
-            final StringJoiner sj = new StringJoiner(context.getString(
-                    R.string.wifitrackerlib_summary_separator));
-            sj.add(context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
-                    [DetailedState.CONNECTED.ordinal()]);
-            sj.add(context.getString(R.string.wifitrackerlib_wifi_no_internet));
-            return sj.toString();
-        }
-        return "";
     }
 
     /**

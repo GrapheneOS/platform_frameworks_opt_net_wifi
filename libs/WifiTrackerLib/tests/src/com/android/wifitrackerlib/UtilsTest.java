@@ -39,6 +39,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -50,6 +51,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.NetworkInfo;
+import android.net.ConnectivityDiagnosticsManager;
+import android.net.NetworkCapabilities;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -83,6 +86,31 @@ import java.util.Set;
 
 @Config(shadows = {ShadowSystem.class})
 public class UtilsTest {
+    private static final int ID_NETWORK_AVAILABLE_SIGN_IN = 1;
+    private static final String STRING_SUMMARY_SEPARATOR = " / ";
+    private static final String STRING_AVAILABLE_VIA_APP = "available_via_";
+    private static final String STRING_CONNECTED_VIA_APP = "connected_via_";
+    private static final String STRING_CONNECTED_LOW_QUALITY = "low_quality";
+    private static final String STRING_NETWORK_AVAILABLE_SIGN_IN = "network_available_sign_in";
+    private static final String STRING_LIMITED_CONNECTION = "limited_connection";
+    private static final String STRING_CHECKING_FOR_INTERNET_ACCESS =
+            "checking_for_internet_access";
+    private static final String STRING_PRIVATE_DNS_BROKEN = "private_dns_broken";
+    private static final String STRING_CONNECTED_CANNOT_PROVIDE_INTERNET =
+            "connected_cannot_provide_internet";
+    private static final String STRING_NO_INTERNET = "no_internet";
+
+    private static final String STRING_WIFI_STATUS_IDLE = "";
+    private static final String STRING_WIFI_STATUS_SCANNING = "scanning";
+    private static final String STRING_WIFI_STATUS_CONNECTING = "connecting";
+    private static final String STRING_WIFI_STATUS_AUTHENTICATING = "authenticating";
+    private static final String STRING_WIFI_STATUS_OBTAINING_IP_ADDRESS = "obtaining_ip_address";
+    private static final String STRING_WIFI_STATUS_CONNECTED = "connected";
+    private static final String[] STRING_ARRAY_WIFI_STATUS = new String[]{STRING_WIFI_STATUS_IDLE,
+            STRING_WIFI_STATUS_SCANNING, STRING_WIFI_STATUS_CONNECTING,
+            STRING_WIFI_STATUS_AUTHENTICATING, STRING_WIFI_STATUS_OBTAINING_IP_ADDRESS,
+            STRING_WIFI_STATUS_CONNECTED};
+
     private static final String LABEL_AUTO_CONNECTION_DISABLED = "Auto-Connection disabled";
     private static final String LABEL_METERED = "Metered";
     private static final String LABEL_UNMETERED = "Unmetered";
@@ -113,7 +141,6 @@ public class UtilsTest {
         TestLooper testLooper = new TestLooper();
         mTestHandler = new Handler(testLooper.getLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
         when(mMockContext.getText(R.string.wifitrackerlib_imsi_protection_warning))
                 .thenReturn("IMSI");
         when(mMockContext.getSystemService(Context.CARRIER_CONFIG_SERVICE))
@@ -129,6 +156,30 @@ public class UtilsTest {
         when(mMockContext.getContentResolver()).thenReturn(mContentResolver);
         when(mContentResolver.getUserId()).thenReturn(0);
         when(mMockInjector.getNoAttributionAnnotationPackages()).thenReturn(Collections.emptySet());
+        when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+                .thenReturn(STRING_ARRAY_WIFI_STATUS);
+        when(mMockResources.getIdentifier(eq("network_available_sign_in"), eq("string"),
+                eq("android"))).thenReturn(ID_NETWORK_AVAILABLE_SIGN_IN);
+        when(mMockContext.getString(ID_NETWORK_AVAILABLE_SIGN_IN))
+                .thenReturn(STRING_NETWORK_AVAILABLE_SIGN_IN);
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(STRING_SUMMARY_SEPARATOR);
+        when(mMockContext.getString(R.string.wifi_connected_low_quality))
+                .thenReturn(STRING_CONNECTED_LOW_QUALITY);
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_limited_connection))
+                .thenReturn(STRING_LIMITED_CONNECTION);
+        when(mMockContext.getString(R.string.wifitrackerlib_checking_for_internet_access))
+                .thenReturn(STRING_CHECKING_FOR_INTERNET_ACCESS);
+        when(mMockContext.getString(R.string.wifitrackerlib_private_dns_broken))
+                .thenReturn(STRING_PRIVATE_DNS_BROKEN);
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_connected_cannot_provide_internet))
+                .thenReturn(STRING_CONNECTED_CANNOT_PROVIDE_INTERNET);
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_no_internet))
+                .thenReturn(STRING_NO_INTERNET);
+        when(mMockContext.getString(eq(R.string.wifitrackerlib_connected_via_app),
+                any())).thenAnswer((answer) -> STRING_CONNECTED_VIA_APP + answer.getArguments()[1]);
+        when(mMockContext.getString(eq(R.string.wifitrackerlib_available_via_app),
+                any())).thenAnswer((answer) -> STRING_AVAILABLE_VIA_APP + answer.getArguments()[1]);
     }
 
     @Test
@@ -580,5 +631,143 @@ public class UtilsTest {
 
         entry.updateConnectionInfo(mockWifiInfo, mockNetworkInfo);
         return entry;
+    }
+
+    @Test
+    public void testGetConnectedDescription() {
+        WifiConfiguration wifiConfig = mock(WifiConfiguration.class);
+        NetworkCapabilities networkCapabilities = mock(NetworkCapabilities.class);
+        ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport = mock(
+                ConnectivityDiagnosticsManager.ConnectivityReport.class);
+
+        // Not default. Do not show "Connected"
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                null,
+                null,
+                false,
+                false,
+                null)).isEmpty();
+
+        // Default but no info, return "Connected"
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                null,
+                null,
+                true,
+                false,
+                null)).isEqualTo(STRING_WIFI_STATUS_CONNECTED);
+
+        // Low quality
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                null,
+                null,
+                false,
+                true,
+                null)).isEqualTo(STRING_CONNECTED_LOW_QUALITY);
+
+        // No internet access
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                null,
+                networkCapabilities,
+                true,
+                false,
+                connectivityReport)).isEqualTo(STRING_WIFI_STATUS_CONNECTED
+                + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
+
+        // Connected to device. Can't provide internet
+        when(wifiConfig.isNoInternetAccessExpected()).thenReturn(true);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                wifiConfig,
+                networkCapabilities,
+                true,
+                false,
+                connectivityReport)).isEqualTo(STRING_CONNECTED_CANNOT_PROVIDE_INTERNET);
+
+        // Private DNS server cannot be accessed
+        when(networkCapabilities.isPrivateDnsBroken()).thenReturn(true);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                wifiConfig,
+                networkCapabilities,
+                true,
+                false,
+                connectivityReport)).isEqualTo(STRING_PRIVATE_DNS_BROKEN);
+
+        // Checking for internet access...
+        when(wifiConfig.isNoInternetAccessExpected()).thenReturn(false);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                wifiConfig,
+                networkCapabilities,
+                true,
+                false,
+                null)).isEqualTo(STRING_CHECKING_FOR_INTERNET_ACCESS);
+
+        // Limited connection
+        when(networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)).thenReturn(true);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                wifiConfig,
+                networkCapabilities,
+                true,
+                false,
+                null)).isEqualTo(STRING_LIMITED_CONNECTION);
+
+        // Sign in to network
+        when(networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                wifiConfig,
+                networkCapabilities,
+                true,
+                false,
+                null)).isEqualTo(STRING_NETWORK_AVAILABLE_SIGN_IN);
+
+        // Connected via app + No internet access
+        WifiConfiguration suggestionConfig = new WifiConfiguration();
+        suggestionConfig.fromWifiNetworkSuggestion = true;
+        suggestionConfig.creatorName = "app";
+        when(mApplicationInfo.loadLabel(any())).thenReturn("appLabel");
+        when(networkCapabilities.isPrivateDnsBroken()).thenReturn(false);
+        when(networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)).thenReturn(false);
+        when(networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(false);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                suggestionConfig,
+                networkCapabilities,
+                true,
+                false,
+                connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
+                + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
+
+        // Connected via app + Low quality + No internet access
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                suggestionConfig,
+                networkCapabilities,
+                true,
+                true,
+                connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
+                + STRING_SUMMARY_SEPARATOR + STRING_CONNECTED_LOW_QUALITY
+                + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
+
+        // Available via app + Low quality + No internet access
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                suggestionConfig,
+                networkCapabilities,
+                false,
+                true,
+                connectivityReport)).isEqualTo(STRING_AVAILABLE_VIA_APP + "appLabel"
+                + STRING_SUMMARY_SEPARATOR + STRING_CONNECTED_LOW_QUALITY
+                + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
     }
 }
