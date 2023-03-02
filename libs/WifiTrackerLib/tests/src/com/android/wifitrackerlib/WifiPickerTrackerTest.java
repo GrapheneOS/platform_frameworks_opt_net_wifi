@@ -634,6 +634,63 @@ public class WifiPickerTrackerTest {
     }
 
     /**
+     * Tests that a connected WifiEntry's isDefaultNetwork() will reflect updates from the default
+     * network changing.
+     */
+    @Test
+    public void testGetConnectedEntry_defaultNetworkChanges_isDefaultNetworkChanges() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager)
+                .registerNetworkCallback(any(), mNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+
+        // No default
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
+
+        // Cell is default
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mock(Network.class),
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
+
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
+
+        // Other Wi-Fi network is default
+        Network otherWifiNetwork = mock(Network.class);
+        WifiInfo otherWifiInfo = mock(WifiInfo.class);
+        when(otherWifiInfo.getNetworkId()).thenReturn(2);
+        NetworkCapabilities otherNetworkCapabilities = mock(NetworkCapabilities.class);
+        when(otherNetworkCapabilities.getTransportInfo()).thenReturn(otherWifiInfo);
+        when(otherNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
+                .thenReturn(true);
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(otherWifiNetwork,
+                otherNetworkCapabilities);
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
+
+        // This Wi-Fi network is default
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
+                mMockNetworkCapabilities);
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isTrue();
+
+        // Lose the default network
+        mDefaultNetworkCallbackCaptor.getValue().onLost(mock(Network.class));
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
+    }
+
+    /**
      * Tests that a connected WifiEntry will return "Low quality" as the summary if Wifi is
      * validated but cell is the default route.
      */
@@ -675,7 +732,6 @@ public class WifiPickerTrackerTest {
         // Trigger a validation callback for the non-primary Wifi network.
         MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
         try {
-            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(any()));
             WifiInfo nonPrimaryWifiInfo = Mockito.mock(WifiInfo.class);
             when(nonPrimaryWifiInfo.makeCopy(anyLong())).thenReturn(nonPrimaryWifiInfo);
             NetworkCapabilities nonPrimaryCap = new NetworkCapabilities.Builder()
@@ -699,6 +755,10 @@ public class WifiPickerTrackerTest {
 
         // Cell default + primary network validation should trigger low quality
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isEqualTo(lowQuality);
+
+        // Lose the default network. Low quality should disappear, since cell isn't default anymore
+        mDefaultNetworkCallbackCaptor.getValue().onLost(mock(Network.class));
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
     }
 
     /**
@@ -1709,10 +1769,8 @@ public class WifiPickerTrackerTest {
                     .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
             // Wifi isn't default yet, so isDefaultNetwork returns false
             assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
-            doReturn(true).when(() -> NonSdkApiWrapper.isVcnOverWifi(any()));
             mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
-                    new NetworkCapabilities.Builder()
-                            .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
+                    mMockVcnNetworkCapabilities);
             // Now VCN-over-Wifi is default, so isDefaultNetwork returns true
             assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
         } finally {
@@ -1737,52 +1795,6 @@ public class WifiPickerTrackerTest {
         } finally {
             session.finishMocking();
         }
-    }
-
-    /**
-     * Tests that roaming from one network to another will update the new network as the default
-     * network if the default route did not change away from Wifi during the roam. This happens if
-     * the new network was switched to via MBB.
-     */
-    @Test
-    public void testGetConnectedEntry_roamedButDefaultRouteDidNotChange_entryIsDefaultNetwork() {
-        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
-        final WifiConfiguration config1 = new WifiConfiguration();
-        config1.SSID = "\"ssid1\"";
-        config1.networkId = 1;
-        final WifiConfiguration config2 = new WifiConfiguration();
-        config2.SSID = "\"ssid2\"";
-        config2.networkId = 2;
-        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
-                .thenReturn(Arrays.asList(config1, config2));
-        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
-        when(mMockWifiInfo.getRssi()).thenReturn(-50);
-        wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
-        verify(mMockConnectivityManager).registerNetworkCallback(
-                any(), mNetworkCallbackCaptor.capture(), any());
-        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
-                mDefaultNetworkCallbackCaptor.capture(), any());
-        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
-                mDefaultNetworkCallbackCaptor.capture(), any());
-
-        // Set the default route to wifi
-        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
-                mMockNetwork, mMockNetworkCapabilities);
-        WifiEntry connectedEntry = wifiPickerTracker.getConnectedWifiEntry();
-        assertThat(connectedEntry.getWifiConfiguration()).isEqualTo(config1);
-        assertThat(connectedEntry.isDefaultNetwork()).isTrue();
-
-        // Connect to new network but don't change the default route
-        mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
-        when(mMockWifiInfo.getNetworkId()).thenReturn(2);
-        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
-                mMockNetwork, mMockNetworkCapabilities);
-
-        // Verify that the newly connected network is still marked as the default network
-        connectedEntry = wifiPickerTracker.getConnectedWifiEntry();
-        assertThat(connectedEntry.getWifiConfiguration()).isEqualTo(config2);
-        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isTrue();
     }
 
     /**

@@ -152,7 +152,7 @@ public class PasspointWifiEntryTest {
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-        entry.setIsDefaultNetwork(true);
+        entry.onDefaultNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
     }
@@ -176,7 +176,6 @@ public class PasspointWifiEntryTest {
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-        entry.setIsDefaultNetwork(false);
 
         assertThat(entry.getSummary()).isEqualTo("");
     }
@@ -248,7 +247,7 @@ public class PasspointWifiEntryTest {
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
         // Not Validated, Default
-        entry.setIsDefaultNetwork(true);
+        entry.onDefaultNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
@@ -260,7 +259,9 @@ public class PasspointWifiEntryTest {
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
         // Validated, Not Default
-        entry.setIsDefaultNetwork(false);
+        Network otherNetwork = mock(Network.class);
+        when(otherNetwork.getNetId()).thenReturn(2);
+        entry.onDefaultNetworkCapabilitiesChanged(otherNetwork, new NetworkCapabilities());
 
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
     }
