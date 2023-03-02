@@ -51,7 +51,6 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.net.NetworkInfo;
 import android.net.wifi.MloLink;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -119,14 +118,9 @@ public class UtilsTest {
     private Handler mTestHandler;
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
-        final StandardWifiEntry entry = new StandardWifiEntry(mMockInjector, mMockContext,
-                mTestHandler, new StandardWifiEntryKey(config), Collections.singletonList(config),
-                null, mMockWifiManager, false /* forSavedNetworksPage */);
-        final WifiInfo mockWifiInfo = mock(WifiInfo.class);
-        final NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
-
-        entry.updateConnectionInfo(mockWifiInfo, mockNetworkInfo);
-        return entry;
+        return new StandardWifiEntry(mMockInjector, mMockContext, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
     }
 
     @Before
