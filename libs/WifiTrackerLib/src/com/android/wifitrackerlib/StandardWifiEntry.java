@@ -51,8 +51,8 @@ import android.app.admin.DevicePolicyManager;
 import android.app.admin.WifiSsidPolicy;
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -207,7 +207,7 @@ public class StandardWifiEntry extends WifiEntry {
                         mTargetWifiConfig,
                         mNetworkCapabilities,
                         mIsDefaultNetwork,
-                        mIsLowQuality,
+                        isLowQuality(),
                         mConnectivityReport);
                 break;
             default:
@@ -421,7 +421,8 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized boolean canSignIn() {
-        return mNetworkCapabilities != null
+        return mNetwork != null
+                && mNetworkCapabilities != null
                 && mNetworkCapabilities.hasCapability(
                         NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
     }
@@ -429,11 +430,8 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     public void signIn(@Nullable SignInCallback callback) {
         if (canSignIn()) {
-            // canSignIn() implies that this WifiEntry is the currently connected network, so use
-            // getCurrentNetwork() to start the captive portal app.
             NonSdkApiWrapper.startCaptivePortalApp(
-                    mContext.getSystemService(ConnectivityManager.class),
-                    mWifiManager.getCurrentNetwork());
+                    mContext.getSystemService(ConnectivityManager.class), mNetwork);
         }
     }
 
@@ -758,8 +756,9 @@ public class StandardWifiEntry extends WifiEntry {
 
     @WorkerThread
     @Override
-    synchronized void updateNetworkCapabilities(@Nullable NetworkCapabilities capabilities) {
-        super.updateNetworkCapabilities(capabilities);
+    synchronized void onNetworkCapabilitiesChanged(
+            @NonNull Network network, @NonNull NetworkCapabilities capabilities) {
+        super.onNetworkCapabilitiesChanged(network, capabilities);
 
         // Auto-open an available captive portal if the user manually connected to this network.
         if (canSignIn() && mShouldAutoOpenCaptivePortal) {
@@ -899,8 +898,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @WorkerThread
-    protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo,
-            @NonNull NetworkInfo networkInfo) {
+    protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo) {
         if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
             return false;
         }
