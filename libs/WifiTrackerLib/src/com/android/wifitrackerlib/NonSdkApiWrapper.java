@@ -103,6 +103,17 @@ class NonSdkApiWrapper {
     }
 
     /**
+     * Tries to get WifiInfo from network capabilities if it is VCN-over-Wifi.
+     */
+    static WifiInfo getVcnWifiInfo(@NonNull NetworkCapabilities networkCapabilities) {
+        TransportInfo transportInfo = networkCapabilities.getTransportInfo();
+        if (transportInfo instanceof VcnTransportInfo) {
+            return ((VcnTransportInfo) transportInfo).getWifiInfo();
+        }
+        return null;
+    }
+
+    /**
      * Returns whether or not the device is in retail demo mode.
      */
     static boolean isDemoMode(@NonNull Context context) {
