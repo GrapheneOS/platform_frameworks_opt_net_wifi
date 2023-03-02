@@ -30,7 +30,6 @@ import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
-import android.net.TransportInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -115,8 +114,6 @@ public class BaseWifiTracker implements LifecycleObserver {
                 handleConfiguredNetworksChangedAction(intent);
             } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
                 handleNetworkStateChangedAction(intent);
-            } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
-                handleRssiChangedAction();
             } else if (TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED.equals(action)) {
                 handleDefaultSubscriptionChanged(intent.getIntExtra(
                         "subscription", SubscriptionManager.INVALID_SUBSCRIPTION_ID));
@@ -150,44 +147,39 @@ public class BaseWifiTracker implements LifecycleObserver {
             .build();
 
     private final ConnectivityManager.NetworkCallback mNetworkCallback =
-            new ConnectivityManager.NetworkCallback() {
+            new ConnectivityManager.NetworkCallback(
+                    ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO) {
                 @Override
                 @WorkerThread
                 public void onLinkPropertiesChanged(@NonNull Network network,
                         @NonNull LinkProperties lp) {
-                    if (!isPrimaryWifiNetwork(
-                            mConnectivityManager.getNetworkCapabilities(network))) {
-                        return;
-                    }
-                    mPrimaryNetwork = network;
-                    handleLinkPropertiesChanged(lp);
+                    handleLinkPropertiesChanged(network, lp);
                 }
 
                 @Override
                 @WorkerThread
                 public void onCapabilitiesChanged(@NonNull Network network,
                         @NonNull NetworkCapabilities networkCapabilities) {
-                    if (!isPrimaryWifiNetwork(networkCapabilities)) {
-                        return;
+                    if (isPrimaryWifiNetwork(networkCapabilities)) {
+                        mPrimaryNetwork = network;
+                        final boolean oldWifiValidated = mIsWifiValidated;
+                        mIsWifiValidated =
+                                networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED);
+                        if (isVerboseLoggingEnabled() && mIsWifiValidated != oldWifiValidated) {
+                            Log.v(mTag, "Is Wifi validated: " + mIsWifiValidated);
+                        }
                     }
-                    mPrimaryNetwork = network;
-                    final boolean oldWifiValidated = mIsWifiValidated;
-                    mIsWifiValidated = networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED);
-                    if (isVerboseLoggingEnabled() && mIsWifiValidated != oldWifiValidated) {
-                        Log.v(mTag, "Is Wifi validated: " + mIsWifiValidated);
-                    }
-                    handleNetworkCapabilitiesChanged(networkCapabilities);
+                    handleNetworkCapabilitiesChanged(network, networkCapabilities);
                 }
 
                 @Override
                 @WorkerThread
                 public void onLost(@NonNull Network network) {
-                    if (!isPrimaryWifiNetwork(
-                            mConnectivityManager.getNetworkCapabilities(network))) {
-                        return;
+                    if (network.equals(mPrimaryNetwork)) {
+                        mIsWifiValidated = false;
+                        mPrimaryNetwork = null;
                     }
-                    mIsWifiValidated = false;
-                    mPrimaryNetwork = null;
+                    handleNetworkLost(network);
                 }
             };
 
@@ -240,11 +232,11 @@ public class BaseWifiTracker implements LifecycleObserver {
         if (networkCapabilities == null) {
             return false;
         }
-        final TransportInfo transportInfo = networkCapabilities.getTransportInfo();
-        if (!(transportInfo instanceof WifiInfo)) {
+        WifiInfo wifiInfo = Utils.getWifiInfo(networkCapabilities);
+        if (wifiInfo == null) {
             return false;
         }
-        return NonSdkApiWrapper.isPrimary((WifiInfo) transportInfo);
+        return NonSdkApiWrapper.isPrimary(wifiInfo);
     }
 
     protected void updateDefaultRouteInfo() {
@@ -323,7 +315,6 @@ public class BaseWifiTracker implements LifecycleObserver {
             filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
             filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
             filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-            filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
             filter.addAction(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
             mContext.registerReceiver(mBroadcastReceiver, filter,
                     /* broadcastPermission */ null, mWorkerHandler);
@@ -441,18 +432,11 @@ public class BaseWifiTracker implements LifecycleObserver {
     }
 
     /**
-     * Handle receiving the WifiManager.RSSI_CHANGED_ACTION broadcast
+     * Handle link property changes for the given network.
      */
     @WorkerThread
-    protected void handleRssiChangedAction() {
-        // Do nothing.
-    }
-
-    /**
-     * Handle link property changes for the current connected Wifi network.
-     */
-    @WorkerThread
-    protected void handleLinkPropertiesChanged(@Nullable LinkProperties linkProperties) {
+    protected void handleLinkPropertiesChanged(
+            @NonNull Network network, @Nullable LinkProperties linkProperties) {
         // Do nothing.
     }
 
@@ -460,12 +444,21 @@ public class BaseWifiTracker implements LifecycleObserver {
      * Handle network capability changes for the current connected Wifi network.
      */
     @WorkerThread
-    protected void handleNetworkCapabilitiesChanged(@Nullable NetworkCapabilities capabilities) {
+    protected void handleNetworkCapabilitiesChanged(
+            @NonNull Network network, @NonNull NetworkCapabilities capabilities) {
         // Do nothing.
     }
 
     /**
-     * Handle network capability changes for the current connected Wifi network.
+     * Handle the loss of a network.
+     */
+    @WorkerThread
+    protected void handleNetworkLost(@NonNull Network network) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle receiving a connectivity report.
      */
     @WorkerThread
     protected void handleConnectivityReportAvailable(

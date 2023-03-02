@@ -16,6 +16,9 @@
 
 package com.android.wifitrackerlib;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
+import static com.android.wifitrackerlib.TestUtils.GOOD_RSSI;
 import static com.android.wifitrackerlib.TestUtils.buildScanResult;
 import static com.android.wifitrackerlib.TestUtils.buildWifiConfiguration;
 
@@ -24,7 +27,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,7 +38,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -52,6 +59,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -78,10 +86,14 @@ public class SavedNetworkTrackerTest {
     @Mock private Clock mMockClock;
     @Mock private SavedNetworkTracker.SavedNetworkTrackerCallback mMockCallback;
     @Mock private WifiInfo mMockWifiInfo;
-    @Mock private NetworkInfo mMockNetworkInfo;
+    @Mock private Network mMockNetwork;
+    @Mock private NetworkCapabilities mMockNetworkCapabilities;
+    @Mock private LinkProperties mMockLinkProperties;
 
     private TestLooper mTestLooper;
 
+    private final ArgumentCaptor<ConnectivityManager.NetworkCallback> mNetworkCallbackCaptor =
+            ArgumentCaptor.forClass(ConnectivityManager.NetworkCallback.class);
     private final ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
 
@@ -113,7 +125,23 @@ public class SavedNetworkTrackerTest {
         when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
         when(mMockWifiManager.isEnhancedOpenSupported()).thenReturn(true);
-        when(mMockConnectivityManager.getNetworkInfo(any())).thenReturn(mMockNetworkInfo);
+        when(mMockWifiManager.getCurrentNetwork()).thenReturn(mMockNetwork);
+        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
+        when(mMockWifiInfo.isPrimary()).thenReturn(true);
+        when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
+        when(mMockWifiInfo.getRssi()).thenReturn(WifiInfo.INVALID_RSSI);
+        when(mMockWifiInfo.makeCopy(anyLong())).thenReturn(mMockWifiInfo);
+        when(mMockNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
+                .thenReturn(true);
+        when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
+        // A real NetworkCapabilities is needed here in order to create a copy (with location info)
+        // using the NetworkCapabilities constructor in handleOnStart.
+        when(mMockConnectivityManager.getNetworkCapabilities(mMockNetwork))
+                .thenReturn(new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                        .build());
+        when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
+                .thenReturn(mMockLinkProperties);
         when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
                 .thenReturn(mMockConnectivityDiagnosticsManager);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
@@ -279,6 +307,7 @@ public class SavedNetworkTrackerTest {
     public void testGetSavedWifiEntries_scanResultsAvailableAction_changesLevel() {
         final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
         final WifiConfiguration config = buildWifiConfiguration("ssid");
+        config.networkId = 1;
         when(mMockWifiManager.getConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         savedNetworkTracker.onStart();
@@ -441,7 +470,6 @@ public class SavedNetworkTrackerTest {
                 .thenReturn(Collections.singletonList(config));
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(-50);
-        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
 
         savedNetworkTracker.onStart();
         mTestLooper.dispatchAll();
@@ -466,18 +494,16 @@ public class SavedNetworkTrackerTest {
                 buildScanResult("ssid", "bssid", START_MILLIS)));
         savedNetworkTracker.onStart();
         mTestLooper.dispatchAll();
-        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
-                any(), any(), any());
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
 
         final WifiEntry entry = savedNetworkTracker.getSavedWifiEntries().get(0);
         assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
 
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(-50);
-        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
-        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_NETWORK_INFO, mMockNetworkInfo));
+        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
+                mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
     }
@@ -498,23 +524,97 @@ public class SavedNetworkTrackerTest {
                 buildScanResult("ssid", "bssid", START_MILLIS)));
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(-50);
-        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
         savedNetworkTracker.onStart();
         mTestLooper.dispatchAll();
-        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
-                any(), any(), any());
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
 
         final WifiEntry entry = savedNetworkTracker.getSavedWifiEntries().get(0);
         assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
 
-        when(mMockNetworkInfo.getDetailedState())
-                .thenReturn(NetworkInfo.DetailedState.DISCONNECTED);
-        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION)
-                        .putExtra(WifiManager.EXTRA_NETWORK_INFO, mMockNetworkInfo));
+        mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
 
         assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+    }
 
+    /**
+     * Tests that getConnectedEntry() will return the correct primary network after an MBB sequence.
+     */
+    @Test
+    public void testConnectedEntry_mbbFlow_matchesNewPrimary() {
+        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        final WifiConfiguration mbbConfig = new WifiConfiguration();
+        mbbConfig.SSID = "\"otherSsid\"";
+        mbbConfig.networkId = 2;
+        when(mMockWifiManager.getConfiguredNetworks()).thenReturn(Arrays.asList(config, mbbConfig));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(config.networkId);
+        when(mMockWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
+
+        // Start off connected
+        List<WifiEntry> savedEntries = savedNetworkTracker.getSavedWifiEntries();
+        assertThat(savedEntries.size()).isEqualTo(2);
+        WifiEntry originalEntry = null;
+        WifiEntry mbbEntry = null;
+        for (WifiEntry entry : savedNetworkTracker.getSavedWifiEntries()) {
+            if (entry.getTitle().equals("ssid")) {
+                originalEntry = entry;
+            } else if (entry.getTitle().equals("otherSsid")) {
+                mbbEntry = entry;
+            }
+        }
+        assertThat(originalEntry).isNotNull();
+        assertThat(originalEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        assertThat(mbbEntry).isNotNull();
+        assertThat(mbbEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            // MBB network connected but not primary yet.
+            Network mbbNetwork = mock(Network.class);
+            NetworkCapabilities mbbNetworkCapabilities = mock(NetworkCapabilities.class);
+            WifiInfo mbbWifiInfo = mock(WifiInfo.class);
+            when(mbbWifiInfo.getNetworkId()).thenReturn(mbbConfig.networkId);
+            when(mbbWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
+            when(mbbNetworkCapabilities.getTransportInfo()).thenReturn(mbbWifiInfo);
+            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(mbbWifiInfo));
+            mNetworkCallbackCaptor.getValue()
+                    .onCapabilitiesChanged(mbbNetwork, mbbNetworkCapabilities);
+            // Original network should still be connected.
+            assertThat(originalEntry.getConnectedState())
+                    .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+            assertThat(mbbEntry.getConnectedState())
+                    .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+
+            // Original network becomes non-primary and MBB network becomes primary.
+            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
+            mNetworkCallbackCaptor.getValue()
+                    .onCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+            doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(mbbWifiInfo));
+            mNetworkCallbackCaptor.getValue()
+                    .onCapabilitiesChanged(mbbNetwork, mbbNetworkCapabilities);
+            // MBB network should be connected now.
+            assertThat(originalEntry.getConnectedState())
+                    .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+            assertThat(mbbEntry.getConnectedState())
+                    .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+
+            // Original network is lost. MBB network should still be connected
+            assertThat(originalEntry.getConnectedState())
+                    .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+            assertThat(mbbEntry.getConnectedState())
+                    .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+        } finally {
+            session.finishMocking();
+        }
     }
 
     @Test
@@ -533,7 +633,6 @@ public class SavedNetworkTrackerTest {
                 buildScanResult("ssid", "bssid", START_MILLIS)));
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(-50);
-        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
         savedNetworkTracker.onStart();
         mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
