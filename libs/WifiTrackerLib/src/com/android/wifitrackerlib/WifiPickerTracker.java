@@ -283,8 +283,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
         }
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
-        handleDefaultRouteChanged();
-
         updateWifiEntries();
     }
 
@@ -358,10 +356,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
             @NonNull Network network, @NonNull NetworkCapabilities capabilities) {
         updateNetworkCapabilities(network, capabilities);
         updateWifiEntries();
-        if (mConnectedWifiEntry != null
-                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
-        }
     }
 
     @WorkerThread
@@ -391,16 +385,18 @@ public class WifiPickerTracker extends BaseWifiTracker {
     }
 
     @WorkerThread
-    protected void handleDefaultRouteChanged() {
-        if (mConnectedWifiEntry != null) {
-            mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+    protected void handleDefaultNetworkCapabilitiesChanged(@NonNull Network network,
+            @NonNull NetworkCapabilities networkCapabilities) {
+        for (WifiEntry entry : getAllWifiEntries()) {
+            entry.onDefaultNetworkCapabilitiesChanged(network, networkCapabilities);
         }
-        if (mMergedCarrierEntry != null) {
-            if (mMergedCarrierEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-                mMergedCarrierEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-            }
-            mMergedCarrierEntry.updateIsCellDefaultRoute(mIsCellDefaultRoute);
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleDefaultNetworkLost() {
+        for (WifiEntry entry : getAllWifiEntries()) {
+            entry.onDefaultNetworkLost();
         }
     }
 
@@ -438,9 +434,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
             if (mConnectedWifiEntry == null && mNetworkRequestEntry != null
                     && mNetworkRequestEntry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
                 mConnectedWifiEntry = mNetworkRequestEntry;
-            }
-            if (mConnectedWifiEntry != null) {
-                mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
             }
             mWifiEntries.clear();
             final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =

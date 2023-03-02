@@ -739,7 +739,7 @@ public class StandardWifiEntryTest {
         when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
 
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-        entry.setIsDefaultNetwork(true);
+        entry.onDefaultNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
     }
@@ -769,7 +769,9 @@ public class StandardWifiEntryTest {
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-        entry.setIsDefaultNetwork(false);
+        Network otherNetwork = mock(Network.class);
+        when(otherNetwork.getNetId()).thenReturn(2);
+        entry.onDefaultNetworkCapabilitiesChanged(otherNetwork, new NetworkCapabilities());
 
         assertThat(entry.getSummary()).isEqualTo("");
     }
@@ -806,7 +808,7 @@ public class StandardWifiEntryTest {
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
         // Not Validated, Default
-        entry.setIsDefaultNetwork(true);
+        entry.onDefaultNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
@@ -818,7 +820,9 @@ public class StandardWifiEntryTest {
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
         // Validated, Not Default
-        entry.setIsDefaultNetwork(false);
+        Network otherNetwork = mock(Network.class);
+        when(otherNetwork.getNetId()).thenReturn(2);
+        entry.onDefaultNetworkCapabilitiesChanged(otherNetwork, new NetworkCapabilities());
 
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
     }

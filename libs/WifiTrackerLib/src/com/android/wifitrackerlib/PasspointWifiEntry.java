@@ -192,7 +192,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                             mWifiConfig,
                             mNetworkCapabilities,
                             mIsDefaultNetwork,
-                            mIsLowQuality,
+                            isLowQuality(),
                             mConnectivityReport);
                     break;
                 default:

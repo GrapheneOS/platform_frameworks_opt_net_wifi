@@ -151,8 +151,6 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
                 handleLinkPropertiesChanged(currentNetwork, linkProperties);
             }
         }
-        mChosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-        mChosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
     }
 
     /**
