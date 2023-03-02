@@ -157,11 +157,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
     @Override
     protected void handleNetworkCapabilitiesChanged(
             @NonNull Network network, @NonNull NetworkCapabilities capabilities) {
-        final WifiEntry chosenEntry = getWifiEntry();
-        chosenEntry.onNetworkCapabilitiesChanged(network, capabilities);
-        if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            chosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
-        }
+        getWifiEntry().onNetworkCapabilitiesChanged(network, capabilities);
     }
 
     @WorkerThread
@@ -172,21 +168,24 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
 
     @WorkerThread
     @Override
+    protected void handleDefaultNetworkCapabilitiesChanged(
+            @NonNull Network network, @NonNull NetworkCapabilities capabilities) {
+        getWifiEntry().onDefaultNetworkCapabilitiesChanged(network, capabilities);
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleDefaultNetworkLost() {
+        getWifiEntry().onDefaultNetworkLost();
+    }
+
+    @WorkerThread
+    @Override
     protected void handleConnectivityReportAvailable(
             @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
         final WifiEntry chosenEntry = getWifiEntry();
         if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
             chosenEntry.updateConnectivityReport(connectivityReport);
-        }
-    }
-
-    @WorkerThread
-    @Override
-    protected void handleDefaultRouteChanged() {
-        final WifiEntry chosenEntry = getWifiEntry();
-        if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            chosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-            chosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
         }
     }
 

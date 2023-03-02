@@ -267,7 +267,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
                 handleLinkPropertiesChanged(currentNetwork, linkProperties);
             }
         }
-        handleDefaultRouteChanged();
         updateWifiEntries();
     }
 
@@ -324,10 +323,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             @NonNull Network network, @NonNull NetworkCapabilities capabilities) {
         updateConnectionInfo(network, capabilities);
         updateWifiEntries();
-        if (mConnectedWifiEntry != null
-                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
-        }
     }
 
     @WorkerThread
@@ -349,11 +344,20 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         }
     }
 
+
     @WorkerThread
-    protected void handleDefaultRouteChanged() {
-        if (mConnectedWifiEntry != null) {
-            mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-            mConnectedWifiEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+    protected void handleDefaultNetworkCapabilitiesChanged(@NonNull Network network,
+            @NonNull NetworkCapabilities networkCapabilities) {
+        for (WifiEntry entry : getAllWifiEntries()) {
+            entry.onDefaultNetworkCapabilitiesChanged(network, networkCapabilities);
+        }
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleDefaultNetworkLost() {
+        for (WifiEntry entry : getAllWifiEntries()) {
+            entry.onDefaultNetworkLost();
         }
     }
 
@@ -373,9 +377,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
                 if (entry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
                     mConnectedWifiEntry = entry;
                 }
-            }
-            if (mConnectedWifiEntry != null) {
-                mConnectedWifiEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
             }
             mSavedWifiEntries.clear();
             mSavedWifiEntries.addAll(mStandardWifiEntryCache);
