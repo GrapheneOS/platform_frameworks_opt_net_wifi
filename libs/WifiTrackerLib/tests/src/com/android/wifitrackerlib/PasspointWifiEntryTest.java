@@ -242,6 +242,7 @@ public class PasspointWifiEntryTest {
         // Validation attempt complete, should show X level icon now.
         ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport = mock(
                 ConnectivityDiagnosticsManager.ConnectivityReport.class);
+        when(connectivityReport.getNetwork()).thenReturn(mMockNetwork);
         entry.updateConnectivityReport(connectivityReport);
 
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);

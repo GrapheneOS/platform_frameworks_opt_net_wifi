@@ -375,12 +375,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @Override
     protected void handleConnectivityReportAvailable(
             @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
-        if (mConnectedWifiEntry != null
-                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            mConnectedWifiEntry.updateConnectivityReport(connectivityReport);
-        }
-        if (mMergedCarrierEntry != null) {
-            mMergedCarrierEntry.updateConnectivityReport(connectivityReport);
+        for (WifiEntry entry : getAllWifiEntries()) {
+            entry.updateConnectivityReport(connectivityReport);
         }
     }
 

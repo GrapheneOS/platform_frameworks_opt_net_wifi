@@ -183,10 +183,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
     @Override
     protected void handleConnectivityReportAvailable(
             @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
-        final WifiEntry chosenEntry = getWifiEntry();
-        if (chosenEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            chosenEntry.updateConnectivityReport(connectivityReport);
-        }
+        getWifiEntry().updateConnectivityReport(connectivityReport);
     }
 
     /**
