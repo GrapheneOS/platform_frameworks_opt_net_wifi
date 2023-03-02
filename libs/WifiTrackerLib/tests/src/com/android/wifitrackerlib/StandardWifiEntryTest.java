@@ -449,6 +449,52 @@ public class StandardWifiEntryTest {
     }
 
     @Test
+    public void testOnNetworkCapabilitiesChanged_nonPrimaryOem_becomesConnected() {
+        final WifiConfiguration config = new WifiConfiguration();
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP),
+                Collections.singletonList(config), null, mMockWifiManager,
+                false /* forSavedNetworksPage */);
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            ExtendedMockito.doReturn(false)
+                    .when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
+            // OEM-Paid
+            when(mMockNetworkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_OEM_PAID)).thenReturn(true);
+            when(mMockNetworkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)).thenReturn(false);
+            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+            assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+
+            // OEM-Private
+            when(mMockNetworkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_OEM_PAID)).thenReturn(false);
+            when(mMockNetworkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)).thenReturn(true);
+            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+            assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+
+            // Not OEM anymore
+            when(mMockNetworkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_OEM_PAID)).thenReturn(false);
+            when(mMockNetworkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)).thenReturn(false);
+            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+            assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    @Test
     public void testConnect_savedNetwork_usesSavedConfig() {
         final ScanResult scan = buildScanResult("ssid", "bssid", 0, TestUtils.GOOD_RSSI);
         final StandardWifiEntry entry = new StandardWifiEntry(
