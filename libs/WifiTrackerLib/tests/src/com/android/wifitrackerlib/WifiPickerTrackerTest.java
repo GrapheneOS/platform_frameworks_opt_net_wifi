@@ -45,6 +45,7 @@ import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.TransportInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
@@ -59,6 +60,7 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 
 import org.junit.Before;
@@ -100,6 +102,7 @@ public class WifiPickerTrackerTest {
     @Mock private WifiInfo mMockWifiInfo;
     @Mock private Network mMockNetwork;
     @Mock private NetworkCapabilities mMockNetworkCapabilities;
+    @Mock private NetworkCapabilities mMockVcnNetworkCapabilities;
     @Mock private LinkProperties mMockLinkProperties;
 
     private TestLooper mTestLooper;
@@ -157,6 +160,18 @@ public class WifiPickerTrackerTest {
         when(mMockNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
                 .thenReturn(true);
         when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
+        when(mMockVcnNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))
+                .thenReturn(true);
+        // Use a placeholder TransportInfo since VcnTransportInfo is @hide.
+        // NonSdkApiWrapper is mocked to get the WifiInfo from these capabilities.
+        when(mMockVcnNetworkCapabilities.getTransportInfo()).thenReturn(
+                new TransportInfo() {
+                    @NonNull
+                    @Override
+                    public TransportInfo makeCopy(long redactions) {
+                        return TransportInfo.super.makeCopy(redactions);
+                    }
+                });
         // A real NetworkCapabilities is needed here in order to create a copy (with location info)
         // using the NetworkCapabilities constructor in handleOnStart.
         when(mMockConnectivityManager.getNetworkCapabilities(mMockNetwork))
@@ -1664,8 +1679,6 @@ public class WifiPickerTrackerTest {
     @Test
     public void testGetMergedCarrierEntry_vcnWifiIsDefault_entryIsDefaultNetwork() {
         final int subId = 1;
-        when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
-        when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
@@ -1674,18 +1687,28 @@ public class WifiPickerTrackerTest {
         final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
         intent.putExtra("subscription", subId);
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
         verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
                 mDefaultNetworkCallbackCaptor.capture(), any());
         verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
                 mDefaultNetworkCallbackCaptor.capture(), any());
-        MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
-        assertThat(mergedCarrierEntry.getConnectedState())
-                .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
-        // Wifi isn't default yet, so isDefaultNetwork returns false
-        assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
 
         MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
         try {
+            // Connect to VCN-over-Wifi network
+            when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
+            when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
+            doReturn(mMockWifiInfo).when(() ->
+                    NonSdkApiWrapper.getVcnWifiInfo(mMockVcnNetworkCapabilities));
+            doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
+            mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
+                    mMockNetwork, mMockVcnNetworkCapabilities);
+            MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
+            assertThat(mergedCarrierEntry.getConnectedState())
+                    .isEqualTo(WifiEntry.CONNECTED_STATE_CONNECTED);
+            // Wifi isn't default yet, so isDefaultNetwork returns false
+            assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
             doReturn(true).when(() -> NonSdkApiWrapper.isVcnOverWifi(any()));
             mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
                     new NetworkCapabilities.Builder()
