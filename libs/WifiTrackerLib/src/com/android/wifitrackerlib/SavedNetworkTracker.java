@@ -21,8 +21,6 @@ import static androidx.core.util.Preconditions.checkNotNull;
 import static com.android.wifitrackerlib.PasspointWifiEntry.uniqueIdToPasspointWifiEntryKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
-import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
-import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -89,8 +87,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     private final List<StandardWifiEntry> mStandardWifiEntryCache = new ArrayList<>();
     // Cache containing saved PasspointWifiEntries. Must be accessed only by the worker thread.
     private final Map<String, PasspointWifiEntry> mPasspointWifiEntryCache = new HashMap<>();
-
-    private WifiEntry mConnectedWifiEntry;
 
     public SavedNetworkTracker(@NonNull Lifecycle lifecycle, @NonNull Context context,
             @NonNull WifiManager wifiManager,
@@ -232,7 +228,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     }
 
     private void clearAllWifiEntries() {
-        mConnectedWifiEntry = null;
         mStandardWifiEntryCache.clear();
         mPasspointWifiEntryCache.clear();
     }
@@ -338,9 +333,8 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     @Override
     protected void handleConnectivityReportAvailable(
             @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
-        if (mConnectedWifiEntry != null
-                && mConnectedWifiEntry.getConnectedState() == CONNECTED_STATE_CONNECTED) {
-            mConnectedWifiEntry.updateConnectivityReport(connectivityReport);
+        for (WifiEntry entry : getAllWifiEntries()) {
+            entry.updateConnectivityReport(connectivityReport);
         }
     }
 
@@ -367,17 +361,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
      */
     private void updateWifiEntries() {
         synchronized (mLock) {
-            mConnectedWifiEntry = null;
-            for (WifiEntry entry : mStandardWifiEntryCache) {
-                if (entry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
-                    mConnectedWifiEntry = entry;
-                }
-            }
-            for (WifiEntry entry : mSubscriptionWifiEntries) {
-                if (entry.getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
-                    mConnectedWifiEntry = entry;
-                }
-            }
             mSavedWifiEntries.clear();
             mSavedWifiEntries.addAll(mStandardWifiEntryCache);
             Collections.sort(mSavedWifiEntries, WifiEntry.TITLE_COMPARATOR);

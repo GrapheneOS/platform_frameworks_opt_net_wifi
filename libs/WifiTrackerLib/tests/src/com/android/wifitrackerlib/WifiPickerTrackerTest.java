@@ -813,6 +813,7 @@ public class WifiPickerTrackerTest {
                 mMockNetwork, mMockNetworkCapabilities);
         ConnectivityDiagnosticsManager.ConnectivityReport report = mock(
                 ConnectivityDiagnosticsManager.ConnectivityReport.class);
+        when(report.getNetwork()).thenReturn(mMockNetwork);
         diagnosticsCallbackCaptor.getValue().onConnectivityReportAvailable(report);
         mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
                 mMockNetwork, mMockNetworkCapabilities);
@@ -867,6 +868,7 @@ public class WifiPickerTrackerTest {
                 mMockNetwork, mMockNetworkCapabilities);
         ConnectivityDiagnosticsManager.ConnectivityReport report = mock(
                 ConnectivityDiagnosticsManager.ConnectivityReport.class);
+        when(report.getNetwork()).thenReturn(mMockNetwork);
         diagnosticsCallbackCaptor.getValue().onConnectivityReportAvailable(report);
 
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary())
