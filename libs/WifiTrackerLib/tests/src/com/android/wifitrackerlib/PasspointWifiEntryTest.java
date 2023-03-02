@@ -31,8 +31,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
+import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -56,7 +56,8 @@ public class PasspointWifiEntryTest {
     @Mock private WifiManager mMockWifiManager;
     @Mock private Resources mMockResources;
     @Mock private WifiInfo mMockWifiInfo;
-    @Mock private NetworkInfo mMockNetworkInfo;
+    @Mock private Network mMockNetwork;
+    @Mock private NetworkCapabilities mMockNetworkCapabilities;
     @Mock private ConnectivityManager mMockConnectivityManager;
 
     private TestLooper mTestLooper;
@@ -71,12 +72,15 @@ public class PasspointWifiEntryTest {
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
 
+        when(mMockWifiInfo.isPrimary()).thenReturn(true);
         when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
         when(mMockWifiInfo.getRssi()).thenReturn(WifiInfo.INVALID_RSSI);
-        when(mMockNetworkInfo.getDetailedState()).thenReturn(
-                NetworkInfo.DetailedState.DISCONNECTED);
+        when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
+
+        when(mMockContext.getSystemService(ConnectivityManager.class))
+                .thenReturn(mMockConnectivityManager);
     }
 
     @Test
@@ -135,28 +139,19 @@ public class PasspointWifiEntryTest {
         String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};
 
-        when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
                 .thenReturn(summarySeparator);
         when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
-        ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(ConnectivityManager.class))
-                .thenReturn(mockConnectivityManager);
-        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(wifiInfo.isPasspointAp()).thenReturn(true);
-        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
-        NetworkInfo networkInfo =
-                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
-        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(true);
 
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
-        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
         entry.setIsDefaultNetwork(true);
 
         assertThat(entry.getSummary()).isEqualTo("Connected");
@@ -168,28 +163,19 @@ public class PasspointWifiEntryTest {
         String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};
 
-        when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
                 .thenReturn(summarySeparator);
         when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
-        ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(ConnectivityManager.class))
-                .thenReturn(mockConnectivityManager);
-        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(wifiInfo.isPasspointAp()).thenReturn(true);
-        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
-        NetworkInfo networkInfo =
-                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
-        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(true);
 
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
-        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
         entry.setIsDefaultNetwork(false);
 
         assertThat(entry.getSummary()).isEqualTo("");
@@ -197,13 +183,10 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testGetSecurityTypes_connectedWifiNetwork_showsCurrentSecurityType() {
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(wifiInfo.isPasspointAp()).thenReturn(true);
-        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
-        when(wifiInfo.getCurrentSecurityType()).thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
-        NetworkInfo networkInfo =
-                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
-        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getCurrentSecurityType())
+                .thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
 
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
@@ -213,13 +196,14 @@ public class PasspointWifiEntryTest {
                 WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2,
                 WifiInfo.SECURITY_TYPE_PASSPOINT_R3));
 
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getSecurityTypes())
                 .containsExactly(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
 
-        when(wifiInfo.getCurrentSecurityType()).thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R3);
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
+        when(mMockWifiInfo.getCurrentSecurityType())
+                .thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R3);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getSecurityTypes()).containsExactly(WifiInfo.SECURITY_TYPE_PASSPOINT_R3);
     }
@@ -240,17 +224,8 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testShouldShowXLevelIcon_unvalidatedOrNotDefault_returnsTrue() {
-        ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(ConnectivityManager.class))
-                .thenReturn(mockConnectivityManager);
-        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(wifiInfo.isPasspointAp()).thenReturn(true);
-        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
-        final NetworkInfo networkInfo =
-                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
-        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
 
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
@@ -260,7 +235,7 @@ public class PasspointWifiEntryTest {
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
         // Not validated, Not Default
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         // Validation attempt not complete, should not show X level icon yet.
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
@@ -269,6 +244,7 @@ public class PasspointWifiEntryTest {
         ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport = mock(
                 ConnectivityDiagnosticsManager.ConnectivityReport.class);
         entry.updateConnectivityReport(connectivityReport);
+
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
         // Not Validated, Default
@@ -277,7 +253,9 @@ public class PasspointWifiEntryTest {
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
         // Validated, Default
-        entry.updateNetworkCapabilities(networkCapabilities);
+        when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(true);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
@@ -296,18 +274,14 @@ public class PasspointWifiEntryTest {
         config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
         config.FQDN = FQDN;
         when(mMockWifiManager.getFactoryMacAddresses()).thenReturn(new String[]{factoryMac});
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(wifiInfo.isPasspointAp()).thenReturn(true);
-        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
-        when(wifiInfo.getMacAddress()).thenReturn(wifiInfoMac);
-        NetworkInfo networkInfo =
-                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
-        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getMacAddress()).thenReturn(wifiInfoMac);
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getMacAddress()).isEqualTo(wifiInfoMac);
     }
@@ -329,34 +303,36 @@ public class PasspointWifiEntryTest {
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
-        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
-        entry.updateNetworkCapabilities(captivePortalCapabilities);
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockNetworkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.canSignIn()).isTrue();
     }
 
     @Test
     public void testUpdateNetworkCapabilities_userConnect_autoOpenCaptivePortalOnce() {
-        when(mMockContext.getSystemService(ConnectivityManager.class))
-                .thenReturn(mMockConnectivityManager);
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
-        NetworkCapabilities captivePortalCapabilities = new NetworkCapabilities.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL).build();
 
         MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
         try {
             // Simulate user tapping on the network and receiving captive portal capabilities.
             // This should trigger the captive portal app.
             entry.connect(null /* callback */);
-            entry.updateNetworkCapabilities(captivePortalCapabilities);
+            when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+            when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+            when(mMockNetworkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
+            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
             verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
 
             // Update network capabilities again. This should not trigger the captive portal app.
-            entry.updateNetworkCapabilities(captivePortalCapabilities);
+            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
             verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
         } finally {
@@ -371,27 +347,18 @@ public class PasspointWifiEntryTest {
         String summarySeparator = " / ";
         String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
                 "Authenticating", "Obtaining IP address", "Connected"};
-        when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
                 .thenReturn(summarySeparator);
         when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
                 .thenReturn(wifiStatusArray);
-        ConnectivityManager mockConnectivityManager = mock(ConnectivityManager.class);
-        when(mMockContext.getSystemService(ConnectivityManager.class))
-                .thenReturn(mockConnectivityManager);
-        final NetworkCapabilities networkCapabilities = new NetworkCapabilities.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED).build();
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(wifiInfo.isPasspointAp()).thenReturn(true);
-        when(wifiInfo.getPasspointFqdn()).thenReturn(FQDN);
-        NetworkInfo networkInfo =
-                new NetworkInfo(ConnectivityManager.TYPE_WIFI, 0 /* subtype */, "WIFI", "");
-        networkInfo.setDetailedState(NetworkInfo.DetailedState.CONNECTED, "", "");
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(true);
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
-        entry.updateConnectionInfo(wifiInfo, networkInfo);
-        entry.updateNetworkCapabilities(networkCapabilities);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         // Disconnect the entry before it can be updated with scans and a WifiConfiguration
         entry.disconnect(null);
