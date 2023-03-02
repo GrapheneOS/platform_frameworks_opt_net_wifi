@@ -1027,9 +1027,11 @@ public class WifiEntry {
     // Method for WifiTracker to update a connected WifiEntry's validation status.
     @WorkerThread
     synchronized void updateConnectivityReport(
-            @Nullable ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
-        mConnectivityReport = connectivityReport;
-        notifyOnUpdated();
+            @NonNull ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
+        if (connectivityReport.getNetwork().equals(mNetwork)) {
+            mConnectivityReport = connectivityReport;
+            notifyOnUpdated();
+        }
     }
 
     synchronized String getWifiInfoDescription() {
