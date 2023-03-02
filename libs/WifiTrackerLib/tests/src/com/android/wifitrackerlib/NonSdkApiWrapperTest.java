@@ -74,26 +74,6 @@ public class NonSdkApiWrapperTest {
     }
 
     /**
-     * Verifies the functionality of {@link NonSdkApiWrapper#isVcnOverWifi}
-     */
-    @Test
-    public void testIsVcnOverWifi() {
-        NetworkCapabilities networkCapabilities  = mock(NetworkCapabilities.class);
-
-        assertThat(NonSdkApiWrapper.isVcnOverWifi(networkCapabilities)).isFalse();
-
-        VcnTransportInfo vcnTransportInfo = mock(VcnTransportInfo.class);
-        when(networkCapabilities.getTransportInfo()).thenReturn(vcnTransportInfo);
-
-        assertThat(NonSdkApiWrapper.isVcnOverWifi(networkCapabilities)).isFalse();
-
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(vcnTransportInfo.getWifiInfo()).thenReturn(wifiInfo);
-
-        assertThat(NonSdkApiWrapper.isVcnOverWifi(networkCapabilities)).isTrue();
-    }
-
-    /**
      * Verifies the functionality of {@link NonSdkApiWrapper#getVcnWifiInfo(NetworkCapabilities)}
      */
     @Test
