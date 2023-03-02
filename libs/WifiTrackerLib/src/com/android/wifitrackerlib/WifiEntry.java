@@ -207,8 +207,9 @@ public class WifiEntry {
      * Default comparator for sorting WifiEntries on a Wi-Fi picker list.
      */
     public static Comparator<WifiEntry> WIFI_PICKER_COMPARATOR =
-            Comparator.comparing((WifiEntry entry) -> entry.getConnectedState()
-                            != CONNECTED_STATE_CONNECTED)
+            Comparator.comparing((WifiEntry entry) -> !entry.isPrimaryNetwork())
+                    .thenComparing((WifiEntry entry) ->
+                            entry.getConnectedState() != CONNECTED_STATE_CONNECTED)
                     .thenComparing((WifiEntry entry) -> !entry.canConnect())
                     .thenComparing((WifiEntry entry) -> !entry.isSubscription())
                     .thenComparing((WifiEntry entry) -> !entry.isSaved())
@@ -336,7 +337,8 @@ public class WifiEntry {
         return getConnectedState() != CONNECTED_STATE_DISCONNECTED
                 && mConnectivityReport != null
                 && (!hasInternetAccess() || !mIsDefaultNetwork)
-                && !canSignIn();
+                && !canSignIn()
+                && isPrimaryNetwork();
     }
 
     /**
@@ -357,9 +359,22 @@ public class WifiEntry {
     }
 
     /**
+     * Returns whether this network is the primary Wi-Fi network or not.
+     */
+    public boolean isPrimaryNetwork() {
+        if (mWifiInfo == null) {
+            return false;
+        }
+        return NonSdkApiWrapper.isPrimary(mWifiInfo);
+    }
+
+    /**
      * Returns whether this network is considered low quality.
      */
     public boolean isLowQuality() {
+        if (!isPrimaryNetwork()) {
+            return false;
+        }
         if (mNetworkCapabilities == null) {
             return false;
         }
@@ -881,8 +896,10 @@ public class WifiEntry {
             return;
         }
 
-        // Treat non-primary connections as disconnected.
-        if (!NonSdkApiWrapper.isPrimary(wifiInfo)) {
+        // Treat non-primary, non-OEM connections as disconnected.
+        if (!NonSdkApiWrapper.isPrimary(wifiInfo)
+                && !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID)
+                && !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)) {
             onNetworkLost(network);
             return;
         }
@@ -1147,8 +1164,10 @@ public class WifiEntry {
                 .append(getConnectedInfo())
                 .append(",hasInternet:")
                 .append(hasInternetAccess())
-                .append(",isDefaultNetwork:")
+                .append(",isDefault:")
                 .append(mIsDefaultNetwork)
+                .append(",isPrimary:")
+                .append(isPrimaryNetwork())
                 .toString();
     }
 
