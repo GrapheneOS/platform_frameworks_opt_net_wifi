@@ -58,12 +58,12 @@ class NonSdkApiWrapper {
     }
 
     /**
-     * Returns whether or not the network capabilities is determined to be VCN over Wi-Fi or not.
+     * Tries to get WifiInfo from network capabilities if it is VCN-over-Wifi.
      */
-    static boolean isVcnOverWifi(@NonNull NetworkCapabilities networkCapabilities) {
+    static WifiInfo getVcnWifiInfo(@NonNull NetworkCapabilities networkCapabilities) {
         // This is only useful for treating CELLULAR over WIFI as a carrier merged network in
         // provider model Settings. Since SUW doesn't use the provider model, this is not used.
-        return false;
+        return null;
     }
 
     /**

@@ -26,11 +26,13 @@ import static java.util.stream.Collectors.toList;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.telephony.SubscriptionManager;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
@@ -131,15 +133,24 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     private void updateStartInfo() {
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
-        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        final Network currentNetwork = mWifiManager.getCurrentNetwork();
-        mCurrentNetworkInfo = mConnectivityManager.getNetworkInfo(currentNetwork);
-        mChosenEntry.updateConnectionInfo(wifiInfo, mCurrentNetworkInfo);
-        handleNetworkCapabilitiesChanged(
-                mConnectivityManager.getNetworkCapabilities(currentNetwork));
-        handleLinkPropertiesChanged(mConnectivityManager.getLinkProperties(currentNetwork));
-        mChosenEntry.setIsDefaultNetwork(mIsWifiDefaultRoute);
-        mChosenEntry.setIsLowQuality(mIsWifiValidated && mIsCellDefaultRoute);
+        handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
+        Network currentNetwork = mWifiManager.getCurrentNetwork();
+        if (currentNetwork != null) {
+            NetworkCapabilities networkCapabilities =
+                    mConnectivityManager.getNetworkCapabilities(currentNetwork);
+            if (networkCapabilities != null) {
+                // getNetworkCapabilities(Network) obfuscates location info such as SSID and
+                // networkId, so we need to set the WifiInfo directly from WifiManager.
+                handleNetworkCapabilitiesChanged(currentNetwork,
+                        new NetworkCapabilities.Builder(networkCapabilities)
+                                .setTransportInfo(mWifiManager.getConnectionInfo())
+                                .build());
+            }
+            LinkProperties linkProperties = mConnectivityManager.getLinkProperties(currentNetwork);
+            if (linkProperties != null) {
+                handleLinkPropertiesChanged(currentNetwork, linkProperties);
+            }
+        }
     }
 
     /**

@@ -93,13 +93,14 @@ class NonSdkApiWrapper {
     }
 
     /**
-     * Returns whether or not the network capabilities is determined to be VCN over Wi-Fi or not.
+     * Tries to get WifiInfo from network capabilities if it is VCN-over-Wifi.
      */
-    static boolean isVcnOverWifi(@NonNull NetworkCapabilities networkCapabilities) {
+    static WifiInfo getVcnWifiInfo(@NonNull NetworkCapabilities networkCapabilities) {
         TransportInfo transportInfo = networkCapabilities.getTransportInfo();
-        return transportInfo != null
-                && transportInfo instanceof VcnTransportInfo
-                && ((VcnTransportInfo) transportInfo).getWifiInfo() != null;
+        if (transportInfo instanceof VcnTransportInfo) {
+            return ((VcnTransportInfo) transportInfo).getWifiInfo();
+        }
+        return null;
     }
 
     /**
