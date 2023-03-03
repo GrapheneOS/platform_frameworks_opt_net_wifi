@@ -39,7 +39,6 @@ import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getConnectedDescription;
 import static com.android.wifitrackerlib.Utils.getConnectingDescription;
 import static com.android.wifitrackerlib.Utils.getDisconnectedDescription;
-import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfiguration;
@@ -241,12 +240,6 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         return sj.toString();
-    }
-
-    @Override
-    public CharSequence getSecondSummary() {
-        return getConnectedState() == CONNECTED_STATE_CONNECTED
-                ? getImsiProtectionDescription(mContext, getWifiConfiguration()) : "";
     }
 
     @Override

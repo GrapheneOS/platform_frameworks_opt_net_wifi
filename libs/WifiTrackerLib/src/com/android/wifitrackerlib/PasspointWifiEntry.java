@@ -29,7 +29,6 @@ import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getConnectedDescription;
 import static com.android.wifitrackerlib.Utils.getConnectingDescription;
 import static com.android.wifitrackerlib.Utils.getDisconnectedDescription;
-import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
@@ -224,12 +223,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
         }
 
         return sj.toString();
-    }
-
-    @Override
-    public synchronized CharSequence getSecondSummary() {
-        return getConnectedState() == CONNECTED_STATE_CONNECTED
-                ? getImsiProtectionDescription(mContext, mWifiConfig) : "";
     }
 
     @Override
