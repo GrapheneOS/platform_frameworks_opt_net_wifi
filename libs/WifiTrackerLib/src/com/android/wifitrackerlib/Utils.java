@@ -30,6 +30,7 @@ import android.net.ConnectivityDiagnosticsManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
+import android.net.TransportInfo;
 import android.net.wifi.MloLink;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -1115,5 +1116,16 @@ public class Utils {
             return getBandString(context, wifiInfo.getFrequency());
         }
         return sj.toString();
+    }
+
+    /**
+     * Gets the WifiInfo from a NetworkCapabilities if there is one.
+     */
+    public static WifiInfo getWifiInfo(@NonNull NetworkCapabilities capabilities) {
+        TransportInfo transportInfo = capabilities.getTransportInfo();
+        if (transportInfo instanceof WifiInfo) {
+            return (WifiInfo) transportInfo;
+        }
+        return NonSdkApiWrapper.getVcnWifiInfo(capabilities);
     }
 }
