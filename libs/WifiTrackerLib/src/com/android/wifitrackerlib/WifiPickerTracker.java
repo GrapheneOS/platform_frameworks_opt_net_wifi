@@ -16,6 +16,8 @@
 
 package com.android.wifitrackerlib;
 
+import static android.os.Build.VERSION_CODES;
+
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static com.android.wifitrackerlib.OsuWifiEntry.osuProviderToOsuWifiEntryKey;
@@ -28,6 +30,7 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityDiagnosticsManager;
@@ -42,6 +45,8 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
+import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
+import android.net.wifi.sharedconnectivity.app.KnownNetwork;
 import android.os.Handler;
 import android.telephony.SubscriptionManager;
 import android.text.TextUtils;
@@ -58,6 +63,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import androidx.core.os.BuildCompat;
 import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
@@ -124,6 +130,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
     private MergedCarrierEntry mMergedCarrierEntry;
 
     private int mNumSavedNetworks;
+
+    private final List<KnownNetwork> mKnownNetworkDataCache = new ArrayList<>();
+    private final List<KnownNetworkEntry> mKnownNetworkEntryCache = new ArrayList<>();
+    private final List<HotspotNetworkEntry> mHotspotNetworkEntryCache = new ArrayList<>();
 
     /**
      * Constructor for WifiPickerTracker.
@@ -252,6 +262,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
         allEntries.addAll(mSuggestedWifiEntryCache);
         allEntries.addAll(mPasspointWifiEntryCache.values());
         allEntries.addAll(mOsuWifiEntryCache.values());
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+            allEntries.addAll(mKnownNetworkEntryCache);
+            allEntries.addAll(mHotspotNetworkEntryCache);
+        }
         if (mNetworkRequestEntry != null) {
             allEntries.add(mNetworkRequestEntry);
         }
@@ -266,6 +280,11 @@ public class WifiPickerTracker extends BaseWifiTracker {
         mSuggestedWifiEntryCache.clear();
         mPasspointWifiEntryCache.clear();
         mOsuWifiEntryCache.clear();
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+            mKnownNetworkDataCache.clear();
+            mKnownNetworkEntryCache.clear();
+            mHotspotNetworkEntryCache.clear();
+        }
         mNetworkRequestEntry = null;
         mMergedCarrierEntry = null;
     }
@@ -343,6 +362,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateNetworkRequestEntryScans(scanResults);
         updatePasspointWifiEntryScans(scanResults);
         updateOsuWifiEntryScans(scanResults);
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE && BuildCompat.isAtLeastU()) {
+            updateKnownNetworkEntryScans(scanResults);
+        }
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
@@ -422,6 +444,44 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateMergedCarrierEntry(defaultSubId);
     }
 
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    @Override
+    protected void handleKnownNetworksUpdated(List<KnownNetwork> networks) {
+        Log.v(TAG, "handleKnownNetworksUpdated");
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+            mKnownNetworkDataCache.clear();
+            mKnownNetworkDataCache.addAll(networks);
+            updateKnownNetworkEntryScans(mScanResultUpdater.getScanResults());
+            updateWifiEntries();
+        }
+    }
+
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    @Override
+    protected void handleHotspotNetworksUpdated(List<HotspotNetwork> networks) {
+        Log.v(TAG, "handleHotspotNetworksUpdated");
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+            updateHotspotNetworkEntries(networks);
+            updateWifiEntries();
+        }
+    }
+
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    @Override
+    protected void handleServiceConnected() {
+        Log.v(TAG, "handleServiceConnected");
+        if (mSharedConnectivityManager != null && ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+            mKnownNetworkDataCache.clear();
+            mKnownNetworkDataCache.addAll(mSharedConnectivityManager.getKnownNetworks());
+            updateKnownNetworkEntryScans(mScanResultUpdater.getScanResults());
+            updateHotspotNetworkEntries(mSharedConnectivityManager.getHotspotNetworks());
+            updateWifiEntries();
+        }
+    }
+
     /**
      * Update the list returned by getWifiEntries() with the current states of the entry caches.
      */
@@ -432,11 +492,28 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mActiveWifiEntries.addAll(mStandardWifiEntryCache);
             mActiveWifiEntries.addAll(mSuggestedWifiEntryCache);
             mActiveWifiEntries.addAll(mPasspointWifiEntryCache.values());
+            if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+                mActiveWifiEntries.addAll(mKnownNetworkEntryCache);
+                mActiveWifiEntries.addAll(mHotspotNetworkEntryCache);
+            }
             if (mNetworkRequestEntry != null) {
                 mActiveWifiEntries.add(mNetworkRequestEntry);
             }
             mActiveWifiEntries.removeIf(entry ->
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED);
+            Set<ScanResultKey> activeKnownAndHotspotKeys = new ArraySet<>();
+            for (WifiEntry entry : mActiveWifiEntries) {
+                if (entry instanceof KnownNetworkEntry) {
+                    activeKnownAndHotspotKeys.add(((KnownNetworkEntry) entry)
+                            .getStandardWifiEntryKey().getScanResultKey());
+                } else if (entry instanceof HotspotNetworkEntry) {
+                    activeKnownAndHotspotKeys.add(((HotspotNetworkEntry) entry)
+                            .getHotspotNetworkEntryKey().getScanResultKey());
+                }
+            }
+            mActiveWifiEntries.removeIf(entry -> entry instanceof StandardWifiEntry
+                    && activeKnownAndHotspotKeys.contains(
+                    ((StandardWifiEntry) entry).getStandardWifiEntryKey().getScanResultKey()));
             mActiveWifiEntries.sort(WifiEntry.WIFI_PICKER_COMPARATOR);
             mWifiEntries.clear();
             final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =
@@ -448,6 +525,18 @@ public class WifiPickerTracker extends BaseWifiTracker {
             Set<String> passpointUtf8Ssids = new ArraySet<>();
             for (PasspointWifiEntry passpointWifiEntry : mPasspointWifiEntryCache.values()) {
                 passpointUtf8Ssids.addAll(passpointWifiEntry.getAllUtf8Ssids());
+            }
+            Set<ScanResultKey> knownNetworkKeys = new ArraySet<>();
+            for (KnownNetworkEntry knownNetworkEntry : mKnownNetworkEntryCache) {
+                knownNetworkKeys.add(
+                        knownNetworkEntry.getStandardWifiEntryKey().getScanResultKey());
+            }
+            Set<ScanResultKey> hotspotNetworkKeys = new ArraySet<>();
+            for (HotspotNetworkEntry hotspotNetworkEntry : mHotspotNetworkEntryCache) {
+                if (!hotspotNetworkEntry.getHotspotNetworkEntryKey().isVirtualEntry()) {
+                    hotspotNetworkKeys.add(
+                            hotspotNetworkEntry.getHotspotNetworkEntryKey().getScanResultKey());
+                }
             }
             for (StandardWifiEntry entry : mStandardWifiEntryCache) {
                 entry.updateAdminRestrictions();
@@ -464,6 +553,18 @@ public class WifiPickerTracker extends BaseWifiTracker {
                         continue;
                     }
                 }
+                if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+                    // Filter out any StandardWifiEntry that is matched with a KnownNetworkEntry
+                    if (knownNetworkKeys
+                            .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
+                        continue;
+                    }
+                    // Filter out any StandardWifiEntry that is matched with a HotspotNetworkEntry
+                    if (hotspotNetworkKeys
+                            .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
+                        continue;
+                    }
+                }
                 mWifiEntries.add(entry);
             }
             mWifiEntries.addAll(mSuggestedWifiEntryCache.stream().filter(entry ->
@@ -476,6 +577,14 @@ public class WifiPickerTracker extends BaseWifiTracker {
                             && !entry.isAlreadyProvisioned()).collect(toList()));
             mWifiEntries.addAll(getContextualWifiEntries().stream().filter(entry ->
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
+            if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+                mWifiEntries.addAll(mKnownNetworkEntryCache.stream().filter(entry ->
+                        entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(
+                        toList()));
+                mWifiEntries.addAll(mHotspotNetworkEntryCache.stream().filter(entry ->
+                        entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(
+                        toList()));
+            }
             Collections.sort(mWifiEntries, WifiEntry.WIFI_PICKER_COMPARATOR);
             if (isVerboseLoggingEnabled()) {
                 Log.v(TAG, "Connected WifiEntries: "
@@ -720,6 +829,89 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 .removeIf(entry -> entry.getValue().getLevel() == WIFI_LEVEL_UNREACHABLE);
     }
 
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    private void updateKnownNetworkEntryScans(@NonNull List<ScanResult> scanResults) {
+        checkNotNull(scanResults, "Scan Result list should not be null!");
+
+        // Group scans by ScanResultKey key
+        final Map<ScanResultKey, List<ScanResult>> scanResultsByKey = scanResults.stream()
+                .filter(scan -> !TextUtils.isEmpty(scan.SSID))
+                .collect(Collectors.groupingBy(ScanResultKey::new));
+
+        // Create a map of KnownNetwork data by ScanResultKey
+        final Map<ScanResultKey, KnownNetwork> knownNetworkDataByKey =
+                mKnownNetworkDataCache.stream().collect(Collectors.toMap(
+                        data -> new ScanResultKey(data.getSsid(),
+                                new ArrayList<>(data.getSecurityTypes())),
+                        data -> data,
+                        (data1, data2) -> {
+                            Log.e(TAG,
+                                    "Encountered duplicate key data in "
+                                            + "updateKnownNetworkEntryScans");
+                            return data1; // When duplicate data is encountered, use first one.
+                        }));
+
+        // Create set of ScanResultKeys for known networks from service that are included in scan
+        final Set<ScanResultKey> newScanKeys = knownNetworkDataByKey.keySet().stream().filter(
+                scanResultsByKey::containsKey).collect(Collectors.toSet());
+
+        // Iterate through current entries and update each entry's scan results
+        mKnownNetworkEntryCache.forEach(entry -> {
+            final ScanResultKey scanKey = entry.getStandardWifiEntryKey().getScanResultKey();
+            newScanKeys.remove(scanKey);
+            // Update scan results if available, or set to null.
+            entry.updateScanResultInfo(scanResultsByKey.get(scanKey));
+        });
+
+        // Create new KnownNetworkEntry objects for each leftover group of scan results.
+        for (ScanResultKey scanKey : newScanKeys) {
+            final StandardWifiEntryKey entryKey =
+                    new StandardWifiEntryKey(scanKey, true /* isTargetingNewNetworks */);
+            final KnownNetworkEntry newEntry = new KnownNetworkEntry(mInjector, mContext,
+                    mMainHandler, entryKey, null /* configs */,
+                    scanResultsByKey.get(scanKey), mWifiManager,
+                    false, /* forSavedNetworksPage */ mSharedConnectivityManager,
+                    knownNetworkDataByKey.get(scanKey));
+            mKnownNetworkEntryCache.add(newEntry);
+        }
+
+        // Remove any entry that is now unreachable due to no scans or unsupported
+        // security types.
+        mKnownNetworkEntryCache.removeIf(
+                entry -> entry.getLevel() == WIFI_LEVEL_UNREACHABLE);
+    }
+
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    private void updateHotspotNetworkEntries(List<HotspotNetwork> networks) {
+        // Map HotspotNetwork data by deviceID
+        final Map<Long, HotspotNetwork> hotspotNetworkDataById = networks.stream().collect(
+                Collectors.toMap(HotspotNetwork::getDeviceId, data -> data, (data1, data2) -> {
+                    Log.e(TAG, "Encountered duplicate key data in updateHotspotNetworkEntries");
+                    return data1; // When duplicate data is encountered, use first one.
+                }));
+        final Set<Long> newDeviceIds = new ArraySet<>(hotspotNetworkDataById.keySet());
+
+        // Remove entries not in latest data set from service
+        mHotspotNetworkEntryCache.removeIf(
+                entry -> !newDeviceIds.contains(entry.getHotspotNetworkEntryKey().getDeviceId()));
+
+        // Iterate through entries and update HotspotNetwork data
+        mHotspotNetworkEntryCache.forEach(entry -> {
+            final Long deviceId = entry.getHotspotNetworkEntryKey().getDeviceId();
+            newDeviceIds.remove(deviceId);
+            entry.updateHotspotNetworkData(hotspotNetworkDataById.get(deviceId));
+        });
+
+        // Create new HotspotNetworkEntry objects for each new device ID
+        for (Long deviceId : newDeviceIds) {
+            mHotspotNetworkEntryCache.add(
+                    new HotspotNetworkEntry(mInjector, mContext, mMainHandler, mWifiManager,
+                            mSharedConnectivityManager, hotspotNetworkDataById.get(deviceId)));
+        }
+    }
+
     @WorkerThread
     private void updateNetworkRequestEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
@@ -746,6 +938,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
             updateSuggestedWifiEntryScans(Collections.emptyList());
             updatePasspointWifiEntryScans(Collections.emptyList());
             updateOsuWifiEntryScans(Collections.emptyList());
+            if (ENABLE_SHARED_CONNECTIVITY_FEATURE && BuildCompat.isAtLeastU()) {
+                updateKnownNetworkEntryScans(Collections.emptyList());
+            }
             updateNetworkRequestEntryScans(Collections.emptyList());
             updateContextualWifiEntryScans(Collections.emptyList());
             return;
@@ -766,6 +961,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateSuggestedWifiEntryScans(scanResults);
         updatePasspointWifiEntryScans(scanResults);
         updateOsuWifiEntryScans(scanResults);
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE && BuildCompat.isAtLeastU()) {
+            updateKnownNetworkEntryScans(scanResults);
+        }
         updateNetworkRequestEntryScans(scanResults);
         updateContextualWifiEntryScans(scanResults);
     }
@@ -876,6 +1074,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         conditionallyCreateConnectedSuggestedWifiEntry(network, capabilities);
         conditionallyCreateConnectedPasspointWifiEntry(network, capabilities);
         conditionallyCreateConnectedNetworkRequestEntry(network, capabilities);
+        // TODO(b/271887126): Conditionally create KnownNetworks and HotspotNetworks too.
     }
 
     /**
