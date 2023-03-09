@@ -18,7 +18,9 @@ package com.android.wifitrackerlib;
 
 import static android.net.NetworkCapabilities.TRANSPORT_CELLULAR;
 import static android.net.NetworkCapabilities.TRANSPORT_WIFI;
+import static android.os.Build.VERSION_CODES;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,6 +32,13 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.wifi.WifiManager;
+import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
+import android.net.wifi.sharedconnectivity.app.HotspotNetworkConnectionStatus;
+import android.net.wifi.sharedconnectivity.app.KnownNetwork;
+import android.net.wifi.sharedconnectivity.app.KnownNetworkConnectionStatus;
+import android.net.wifi.sharedconnectivity.app.SharedConnectivityClientCallback;
+import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
+import android.net.wifi.sharedconnectivity.app.SharedConnectivitySettingsState;
 import android.os.Handler;
 import android.os.Looper;
 import android.telephony.SubscriptionManager;
@@ -41,11 +50,14 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
+import androidx.core.os.BuildCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
 import java.time.Clock;
+import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Base class for WifiTracker functionality.
@@ -76,6 +88,8 @@ public class BaseWifiTracker implements LifecycleObserver {
     private final String mTag;
 
     private static boolean sVerboseLogging;
+
+    public static final boolean ENABLE_SHARED_CONNECTIVITY_FEATURE = false;
 
     public static boolean isVerboseLoggingEnabled() {
         return BaseWifiTracker.sVerboseLogging;
@@ -131,6 +145,8 @@ public class BaseWifiTracker implements LifecycleObserver {
     protected final long mMaxScanAgeMillis;
     protected final long mScanIntervalMillis;
     protected final ScanResultUpdater mScanResultUpdater;
+
+    @Nullable protected SharedConnectivityManager mSharedConnectivityManager = null;
 
     // Network request for listening on changes to Wifi link properties and network capabilities
     // such as captive portal availability.
@@ -191,6 +207,61 @@ public class BaseWifiTracker implements LifecycleObserver {
         }
     };
 
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private final Executor mSharedConnectivityExecutor = new Executor() {
+        @Override
+        public void execute(Runnable command) {
+            mWorkerHandler.post(command);
+        }
+    };
+
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private final SharedConnectivityClientCallback mSharedConnectivityCallback =
+            new SharedConnectivityClientCallback() {
+                @Override
+                public void onHotspotNetworksUpdated(@NonNull List<HotspotNetwork> networks) {
+                    handleHotspotNetworksUpdated(networks);
+                }
+
+                @Override
+                public void onKnownNetworksUpdated(@NonNull List<KnownNetwork> networks) {
+                    handleKnownNetworksUpdated(networks);
+                }
+
+                @Override
+                public void onSharedConnectivitySettingsChanged(
+                        @NonNull SharedConnectivitySettingsState state) {
+                    handleSharedConnectivitySettingsChanged(state);
+                }
+
+                @Override
+                public void onHotspotNetworkConnectionStatusChanged(
+                        @NonNull HotspotNetworkConnectionStatus status) {
+                    handleHotspotNetworkConnectionStatusChanged(status);
+                }
+
+                @Override
+                public void onKnownNetworkConnectionStatusChanged(
+                        @NonNull KnownNetworkConnectionStatus status) {
+                    handleKnownNetworkConnectionStatusChanged(status);
+                }
+
+                @Override
+                public void onServiceConnected() {
+                    handleServiceConnected();
+                }
+
+                @Override
+                public void onServiceDisconnected() {
+                    handleServiceDisconnected();
+                }
+
+                @Override
+                public void onRegisterCallbackFailed(Exception exception) {
+                    handleRegisterCallbackFailed(exception);
+                }
+            };
+
     /**
      * Constructor for BaseWifiTracker.
      * @param injector Injector for commonly referenced objects.
@@ -224,6 +295,10 @@ public class BaseWifiTracker implements LifecycleObserver {
         mConnectivityManager = connectivityManager;
         mConnectivityDiagnosticsManager =
                 context.getSystemService(ConnectivityDiagnosticsManager.class);
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE && BuildCompat.isAtLeastU()) {
+            mSharedConnectivityManager =
+                    context.getSystemService(SharedConnectivityManager.class);
+        }
         mMainHandler = mainHandler;
         mWorkerHandler = workerHandler;
         mMaxScanAgeMillis = maxScanAgeMillis;
@@ -256,6 +331,10 @@ public class BaseWifiTracker implements LifecycleObserver {
                     mWorkerHandler);
             mConnectivityDiagnosticsManager.registerConnectivityDiagnosticsCallback(mNetworkRequest,
                     command -> mWorkerHandler.post(command), mConnectivityDiagnosticsCallback);
+            if (mSharedConnectivityManager != null && BuildCompat.isAtLeastU()) {
+                mSharedConnectivityManager.registerCallback(mSharedConnectivityExecutor,
+                        mSharedConnectivityCallback);
+            }
             NonSdkApiWrapper.registerSystemDefaultNetworkCallback(
                     mConnectivityManager, mDefaultNetworkCallback, mWorkerHandler);
             handleOnStart();
@@ -277,6 +356,14 @@ public class BaseWifiTracker implements LifecycleObserver {
                 mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
                 mConnectivityDiagnosticsManager.unregisterConnectivityDiagnosticsCallback(
                         mConnectivityDiagnosticsCallback);
+                if (mSharedConnectivityManager != null && BuildCompat.isAtLeastU()) {
+                    boolean result =
+                            mSharedConnectivityManager.unregisterCallback(
+                                    mSharedConnectivityCallback);
+                    if (!result) {
+                        Log.e(mTag, "onStop: unregisterCallback failed");
+                    }
+                }
             } catch (IllegalArgumentException e) {
                 // Already unregistered in onDestroyed().
             }
@@ -296,6 +383,14 @@ public class BaseWifiTracker implements LifecycleObserver {
             mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
             mConnectivityDiagnosticsManager.unregisterConnectivityDiagnosticsCallback(
                     mConnectivityDiagnosticsCallback);
+            if (mSharedConnectivityManager != null && BuildCompat.isAtLeastU()) {
+                boolean result =
+                        mSharedConnectivityManager.unregisterCallback(
+                                mSharedConnectivityCallback);
+                if (!result) {
+                    Log.e(mTag, "onDestroyed: unregisterCallback failed");
+                }
+            }
         } catch (IllegalArgumentException e) {
             // Already unregistered in onStop() worker thread runnable.
         }
@@ -422,6 +517,81 @@ public class BaseWifiTracker implements LifecycleObserver {
      */
     @WorkerThread
     protected void handleDefaultSubscriptionChanged(int defaultSubId) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle updates to the list of tether networks from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleHotspotNetworksUpdated(List<HotspotNetwork> networks) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle updates to the list of known networks from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleKnownNetworksUpdated(List<KnownNetwork> networks) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle changes to the shared connectivity settings from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleSharedConnectivitySettingsChanged(
+            @NonNull SharedConnectivitySettingsState state) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle changes to the shared connectivity settings from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleHotspotNetworkConnectionStatusChanged(
+            @NonNull HotspotNetworkConnectionStatus status) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle changes to the shared connectivity settings from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleKnownNetworkConnectionStatusChanged(
+            @NonNull KnownNetworkConnectionStatus status) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle service connected callback from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleServiceConnected() {
+        // Do nothing.
+    }
+
+    /**
+     * Handle service disconnected callback from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleServiceDisconnected() {
+        // Do nothing.
+    }
+
+    /**
+     * Handle register callback failed callback from SharedConnectivityManager.
+     */
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleRegisterCallbackFailed(Exception exception) {
         // Do nothing.
     }
 
