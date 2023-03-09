@@ -170,14 +170,6 @@ public class HotspotNetworkEntry extends WifiEntry {
                 + mHotspotNetworkData.getNetworkProviderInfo().getModelName();
     }
 
-    @Override
-    public int getLevel() {
-        if (mHotspotNetworkData == null) {
-            return 0;
-        }
-        return mHotspotNetworkData.getNetworkProviderInfo().getConnectionStrength();
-    }
-
     /**
      * Alternate summary string to be used on Network & internet page.
      *
@@ -190,6 +182,19 @@ public class HotspotNetworkEntry extends WifiEntry {
         // TODO(b/271869550): Fully implement this WIP string.
         return mHotspotNetworkData.getNetworkName() + " from "
                 + mHotspotNetworkData.getNetworkProviderInfo().getDeviceName();
+    }
+
+    /**
+     * Connection strength between the host device and the internet.
+     *
+     * @return Displayed connection strength in the range 0 to 3.
+     */
+    @IntRange(from = 0, to = 3)
+    public int getUpstreamConnectionStrength() {
+        if (mHotspotNetworkData == null) {
+            return 0;
+        }
+        return mHotspotNetworkData.getNetworkProviderInfo().getConnectionStrength();
     }
 
     /**
