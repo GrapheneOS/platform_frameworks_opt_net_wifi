@@ -30,6 +30,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
@@ -215,6 +216,17 @@ public class HotspotNetworkEntry extends WifiEntry {
             return NetworkProviderInfo.DEVICE_TYPE_UNKNOWN;
         }
         return mHotspotNetworkData.getNetworkProviderInfo().getDeviceType();
+    }
+
+    /**
+     * The battery percentage of the host device.
+     */
+    @IntRange(from = 0, to = 100)
+    public int getBatteryPercentage() {
+        if (mHotspotNetworkData == null) {
+            return 0;
+        }
+        return mHotspotNetworkData.getNetworkProviderInfo().getBatteryPercentage();
     }
 
     @Override
