@@ -690,7 +690,8 @@ public class StandardWifiEntry extends WifiEntry {
 
         // The network is disabled because of one of the authentication problems.
         NetworkSelectionStatus networkSelectionStatus = wifiConfig.getNetworkSelectionStatus();
-        if (networkSelectionStatus.getNetworkSelectionStatus() != NETWORK_SELECTION_ENABLED) {
+        if (networkSelectionStatus.getNetworkSelectionStatus() != NETWORK_SELECTION_ENABLED
+                || !networkSelectionStatus.hasEverConnected()) {
             if (networkSelectionStatus.getDisableReasonCounter(DISABLED_AUTHENTICATION_FAILURE) > 0
                     || networkSelectionStatus.getDisableReasonCounter(
                     DISABLED_BY_WRONG_PASSWORD) > 0
