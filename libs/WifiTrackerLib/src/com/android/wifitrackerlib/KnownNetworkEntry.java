@@ -22,6 +22,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.sharedconnectivity.app.KnownNetwork;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
@@ -29,8 +30,10 @@ import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * WifiEntry representation of a Known Network provided via {@link SharedConnectivityManager}.
@@ -92,6 +95,16 @@ public class KnownNetworkEntry extends StandardWifiEntry{
         }
         super.forget(callback);
         // TODO(b/271907257): Integrate data from connection status updates
+    }
+
+    @WorkerThread
+    protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo) {
+        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
+            return false;
+        }
+        return Objects.equals(getStandardWifiEntryKey().getScanResultKey(),
+                ssidAndSecurityTypeToStandardWifiEntryKey(WifiInfo.sanitizeSsid(wifiInfo.getSSID()),
+                        wifiInfo.getCurrentSecurityType()).getScanResultKey());
     }
 
     @Override

@@ -448,7 +448,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleKnownNetworksUpdated(List<KnownNetwork> networks) {
-        Log.v(TAG, "handleKnownNetworksUpdated");
         if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
             mKnownNetworkDataCache.clear();
             mKnownNetworkDataCache.addAll(networks);
@@ -461,7 +460,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleHotspotNetworksUpdated(List<HotspotNetwork> networks) {
-        Log.v(TAG, "handleHotspotNetworksUpdated");
         if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
             updateHotspotNetworkEntries(networks);
             updateWifiEntries();
@@ -472,8 +470,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleServiceConnected() {
-        Log.v(TAG, "handleServiceConnected");
-        if (mSharedConnectivityManager != null && ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE && mSharedConnectivityManager != null) {
             mKnownNetworkDataCache.clear();
             mKnownNetworkDataCache.addAll(mSharedConnectivityManager.getKnownNetworks());
             updateKnownNetworkEntryScans(mScanResultUpdater.getScanResults());
@@ -512,6 +509,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 }
             }
             mActiveWifiEntries.removeIf(entry -> entry instanceof StandardWifiEntry
+                    && !(entry instanceof KnownNetworkEntry)
                     && activeKnownAndHotspotKeys.contains(
                     ((StandardWifiEntry) entry).getStandardWifiEntryKey().getScanResultKey()));
             mActiveWifiEntries.sort(WifiEntry.WIFI_PICKER_COMPARATOR);
@@ -864,6 +862,22 @@ public class WifiPickerTracker extends BaseWifiTracker {
             entry.updateScanResultInfo(scanResultsByKey.get(scanKey));
         });
 
+        // Get network and capabilities if new network entries are being created
+        Network network = null;
+        NetworkCapabilities capabilities = null;
+        if (!newScanKeys.isEmpty()) {
+            network = mWifiManager.getCurrentNetwork();
+            if (network != null) {
+                capabilities = mConnectivityManager.getNetworkCapabilities(network);
+                if (capabilities != null) {
+                    // getNetworkCapabilities(Network) obfuscates location info such as SSID and
+                    // networkId, so we need to set the WifiInfo directly from WifiManager.
+                    capabilities = new NetworkCapabilities.Builder(capabilities).setTransportInfo(
+                            mWifiManager.getConnectionInfo()).build();
+                }
+            }
+        }
+
         // Create new KnownNetworkEntry objects for each leftover group of scan results.
         for (ScanResultKey scanKey : newScanKeys) {
             final StandardWifiEntryKey entryKey =
@@ -873,6 +887,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     scanResultsByKey.get(scanKey), mWifiManager,
                     false, /* forSavedNetworksPage */ mSharedConnectivityManager,
                     knownNetworkDataByKey.get(scanKey));
+            if (network != null && capabilities != null) {
+                newEntry.onNetworkCapabilitiesChanged(network, capabilities);
+            }
             mKnownNetworkEntryCache.add(newEntry);
         }
 
