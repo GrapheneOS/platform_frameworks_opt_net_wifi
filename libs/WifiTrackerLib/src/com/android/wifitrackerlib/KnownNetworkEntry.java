@@ -41,7 +41,6 @@ import java.util.Objects;
 @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class KnownNetworkEntry extends StandardWifiEntry{
     static final String TAG = "KnownNetworkEntry";
-    public static final String KEY_PREFIX = "KnownNetworkEntry:";
 
     @Nullable private final SharedConnectivityManager mSharedConnectivityManager;
     @NonNull private final KnownNetwork mKnownNetworkData;
@@ -105,10 +104,5 @@ public class KnownNetworkEntry extends StandardWifiEntry{
         return Objects.equals(getStandardWifiEntryKey().getScanResultKey(),
                 ssidAndSecurityTypeToStandardWifiEntryKey(WifiInfo.sanitizeSsid(wifiInfo.getSSID()),
                         wifiInfo.getCurrentSecurityType()).getScanResultKey());
-    }
-
-    @Override
-    public String getKey() {
-        return KEY_PREFIX + super.getKey();
     }
 }

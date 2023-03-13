@@ -147,9 +147,6 @@ public class HotspotNetworkEntry extends WifiEntry {
 
     @WorkerThread
     protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo) {
-        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
-            return false;
-        }
         return Objects.equals(mKey.getBssid(), wifiInfo.getBSSID());
     }
 
@@ -246,6 +243,11 @@ public class HotspotNetworkEntry extends WifiEntry {
             mSharedConnectivityManager.connectHotspotNetwork(mHotspotNetworkData);
         }
         // TODO(b/271907257): Integrate data from connection status updates
+    }
+
+    @Override
+    public boolean canDisconnect() {
+        return getConnectedState() != CONNECTED_STATE_DISCONNECTED;
     }
 
     @Override
