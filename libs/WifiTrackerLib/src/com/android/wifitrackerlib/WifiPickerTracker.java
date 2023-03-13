@@ -921,11 +921,31 @@ public class WifiPickerTracker extends BaseWifiTracker {
             entry.updateHotspotNetworkData(hotspotNetworkDataById.get(deviceId));
         });
 
+        // Get network and capabilities if new network entries are being created
+        Network network = null;
+        NetworkCapabilities capabilities = null;
+        if (!newDeviceIds.isEmpty()) {
+            network = mWifiManager.getCurrentNetwork();
+            if (network != null) {
+                capabilities = mConnectivityManager.getNetworkCapabilities(network);
+                if (capabilities != null) {
+                    // getNetworkCapabilities(Network) obfuscates location info such as SSID and
+                    // networkId, so we need to set the WifiInfo directly from WifiManager.
+                    capabilities = new NetworkCapabilities.Builder(capabilities).setTransportInfo(
+                            mWifiManager.getConnectionInfo()).build();
+                }
+            }
+        }
+
         // Create new HotspotNetworkEntry objects for each new device ID
         for (Long deviceId : newDeviceIds) {
-            mHotspotNetworkEntryCache.add(
-                    new HotspotNetworkEntry(mInjector, mContext, mMainHandler, mWifiManager,
-                            mSharedConnectivityManager, hotspotNetworkDataById.get(deviceId)));
+            final HotspotNetworkEntry newEntry = new HotspotNetworkEntry(mInjector, mContext,
+                    mMainHandler, mWifiManager, mSharedConnectivityManager,
+                    hotspotNetworkDataById.get(deviceId));
+            if (network != null && capabilities != null) {
+                newEntry.onNetworkCapabilitiesChanged(network, capabilities);
+            }
+            mHotspotNetworkEntryCache.add(newEntry);
         }
     }
 
