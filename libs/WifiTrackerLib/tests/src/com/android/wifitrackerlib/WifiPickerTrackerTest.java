@@ -40,6 +40,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -91,6 +92,7 @@ public class WifiPickerTrackerTest {
     @Mock private Resources mMockResources;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
+    @Mock private ConnectivityDiagnosticsManager mMockConnectivityDiagnosticsManager;
     @Mock private TelephonyManager mMockTelephonyManager;
     @Mock private SubscriptionManager mMockSubscriptionManager;
     @Mock private Clock mMockClock;
@@ -156,6 +158,8 @@ public class WifiPickerTrackerTest {
                 .thenReturn(mMockTelephonyManager);
         when(mMockContext.getSystemService(SubscriptionManager.class))
                 .thenReturn(mMockSubscriptionManager);
+        when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
+                .thenReturn(mMockConnectivityDiagnosticsManager);
         when(mMockContext.getString(anyInt())).thenReturn("");
     }
 
@@ -653,6 +657,137 @@ public class WifiPickerTrackerTest {
 
         // Cell default + primary network validation should trigger low quality
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isEqualTo(lowQuality);
+    }
+
+    /**
+     * Tests that a connected WifiEntry will show "Checking for internet access..." as the summary
+     * if the network hasn't finished the first validation attempt yet.
+     */
+    @Test
+    public void testGetConnectedEntry_wifiNotValidatedYet_showsCheckingForInternetAccess() {
+        final String summarySeparator = " / ";
+        final String checkingForInternetAccess = "Checking for internet access..";
+        final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
+                "Authenticating", "Obtaining IP address", "Connected"};
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(summarySeparator);
+        when(mMockContext.getString(R.string.wifitrackerlib_checking_for_internet_access))
+                .thenReturn(checkingForInternetAccess);
+        when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+                .thenReturn(wifiStatusArray);
+        WifiInfo primaryWifiInfo = Mockito.mock(WifiInfo.class);
+        when(primaryWifiInfo.isPrimary()).thenReturn(true);
+        when(primaryWifiInfo.makeCopy(anyLong())).thenReturn(primaryWifiInfo);
+        NetworkCapabilities primaryCap = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setTransportInfo(primaryWifiInfo)
+                .build();
+        when(mMockConnectivityManager.getNetworkCapabilities(any())).thenReturn(primaryCap);
+
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        when(mMockConnectivityManager.getNetworkInfo(any())).thenReturn(mMockNetworkInfo);
+        ArgumentCaptor<ConnectivityDiagnosticsManager.ConnectivityDiagnosticsCallback>
+                diagnosticsCallbackCaptor = ArgumentCaptor.forClass(
+                        ConnectivityDiagnosticsManager.ConnectivityDiagnosticsCallback.class);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager)
+                .registerNetworkCallback(any(), mNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityDiagnosticsManager).registerConnectivityDiagnosticsCallback(
+                any(), any(), diagnosticsCallbackCaptor.capture());
+
+        // Still checking for internet access.
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary())
+                .isEqualTo(checkingForInternetAccess);
+
+        // Trigger a validation callback and connectivity report for the primary Wifi network.
+        primaryCap = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setTransportInfo(primaryWifiInfo)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                .build();
+        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork, primaryCap);
+        ConnectivityDiagnosticsManager.ConnectivityReport report = mock(
+                ConnectivityDiagnosticsManager.ConnectivityReport.class);
+        diagnosticsCallbackCaptor.getValue().onConnectivityReportAvailable(report);
+
+        // Now we're fully connected
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isEqualTo("Connected");
+    }
+
+    /**
+     * Tests that a connected WifiEntry that is expected to have no internet will display
+     * "Connected to device. Can't provide internet" if the network is not validated.
+     */
+    @Test
+    public void testGetConnectedEntry_wifiNotValidated_showsConnectedToDevice() {
+        final String summarySeparator = " / ";
+        final String connectedToDevice = "Connected to device. Can't provide internet";
+        final String[] wifiStatusArray = new String[]{"", "Scanning", "Connecting",
+                "Authenticating", "Obtaining IP address", "Connected"};
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(summarySeparator);
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_connected_cannot_provide_internet))
+                .thenReturn(connectedToDevice);
+        when(mMockResources.getStringArray(R.array.wifitrackerlib_wifi_status))
+                .thenReturn(wifiStatusArray);
+        WifiInfo primaryWifiInfo = Mockito.mock(WifiInfo.class);
+        when(primaryWifiInfo.isPrimary()).thenReturn(true);
+        when(primaryWifiInfo.makeCopy(anyLong())).thenReturn(primaryWifiInfo);
+        NetworkCapabilities primaryCap = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setTransportInfo(primaryWifiInfo)
+                .build();
+        when(mMockConnectivityManager.getNetworkCapabilities(any())).thenReturn(primaryCap);
+
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = spy(new WifiConfiguration());
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(config.isNoInternetAccessExpected()).thenReturn(true);
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkInfo.getDetailedState()).thenReturn(NetworkInfo.DetailedState.CONNECTED);
+        when(mMockConnectivityManager.getNetworkInfo(any())).thenReturn(mMockNetworkInfo);
+        ArgumentCaptor<ConnectivityDiagnosticsManager.ConnectivityDiagnosticsCallback>
+                diagnosticsCallbackCaptor = ArgumentCaptor.forClass(
+                ConnectivityDiagnosticsManager.ConnectivityDiagnosticsCallback.class);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager)
+                .registerNetworkCallback(any(), mNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityDiagnosticsManager).registerConnectivityDiagnosticsCallback(
+                any(), any(), diagnosticsCallbackCaptor.capture());
+
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary())
+                .isEqualTo(connectedToDevice);
+
+        // Trigger a no-validation callback and connectivity report for the primary Wifi network.
+        primaryCap = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setTransportInfo(primaryWifiInfo)
+                .build();
+        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork, primaryCap);
+        ConnectivityDiagnosticsManager.ConnectivityReport report = mock(
+                ConnectivityDiagnosticsManager.ConnectivityReport.class);
+        diagnosticsCallbackCaptor.getValue().onConnectivityReportAvailable(report);
+
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary())
+                .isEqualTo(connectedToDevice);
     }
 
     /**
