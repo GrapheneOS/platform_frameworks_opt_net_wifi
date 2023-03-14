@@ -16,6 +16,7 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
 
@@ -401,37 +402,51 @@ public class Utils {
         }
 
         // Check for any failure messages to display
+        NetworkSelectionStatus networkSelectionStatus =
+                wifiConfiguration.getNetworkSelectionStatus();
         if (wifiConfiguration.hasNoInternetAccess()) {
-            int messageID =
-                    wifiConfiguration.getNetworkSelectionStatus().getNetworkSelectionStatus()
-                            == NETWORK_SELECTION_PERMANENTLY_DISABLED
-                            ? R.string.wifitrackerlib_wifi_no_internet_no_reconnect
-                            : R.string.wifitrackerlib_wifi_no_internet;
-            return context.getString(messageID);
-        } else if (wifiConfiguration.getNetworkSelectionStatus().getNetworkSelectionStatus()
-                != NETWORK_SELECTION_ENABLED) {
-            WifiConfiguration.NetworkSelectionStatus networkStatus =
-                    wifiConfiguration.getNetworkSelectionStatus();
-            switch (networkStatus.getNetworkSelectionDisableReason()) {
-                case WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE:
-                case WifiConfiguration.NetworkSelectionStatus
-                        .DISABLED_AUTHENTICATION_NO_SUBSCRIPTION:
+            if (networkSelectionStatus.getNetworkSelectionStatus()
+                    == NETWORK_SELECTION_PERMANENTLY_DISABLED) {
+                return context.getString(R.string.wifitrackerlib_wifi_no_internet_no_reconnect);
+            }
+            return context.getString(R.string.wifitrackerlib_wifi_no_internet);
+        }
+        if (networkSelectionStatus.getNetworkSelectionStatus() != NETWORK_SELECTION_ENABLED) {
+            switch (networkSelectionStatus.getNetworkSelectionDisableReason()) {
+                case NetworkSelectionStatus.DISABLED_CONSECUTIVE_FAILURES:
+                    if (!networkSelectionStatus.hasEverConnected()
+                            && networkSelectionStatus.getDisableReasonCounter(
+                                    NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE) > 0) {
+                        return context.getString(
+                                R.string.wifitrackerlib_wifi_disabled_password_failure);
+                    }
+                    break;
+                case NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE:
+                case NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_CREDENTIALS:
+                case NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_SUBSCRIPTION:
                     return context.getString(
                             R.string.wifitrackerlib_wifi_disabled_password_failure);
-                case WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD:
+                case NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD:
                     return context.getString(R.string.wifitrackerlib_wifi_check_password_try_again);
-                case WifiConfiguration.NetworkSelectionStatus.DISABLED_DHCP_FAILURE:
+                case NetworkSelectionStatus.DISABLED_DHCP_FAILURE:
                     return context.getString(R.string.wifitrackerlib_wifi_disabled_network_failure);
-                case WifiConfiguration.NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION:
+                case NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION:
                     return context.getString(R.string.wifitrackerlib_wifi_disabled_generic);
-                case WifiConfiguration.NetworkSelectionStatus.DISABLED_NO_INTERNET_PERMANENT:
-                case WifiConfiguration.NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY:
+                case NetworkSelectionStatus.DISABLED_NO_INTERNET_PERMANENT:
+                case NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY:
                     return context.getString(R.string.wifitrackerlib_wifi_no_internet_no_reconnect);
                 case DISABLED_TRANSITION_DISABLE_INDICATION:
                     return context.getString(
                             R.string.wifitrackerlib_wifi_disabled_transition_disable_indication);
                 default:
                     break;
+            }
+        } else { // NETWORK_SELECTION_ENABLED
+            // Show failure message if we've gotten AUTHENTICATION_FAILURE and have never connected
+            // before, which usually indicates the credentials are wrong.
+            if (networkSelectionStatus.getDisableReasonCounter(DISABLED_AUTHENTICATION_FAILURE) > 0
+                    && !networkSelectionStatus.hasEverConnected()) {
+                return context.getString(R.string.wifitrackerlib_wifi_disabled_password_failure);
             }
         }
         switch (wifiConfiguration.getRecentFailureReason()) {
