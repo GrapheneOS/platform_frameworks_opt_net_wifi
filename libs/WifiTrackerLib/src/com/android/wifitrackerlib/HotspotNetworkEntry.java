@@ -20,7 +20,6 @@ import static android.os.Build.VERSION_CODES;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
@@ -147,8 +146,10 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @WorkerThread
-    protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo,
-            @NonNull NetworkInfo networkInfo) {
+    protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo) {
+        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
+            return false;
+        }
         return Objects.equals(mKey.getBssid(), wifiInfo.getBSSID());
     }
 
