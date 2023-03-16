@@ -26,6 +26,7 @@ import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
 import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
 import android.os.Handler;
+import android.text.BidiFormatter;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
@@ -166,9 +167,10 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mHotspotNetworkData == null) {
             return "";
         }
-        // TODO(b/271869550): Fully implement this WIP string.
-        return mHotspotNetworkData.getNetworkName() + " from "
-                + mHotspotNetworkData.getNetworkProviderInfo().getModelName();
+        return mContext.getString(R.string.wifitrackerlib_hotspot_network_summary,
+                BidiFormatter.getInstance().unicodeWrap(mHotspotNetworkData.getNetworkName()),
+                BidiFormatter.getInstance().unicodeWrap(
+                        mHotspotNetworkData.getNetworkProviderInfo().getModelName()));
     }
 
     /**
@@ -180,9 +182,10 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mHotspotNetworkData == null) {
             return "";
         }
-        // TODO(b/271869550): Fully implement this WIP string.
-        return mHotspotNetworkData.getNetworkName() + " from "
-                + mHotspotNetworkData.getNetworkProviderInfo().getDeviceName();
+        return mContext.getString(R.string.wifitrackerlib_hotspot_network_alternate,
+                BidiFormatter.getInstance().unicodeWrap(mHotspotNetworkData.getNetworkName()),
+                BidiFormatter.getInstance().unicodeWrap(
+                        mHotspotNetworkData.getNetworkProviderInfo().getDeviceName()));
     }
 
     /**
