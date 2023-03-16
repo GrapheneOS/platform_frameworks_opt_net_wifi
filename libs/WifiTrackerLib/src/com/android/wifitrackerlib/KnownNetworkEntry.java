@@ -48,10 +48,11 @@ public class KnownNetworkEntry extends StandardWifiEntry{
     KnownNetworkEntry(
             @NonNull WifiTrackerInjector injector, @NonNull Context context,
             @NonNull Handler callbackHandler, @NonNull StandardWifiEntryKey key,
-            @NonNull WifiManager wifiManager, boolean forSavedNetworksPage,
+            @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull KnownNetwork knownNetworkData) {
-        super(injector, context, callbackHandler, key, wifiManager, forSavedNetworksPage);
+        super(injector, context, callbackHandler, key, wifiManager,
+                false /* forSavedNetworksPage */);
         mSharedConnectivityManager = sharedConnectivityManager;
         mKnownNetworkData = knownNetworkData;
     }
@@ -60,40 +61,36 @@ public class KnownNetworkEntry extends StandardWifiEntry{
             @NonNull WifiTrackerInjector injector, @NonNull Context context,
             @NonNull Handler callbackHandler, @NonNull StandardWifiEntryKey key,
             @Nullable List<WifiConfiguration> configs, @Nullable List<ScanResult> scanResults,
-            @NonNull WifiManager wifiManager, boolean forSavedNetworksPage,
+            @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull KnownNetwork knownNetworkData) throws IllegalArgumentException {
         super(injector, context, callbackHandler, key, configs, scanResults, wifiManager,
-                forSavedNetworksPage);
+                false /* forSavedNetworksPage */);
         mSharedConnectivityManager = sharedConnectivityManager;
         mKnownNetworkData = knownNetworkData;
     }
 
     @Override
     public synchronized String getSummary(boolean concise) {
-        if (isSaved()) {
-            return super.getSummary(concise);
-        }
         return "Known"; // TODO(b/271869550): Fully implement this WIP string.
     }
 
     @Override
     public synchronized void connect(@Nullable ConnectCallback callback) {
-        if (isSaved()) {
-            super.connect(callback);
-        } else if (mSharedConnectivityManager != null) {
+        if (mSharedConnectivityManager != null) {
             mSharedConnectivityManager.connectKnownNetwork(mKnownNetworkData);
         }
         // TODO(b/271907257): Integrate data from connection status updates
     }
 
     @Override
-    public synchronized void forget(@Nullable ForgetCallback callback) {
-        if (mSharedConnectivityManager != null) {
-            mSharedConnectivityManager.forgetKnownNetwork(mKnownNetworkData);
-        }
-        super.forget(callback);
-        // TODO(b/271907257): Integrate data from connection status updates
+    public synchronized boolean isSaved() {
+        return false;
+    }
+
+    @Override
+    public synchronized boolean isSuggestion() {
+        return false;
     }
 
     @WorkerThread
