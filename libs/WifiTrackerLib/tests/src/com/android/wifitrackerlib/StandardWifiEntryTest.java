@@ -19,8 +19,9 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_NO_CREDENTIALS;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_BY_WRONG_PASSWORD;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_CONSECUTIVE_FAILURES;
+import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
-import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_OPEN;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_OWE;
@@ -42,7 +43,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -1125,7 +1125,6 @@ public class StandardWifiEntryTest {
 
     @Test
     public void testShouldEditBeforeConnect_authenticationFailure_returnTrue() {
-        // Test DISABLED_AUTHENTICATION_FAILURE.
         WifiConfiguration wifiConfig = spy(new WifiConfiguration());
         wifiConfig.SSID = "\"ssid\"";
         wifiConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
@@ -1134,38 +1133,68 @@ public class StandardWifiEntryTest {
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
                 Collections.singletonList(wifiConfig), null, mMockWifiManager,
                 false /* forSavedNetworksPage */);
-        NetworkSelectionStatus.Builder statusBuilder = new NetworkSelectionStatus.Builder();
-        NetworkSelectionStatus networkSelectionStatus = spy(statusBuilder.setNetworkSelectionStatus(
-                NETWORK_SELECTION_TEMPORARY_DISABLED)
-                .setNetworkSelectionDisableReason(
-                        DISABLED_AUTHENTICATION_FAILURE)
-                .build());
-        doReturn(1).when(networkSelectionStatus).getDisableReasonCounter(
-                DISABLED_AUTHENTICATION_FAILURE);
-        doReturn(true).when(networkSelectionStatus).hasEverConnected();
-        doReturn(networkSelectionStatus).when(wifiConfig).getNetworkSelectionStatus();
+        NetworkSelectionStatus networkSelectionStatus = mock(NetworkSelectionStatus.class);
+        when(wifiConfig.getNetworkSelectionStatus()).thenReturn(networkSelectionStatus);
 
+        String saved = "Saved";
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_disconnected)).thenReturn(saved);
+        String separator = " / ";
+        when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
+                .thenReturn(separator);
+        String disabledPasswordFailure = "disabledPasswordFailure";
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_disabled_password_failure))
+                .thenReturn(disabledPasswordFailure);
+        String checkPasswordTryAgain = "checkPasswordTryAgain";
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_check_password_try_again))
+                .thenReturn(checkPasswordTryAgain);
+
+        // Test DISABLED_AUTHENTICATION_FAILURE for never connected network
+        when(networkSelectionStatus.hasEverConnected()).thenReturn(false);
+        when(networkSelectionStatus.getNetworkSelectionStatus())
+                .thenReturn(NETWORK_SELECTION_ENABLED);
+        when(networkSelectionStatus.getDisableReasonCounter(DISABLED_AUTHENTICATION_FAILURE))
+                .thenReturn(1);
         assertThat(entry.shouldEditBeforeConnect()).isTrue();
+        assertThat(entry.getSummary()).isEqualTo(saved + separator + disabledPasswordFailure);
+
+        // Test DISABLED_AUTHENTICATION_FAILURE for a previously connected network
+        when(networkSelectionStatus.hasEverConnected()).thenReturn(true);
+        when(networkSelectionStatus.getNetworkSelectionStatus())
+                .thenReturn(NETWORK_SELECTION_PERMANENTLY_DISABLED);
+        when(networkSelectionStatus.getNetworkSelectionDisableReason())
+                .thenReturn(DISABLED_AUTHENTICATION_FAILURE);
+        when(wifiConfig.hasNoInternetAccess()).thenReturn(false);
+        assertThat(entry.shouldEditBeforeConnect()).isTrue();
+        assertThat(entry.getSummary()).isEqualTo(saved + separator + disabledPasswordFailure);
+
+        // Test DISABLED_CONSECUTIVE_FAILURES with some DISABLED_AUTHENTICATION_FAILURE
+        when(networkSelectionStatus.hasEverConnected()).thenReturn(false);
+        when(networkSelectionStatus.getNetworkSelectionStatus())
+                .thenReturn(NETWORK_SELECTION_PERMANENTLY_DISABLED);
+        when(networkSelectionStatus.getNetworkSelectionDisableReason())
+                .thenReturn(DISABLED_CONSECUTIVE_FAILURES);
+        when(networkSelectionStatus.getDisableReasonCounter(DISABLED_AUTHENTICATION_FAILURE))
+                .thenReturn(3);
+        assertThat(entry.shouldEditBeforeConnect()).isTrue();
+        assertThat(entry.getSummary()).isEqualTo(saved + separator + disabledPasswordFailure);
 
         // Test DISABLED_BY_WRONG_PASSWORD.
-        networkSelectionStatus = spy(statusBuilder.setNetworkSelectionStatus(
-                NETWORK_SELECTION_PERMANENTLY_DISABLED)
-                .setNetworkSelectionDisableReason(DISABLED_BY_WRONG_PASSWORD)
-                .build());
-        doReturn(1).when(networkSelectionStatus).getDisableReasonCounter(
-                DISABLED_BY_WRONG_PASSWORD);
-
+        when(networkSelectionStatus.hasEverConnected()).thenReturn(false);
+        when(networkSelectionStatus.getNetworkSelectionStatus())
+                .thenReturn(NETWORK_SELECTION_PERMANENTLY_DISABLED);
+        when(networkSelectionStatus.getNetworkSelectionDisableReason())
+                .thenReturn(DISABLED_BY_WRONG_PASSWORD);
         assertThat(entry.shouldEditBeforeConnect()).isTrue();
+        assertThat(entry.getSummary()).isEqualTo(saved + separator + checkPasswordTryAgain);
 
         // Test DISABLED_AUTHENTICATION_NO_CREDENTIALS.
-        networkSelectionStatus = spy(statusBuilder.setNetworkSelectionStatus(
-                NETWORK_SELECTION_PERMANENTLY_DISABLED)
-                .setNetworkSelectionDisableReason(DISABLED_AUTHENTICATION_NO_CREDENTIALS)
-                .build());
-        doReturn(1).when(networkSelectionStatus).getDisableReasonCounter(
-                DISABLED_AUTHENTICATION_NO_CREDENTIALS);
-
+        when(networkSelectionStatus.hasEverConnected()).thenReturn(false);
+        when(networkSelectionStatus.getNetworkSelectionStatus())
+                .thenReturn(NETWORK_SELECTION_PERMANENTLY_DISABLED);
+        when(networkSelectionStatus.getNetworkSelectionDisableReason())
+                .thenReturn(DISABLED_AUTHENTICATION_NO_CREDENTIALS);
         assertThat(entry.shouldEditBeforeConnect()).isTrue();
+        assertThat(entry.getSummary()).isEqualTo(saved + separator + disabledPasswordFailure);
     }
 
     @Test
