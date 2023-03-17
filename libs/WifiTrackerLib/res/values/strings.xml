@@ -118,6 +118,12 @@
     <!-- Summary for admin restricted networks [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_admin_restricted_network">Not allowed by your organization</string>
 
+    <!-- Summary for a hotspot network (used on "Internet" page) [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_hotspot_network_summary"><xliff:g id="network name" example="Google Fi">%1$s</xliff:g> from <xliff:g id="model name" example="Pixel 7">%2$s</xliff:g></string>
+
+    <!-- Alternate summary for a hotspot network (used on "Network & internet" page) [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_hotspot_network_alternate"><xliff:g id="network name" example="Google Fi">%1$s</xliff:g> from <xliff:g id="device name" example="Matt's Phone">%2$s</xliff:g></string>
+
     <!-- Concise terminology for wifi with WPA/WPA2 802.1x EAP security [CHAR LIMIT=40] -->
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2">WPA/WPA2-EAP</string>
 
