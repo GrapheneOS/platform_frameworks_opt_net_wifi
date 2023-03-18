@@ -60,6 +60,7 @@ import android.os.Handler;
 import android.os.test.TestLooper;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.util.ArrayMap;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -78,7 +79,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -967,7 +967,7 @@ public class WifiPickerTrackerTest {
 
         final WifiConfiguration wifiConfig = spy(new WifiConfiguration());
         when(wifiConfig.getKey()).thenReturn(passpointConfig.getUniqueId());
-        final Map<Integer, List<ScanResult>> mapping = new HashMap<>();
+        final Map<Integer, List<ScanResult>> mapping = new ArrayMap<>();
         mapping.put(WifiManager.PASSPOINT_HOME_NETWORK, Collections.singletonList(passpointScan));
         List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> allMatchingWifiConfigs =
                 Collections.singletonList(new Pair<>(wifiConfig, mapping));
@@ -1002,7 +1002,7 @@ public class WifiPickerTrackerTest {
         when(wifiConfig.getKey()).thenReturn(passpointConfig.getUniqueId());
         when(wifiConfig.isPasspoint()).thenReturn(true);
         wifiConfig.networkId = 1;
-        final Map<Integer, List<ScanResult>> mapping = new HashMap<>();
+        final Map<Integer, List<ScanResult>> mapping = new ArrayMap<>();
         mapping.put(WifiManager.PASSPOINT_HOME_NETWORK, Collections.singletonList(
                 buildScanResult("ssid", "bssid", START_MILLIS)));
         List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> allMatchingWifiConfigs =
@@ -1045,7 +1045,7 @@ public class WifiPickerTrackerTest {
                 .thenReturn(Collections.singletonList(passpointConfig));
         final WifiConfiguration wifiConfig = spy(new WifiConfiguration());
         when(wifiConfig.getKey()).thenReturn(passpointConfig.getUniqueId());
-        final Map<Integer, List<ScanResult>> mapping = new HashMap<>();
+        final Map<Integer, List<ScanResult>> mapping = new ArrayMap<>();
         mapping.put(WifiManager.PASSPOINT_HOME_NETWORK, Collections.singletonList(
                 buildScanResult("ssid", "bssid", START_MILLIS)));
         List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> allMatchingWifiConfigs =
@@ -1086,7 +1086,7 @@ public class WifiPickerTrackerTest {
                 .thenReturn(Collections.singletonList(passpointConfig));
         final WifiConfiguration wifiConfig = spy(new WifiConfiguration());
         when(wifiConfig.getKey()).thenReturn(passpointConfig.getUniqueId());
-        final Map<Integer, List<ScanResult>> mapping = new HashMap<>();
+        final Map<Integer, List<ScanResult>> mapping = new ArrayMap<>();
         mapping.put(WifiManager.PASSPOINT_HOME_NETWORK, Collections.singletonList(
                 buildScanResult("ssid", "bssid", START_MILLIS)));
         List<Pair<WifiConfiguration, Map<Integer, List<ScanResult>>>> allMatchingWifiConfigs =
