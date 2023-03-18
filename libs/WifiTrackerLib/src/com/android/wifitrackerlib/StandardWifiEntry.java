@@ -66,6 +66,7 @@ import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.ArraySet;
 import android.util.Log;
 
@@ -83,7 +84,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -106,10 +106,10 @@ public class StandardWifiEntry extends WifiEntry {
     @NonNull private final Context mContext;
 
     // Map of security type to matching scan results
-    @NonNull private final Map<Integer, List<ScanResult>> mMatchingScanResults = new HashMap<>();
+    @NonNull private final Map<Integer, List<ScanResult>> mMatchingScanResults = new ArrayMap<>();
     // Map of security type to matching WifiConfiguration
     // TODO: Change this to single WifiConfiguration once we can get multiple security type configs.
-    @NonNull private final Map<Integer, WifiConfiguration> mMatchingWifiConfigs = new HashMap<>();
+    @NonNull private final Map<Integer, WifiConfiguration> mMatchingWifiConfigs = new ArrayMap<>();
 
     // List of the target scan results to be displayed. This should match the highest available
     // security from all of the matched WifiConfigurations.
