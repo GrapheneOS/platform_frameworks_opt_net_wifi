@@ -470,7 +470,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleServiceConnected() {
-        if (ENABLE_SHARED_CONNECTIVITY_FEATURE && mSharedConnectivityManager != null) {
+        if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
             mKnownNetworkDataCache.clear();
             mKnownNetworkDataCache.addAll(mSharedConnectivityManager.getKnownNetworks());
             updateKnownNetworkEntryScans(mScanResultUpdater.getScanResults());
@@ -490,7 +490,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mActiveWifiEntries.addAll(mSuggestedWifiEntryCache);
             mActiveWifiEntries.addAll(mPasspointWifiEntryCache.values());
             if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
-                mActiveWifiEntries.addAll(mKnownNetworkEntryCache);
                 mActiveWifiEntries.addAll(mHotspotNetworkEntryCache);
             }
             if (mNetworkRequestEntry != null) {
@@ -498,26 +497,26 @@ public class WifiPickerTracker extends BaseWifiTracker {
             }
             mActiveWifiEntries.removeIf(entry ->
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED);
-            Set<ScanResultKey> activeKnownAndHotspotKeys = new ArraySet<>();
+            Set<ScanResultKey> activeHotspotNetworkKeys = new ArraySet<>();
             for (WifiEntry entry : mActiveWifiEntries) {
-                if (entry instanceof KnownNetworkEntry) {
-                    activeKnownAndHotspotKeys.add(((KnownNetworkEntry) entry)
-                            .getStandardWifiEntryKey().getScanResultKey());
-                } else if (entry instanceof HotspotNetworkEntry) {
-                    activeKnownAndHotspotKeys.add(((HotspotNetworkEntry) entry)
+                if (entry instanceof HotspotNetworkEntry) {
+                    activeHotspotNetworkKeys.add(((HotspotNetworkEntry) entry)
                             .getHotspotNetworkEntryKey().getScanResultKey());
                 }
             }
             mActiveWifiEntries.removeIf(entry -> entry instanceof StandardWifiEntry
-                    && !(entry instanceof KnownNetworkEntry)
-                    && activeKnownAndHotspotKeys.contains(
+                    && activeHotspotNetworkKeys.contains(
                     ((StandardWifiEntry) entry).getStandardWifiEntryKey().getScanResultKey()));
             mActiveWifiEntries.sort(WifiEntry.WIFI_PICKER_COMPARATOR);
             mWifiEntries.clear();
             final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =
                     mSuggestedWifiEntryCache.stream()
-                            .filter(entry -> entry.isUserShareable()
-                                    || mActiveWifiEntries.contains(entry))
+                            .filter(entry -> {
+                                if (entry.isUserShareable()) return true;
+                                synchronized (mLock) {
+                                    return mActiveWifiEntries.contains(entry);
+                                }
+                            })
                             .map(entry -> entry.getStandardWifiEntryKey().getScanResultKey())
                             .collect(Collectors.toSet());
             Set<String> passpointUtf8Ssids = new ArraySet<>();
@@ -885,8 +884,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             final KnownNetworkEntry newEntry = new KnownNetworkEntry(mInjector, mContext,
                     mMainHandler, entryKey, null /* configs */,
                     scanResultsByKey.get(scanKey), mWifiManager,
-                    false, /* forSavedNetworksPage */ mSharedConnectivityManager,
-                    knownNetworkDataByKey.get(scanKey));
+                    mSharedConnectivityManager, knownNetworkDataByKey.get(scanKey));
             if (network != null && capabilities != null) {
                 newEntry.onNetworkCapabilitiesChanged(network, capabilities);
             }

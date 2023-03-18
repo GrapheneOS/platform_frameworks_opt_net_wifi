@@ -40,6 +40,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.util.Pair;
 
@@ -56,7 +57,6 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +86,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     // Cache containing saved StandardWifiEntries. Must be accessed only by the worker thread.
     private final List<StandardWifiEntry> mStandardWifiEntryCache = new ArrayList<>();
     // Cache containing saved PasspointWifiEntries. Must be accessed only by the worker thread.
-    private final Map<String, PasspointWifiEntry> mPasspointWifiEntryCache = new HashMap<>();
+    private final Map<String, PasspointWifiEntry> mPasspointWifiEntryCache = new ArrayMap<>();
 
     public SavedNetworkTracker(@NonNull Lifecycle lifecycle, @NonNull Context context,
             @NonNull WifiManager wifiManager,
