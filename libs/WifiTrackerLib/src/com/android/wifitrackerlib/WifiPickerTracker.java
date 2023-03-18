@@ -516,8 +516,12 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mWifiEntries.clear();
             final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =
                     mSuggestedWifiEntryCache.stream()
-                            .filter(entry -> entry.isUserShareable()
-                                    || mActiveWifiEntries.contains(entry))
+                            .filter(entry -> {
+                                if (entry.isUserShareable()) return true;
+                                synchronized (mLock) {
+                                    return mActiveWifiEntries.contains(entry);
+                                }
+                            })
                             .map(entry -> entry.getStandardWifiEntryKey().getScanResultKey())
                             .collect(Collectors.toSet());
             Set<String> passpointUtf8Ssids = new ArraySet<>();
