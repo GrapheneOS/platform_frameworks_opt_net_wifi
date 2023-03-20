@@ -394,9 +394,10 @@ public class WifiEntry {
 
     /**
      * Returns the security type defined by the SECURITY constants
-     * DEPRECATED: Use getSecurityTypes() which can return multiple security types.
+     * @deprecated Use getSecurityTypes() which can return multiple security types.
      */
     // TODO(b/187554920): Remove this and move all clients to getSecurityTypes()
+    @Deprecated
     @Security
     public int getSecurity() {
         switch (getSingleSecurityTypeFromMultipleSecurityTypes(getSecurityTypes())) {
