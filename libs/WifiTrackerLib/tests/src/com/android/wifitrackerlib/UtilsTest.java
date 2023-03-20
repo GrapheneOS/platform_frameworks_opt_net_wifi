@@ -861,4 +861,37 @@ public class UtilsTest {
                 + STRING_SUMMARY_SEPARATOR + STRING_CONNECTED_LOW_QUALITY
                 + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
     }
+
+    @Test
+    public void testGetSingleSecurityTypeFromMultipleSecurityTypes() {
+        // Empty
+        assertThat(Utils.getSingleSecurityTypeFromMultipleSecurityTypes(new ArrayList<>()))
+                .isEqualTo(WifiInfo.SECURITY_TYPE_UNKNOWN);
+        // Single type
+        assertThat(Utils.getSingleSecurityTypeFromMultipleSecurityTypes(
+                Arrays.asList(WifiInfo.SECURITY_TYPE_PSK)))
+                .isEqualTo(WifiInfo.SECURITY_TYPE_PSK);
+        // Open + OWE -> Open
+        assertThat(Utils.getSingleSecurityTypeFromMultipleSecurityTypes(
+                Arrays.asList(WifiInfo.SECURITY_TYPE_OPEN, WifiInfo.SECURITY_TYPE_OWE)))
+                        .isEqualTo(WifiInfo.SECURITY_TYPE_OPEN);
+        // PSK + SAE -> PSK
+        assertThat(Utils.getSingleSecurityTypeFromMultipleSecurityTypes(
+                Arrays.asList(WifiInfo.SECURITY_TYPE_SAE, WifiInfo.SECURITY_TYPE_PSK)))
+                .isEqualTo(WifiInfo.SECURITY_TYPE_PSK);
+        // EAP + WPA3-Enterprise -> EAP
+        assertThat(Utils.getSingleSecurityTypeFromMultipleSecurityTypes(
+                Arrays.asList(WifiInfo.SECURITY_TYPE_EAP,
+                                WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE)))
+                .isEqualTo(WifiInfo.SECURITY_TYPE_EAP);
+        // Everything else -> first security type on the list.
+        assertThat(Utils.getSingleSecurityTypeFromMultipleSecurityTypes(
+                Arrays.asList(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2,
+                        WifiInfo.SECURITY_TYPE_PASSPOINT_R3)))
+                .isEqualTo(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
+        assertThat(Utils.getSingleSecurityTypeFromMultipleSecurityTypes(
+                Arrays.asList(WifiInfo.SECURITY_TYPE_PASSPOINT_R3,
+                        WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2)))
+                .isEqualTo(WifiInfo.SECURITY_TYPE_PASSPOINT_R3);
+    }
 }
