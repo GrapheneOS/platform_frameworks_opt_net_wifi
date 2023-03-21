@@ -31,7 +31,9 @@ import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiScanner;
 import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
 import android.net.wifi.sharedconnectivity.app.HotspotNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.KnownNetwork;
@@ -56,6 +58,7 @@ import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -207,6 +210,13 @@ public class BaseWifiTracker implements LifecycleObserver {
         }
     };
 
+    private final Executor mConnectivityDiagnosticsExecutor = new Executor() {
+        @Override
+        public void execute(Runnable command) {
+            mWorkerHandler.post(command);
+        }
+    };
+
     @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
     private final Executor mSharedConnectivityExecutor = new Executor() {
         @Override
@@ -330,7 +340,7 @@ public class BaseWifiTracker implements LifecycleObserver {
             mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
                     mWorkerHandler);
             mConnectivityDiagnosticsManager.registerConnectivityDiagnosticsCallback(mNetworkRequest,
-                    command -> mWorkerHandler.post(command), mConnectivityDiagnosticsCallback);
+                    mConnectivityDiagnosticsExecutor, mConnectivityDiagnosticsCallback);
             if (mSharedConnectivityManager != null && BuildCompat.isAtLeastU()) {
                 mSharedConnectivityManager.registerCallback(mSharedConnectivityExecutor,
                         mSharedConnectivityCallback);
@@ -598,11 +608,59 @@ public class BaseWifiTracker implements LifecycleObserver {
     /**
      * Scanner to handle starting scans every SCAN_INTERVAL_MILLIS
      */
+    @WorkerThread
     private class Scanner extends Handler {
         private static final int SCAN_RETRY_TIMES = 3;
 
         private int mRetry = 0;
         private boolean mIsActive;
+        private final WifiScanner.ScanListener mFirstScanListener = new WifiScanner.ScanListener() {
+            @Override
+            public void onPeriodChanged(int periodInMs) {
+                // No-op.
+            }
+
+            @Override
+            public void onResults(WifiScanner.ScanData[] results) {
+                if (!mIsActive) {
+                    return;
+                }
+                if (sVerboseLogging) {
+                    Log.v(mTag, "Received scan results from first scan request.");
+                }
+                List<ScanResult> scanResults = new ArrayList<>();
+                if (results != null) {
+                    for (WifiScanner.ScanData scanData : results) {
+                        scanResults.addAll(List.of(scanData.getResults()));
+                    }
+                }
+                // Fake a SCAN_RESULTS_AVAILABLE_ACTION. The results should already be populated in
+                // mScanResultUpdater, which is the source of truth for the child classes.
+                mScanResultUpdater.update(scanResults);
+                handleScanResultsAvailableAction(
+                        new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+                                .putExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
+                // Now start scanning via WifiManager.startScan().
+                postScan();
+            }
+
+            @Override
+            public void onFullResult(ScanResult fullScanResult) {
+                // No-op.
+            }
+
+            @Override
+            public void onSuccess() {
+                // No-op.
+            }
+
+            @Override
+            public void onFailure(int reason, String description) {
+                Log.e(mTag, "Failed to scan! Reason: " + reason + ", ");
+                // First scan failed, start scanning normally anyway.
+                postScan();
+            }
+        };
 
         private Scanner(Looper looper) {
             super(looper);
@@ -613,6 +671,23 @@ public class BaseWifiTracker implements LifecycleObserver {
                 mIsActive = true;
                 if (isVerboseLoggingEnabled()) {
                     Log.v(mTag, "Scanner start");
+                }
+                if (BuildCompat.isAtLeastU()) {
+                    // Start off with a fast scan of 2.4GHz, 5GHz, and 6GHz RNR using WifiScanner.
+                    // After this is done, fall back to WifiManager.startScan() to get the rest of
+                    // the bands and hidden networks.
+                    // TODO(b/274177966): Move to using WifiScanner exclusively once we have
+                    //                    permission to use ScanSettings.hiddenNetworks.
+                    WifiScanner.ScanSettings scanSettings = new WifiScanner.ScanSettings();
+                    scanSettings.band = WifiScanner.WIFI_BAND_BOTH;
+                    scanSettings.setRnrSetting(WifiScanner.WIFI_RNR_ENABLED);
+                    WifiScanner wifiScanner = mContext.getSystemService(WifiScanner.class);
+                    if (wifiScanner != null) {
+                        wifiScanner.startScan(scanSettings, mFirstScanListener);
+                        return;
+                    } else {
+                        Log.e(mTag, "Failed to retrieve WifiScanner!");
+                    }
                 }
                 postScan();
             }

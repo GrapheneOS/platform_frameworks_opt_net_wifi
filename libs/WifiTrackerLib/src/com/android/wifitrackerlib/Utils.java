@@ -201,9 +201,13 @@ public class Utils {
      */
     static int getSingleSecurityTypeFromMultipleSecurityTypes(
             @NonNull List<Integer> securityTypes) {
+        if (securityTypes.size() == 0) {
+            return WifiInfo.SECURITY_TYPE_UNKNOWN;
+        }
         if (securityTypes.size() == 1) {
             return securityTypes.get(0);
-        } else if (securityTypes.size() == 2) {
+        }
+        if (securityTypes.size() == 2) {
             if (securityTypes.contains(WifiInfo.SECURITY_TYPE_OPEN)) {
                 return WifiInfo.SECURITY_TYPE_OPEN;
             }
@@ -214,7 +218,8 @@ public class Utils {
                 return WifiInfo.SECURITY_TYPE_EAP;
             }
         }
-        return WifiInfo.SECURITY_TYPE_UNKNOWN;
+        // Default to the first security type if we don't need any special mapping.
+        return securityTypes.get(0);
     }
 
     /**
