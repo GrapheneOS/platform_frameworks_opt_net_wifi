@@ -35,7 +35,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +53,6 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiScanner;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
 import android.net.wifi.hotspot2.pps.HomeSp;
@@ -97,7 +95,6 @@ public class WifiPickerTrackerTest {
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
     @Mock private WifiManager mMockWifiManager;
-    @Mock private WifiScanner mWifiScanner;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private ConnectivityDiagnosticsManager mMockConnectivityDiagnosticsManager;
     @Mock private TelephonyManager mMockTelephonyManager;
@@ -192,7 +189,6 @@ public class WifiPickerTrackerTest {
                 .thenReturn(mMockSubscriptionManager);
         when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
                 .thenReturn(mMockConnectivityDiagnosticsManager);
-        when(mMockContext.getSystemService(WifiScanner.class)).thenReturn(mWifiScanner);
         when(mMockContext.getString(anyInt())).thenReturn("");
     }
 
@@ -1992,57 +1988,5 @@ public class WifiPickerTrackerTest {
                 mDefaultNetworkCallbackCaptor.getValue());
         verify(mMockConnectivityManager).unregisterNetworkCallback(
                 mDefaultNetworkCallbackCaptor.getValue());
-    }
-
-    /**
-     * Tests that the BaseWifiTracker.Scanner continues scanning with WifiManager.startScan() after
-     * the first WifiScanner result is received.
-     */
-    @Test
-    public void testScanner_wifiScannerResultReceived_scannerContinues() {
-        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
-        wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
-        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
-                any(), any(), any());
-        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION).putExtra(
-                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_ENABLED));
-
-        ArgumentCaptor<WifiScanner.ScanListener> mScanListenerCaptor =
-                ArgumentCaptor.forClass(WifiScanner.ScanListener.class);
-        verify(mWifiScanner).startScan(any(), mScanListenerCaptor.capture());
-        mTestLooper.moveTimeForward(SCAN_INTERVAL_MILLIS);
-        mTestLooper.dispatchAll();
-        verify(mMockWifiManager, never()).startScan();
-
-        mScanListenerCaptor.getValue().onResults(null);
-        verify(mMockWifiManager).startScan();
-    }
-
-    /**
-     * Tests that the BaseWifiTracker.Scanner continues scanning with WifiManager.startScan() after
-     * the first WifiScanner scan fails.
-     */
-    @Test
-    public void testScanner_wifiScannerFailed_scannerContinues() {
-        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
-        wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
-        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
-                any(), any(), any());
-        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
-                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION).putExtra(
-                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_ENABLED));
-
-        ArgumentCaptor<WifiScanner.ScanListener> mScanListenerCaptor =
-                ArgumentCaptor.forClass(WifiScanner.ScanListener.class);
-        verify(mWifiScanner).startScan(any(), mScanListenerCaptor.capture());
-        mTestLooper.moveTimeForward(SCAN_INTERVAL_MILLIS);
-        mTestLooper.dispatchAll();
-        verify(mMockWifiManager, never()).startScan();
-
-        mScanListenerCaptor.getValue().onFailure(0, "Reason");
-        verify(mMockWifiManager).startScan();
     }
 }
