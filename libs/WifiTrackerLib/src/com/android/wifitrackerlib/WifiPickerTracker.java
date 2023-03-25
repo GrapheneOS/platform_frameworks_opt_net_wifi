@@ -46,7 +46,9 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.hotspot2.OsuProvider;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
+import android.net.wifi.sharedconnectivity.app.HotspotNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.KnownNetwork;
+import android.net.wifi.sharedconnectivity.app.KnownNetworkConnectionStatus;
 import android.os.Handler;
 import android.telephony.SubscriptionManager;
 import android.text.TextUtils;
@@ -469,6 +471,27 @@ public class WifiPickerTracker extends BaseWifiTracker {
             updateHotspotNetworkEntries();
             updateWifiEntries();
         }
+    }
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    protected void handleHotspotNetworkConnectionStatusChanged(
+            @NonNull HotspotNetworkConnectionStatus status) {
+        mHotspotNetworkEntryCache.stream().filter(
+                entry -> entry.getHotspotNetworkEntryKey().getDeviceId()
+                        == status.getHotspotNetwork().getDeviceId()).forEach(
+                                entry -> entry.onConnectionStatusChanged(status.getStatus()));
+    }
+
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    @Override
+    protected void handleKnownNetworkConnectionStatusChanged(
+            @NonNull KnownNetworkConnectionStatus status) {
+        final ScanResultKey key = new ScanResultKey(status.getKnownNetwork().getSsid(),
+                status.getKnownNetwork().getSecurityTypes().stream().toList());
+        mKnownNetworkEntryCache.stream().filter(
+                entry -> entry.getStandardWifiEntryKey().getScanResultKey().equals(key)).forEach(
+                        entry -> entry.onConnectionStatusChanged(status.getStatus()));
     }
 
     @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
