@@ -159,7 +159,7 @@ wifi_cc_defaults {
                 whole_static_libs: ["libwifi-hal-syna"],
             },
             qcwcn: {
-                whole_static_libs: ["libwifi-hal-qcom"],
+                defaults: ["libwifi-hal-qcom"],
             },
             mrvl: {
                 // this is commented because none of the nexus devices
@@ -197,9 +197,6 @@ wifi_cc_defaults {
                 shared_libs: ["libcrypto"],
                 defaults: ["google_wifi_config_lib_defaults"],
             },
-            qcwcn: {
-                shared_libs: ["libcld80211", "libcrypto"],
-            },
         },
     },
 }
@@ -233,128 +230,5 @@ cc_library_shared {
     sanitize: {
         cfi: true,
         integer_overflow: true,
-    },
-}
-
-// Expose make-built libwifi-hal-<vendor> via wifi_cc_prebuilt_library_static.
-
-// Licenses for imported libwifi-hal-<vendor> libraries
-
-license {
-    name: "libwifi_hal_apache20_license",
-    visibility: [":__subpackages__"],
-    license_kinds: [
-        "SPDX-license-identifier-Apache-2.0",
-    ],
-}
-
-license {
-    name: "libwifi_hal_bsd_license",
-    visibility: [":__subpackages__"],
-    license_kinds: [
-        "SPDX-license-identifier-BSD",
-    ],
-}
-
-// Additional soong_config_module_types to enable/disable according to BOARD_WLAN_DEVICE
-// If libwifi-hal-<vendor> libs are migrated to soong modules, these are not necessary.
-
-soong_config_module_type {
-    name: "wifi_cc_prebuilt_library_static",
-    module_type: "cc_prebuilt_library_static",
-    config_namespace: "wifi",
-    variables: [
-        "board_wlan_device", // BOARD_WLAN_DEVICE
-    ],
-    properties: [
-        "enabled",
-    ],
-}
-
-soong_config_module_type {
-    name: "wifi_cc_prebuilt_library_shared",
-    module_type: "cc_prebuilt_library_shared",
-    config_namespace: "wifi",
-    variables: [
-        "board_wlan_device", // BOARD_WLAN_DEVICE
-    ],
-    properties: [
-        "enabled",
-    ],
-}
-
-soong_config_module_type {
-    name: "wifi_makefile_goal",
-    module_type: "makefile_goal",
-    config_namespace: "wifi",
-    variables: [
-        "board_wlan_device", // BOARD_WLAN_DEVICE
-    ],
-    properties: [
-        "enabled",
-    ],
-}
-
-// libwifi-hal-qcom
-
-wifi_cc_prebuilt_library_static {
-    name: "libwifi-hal-qcom",
-    proprietary: true,
-    srcs: [":make-libwifi-hal-qcom"],
-    compile_multilib: "first",
-    installable: false,
-    licenses: ["libwifi_hal_apache20_license", "libwifi_hal_bsd_license"],
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            qcwcn: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-wifi_makefile_goal {
-    name: "make-libwifi-hal-qcom",
-    product_out_path: "obj/STATIC_LIBRARIES/libwifi-hal-qcom_intermediates/libwifi-hal-qcom.a",
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            qcwcn: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-// libcld80211
-
-wifi_cc_prebuilt_library_shared {
-    name: "libcld80211",
-    vendor: true,
-    srcs: [":make-libcld80211"],
-    compile_multilib: "first",
-    installable: false,
-    licenses: ["libwifi_hal_bsd_license"],
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            qcwcn: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-wifi_makefile_goal {
-    name: "make-libcld80211",
-    product_out_path: "obj/SHARED_LIBRARIES/libcld80211_intermediates/LINKED/libcld80211.so",
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            qcwcn: {
-                enabled: true,
-            },
-        },
     },
 }
