@@ -1514,14 +1514,14 @@ public class WifiPickerTrackerTest {
         final WifiConfiguration primaryConfig = new WifiConfiguration();
         primaryConfig.SSID = "\"primary\"";
         primaryConfig.networkId = 1;
-        final WifiConfiguration oemPaidConfig = new WifiConfiguration();
-        oemPaidConfig.SSID = "\"oemPaid\"";
-        oemPaidConfig.networkId = 2;
+        final WifiConfiguration oemConfig = new WifiConfiguration();
+        oemConfig.SSID = "\"oem\"";
+        oemConfig.networkId = 2;
         final WifiConfiguration oemPrivateConfig = new WifiConfiguration();
         oemPrivateConfig.SSID = "\"oemPrivate\"";
         oemPrivateConfig.networkId = 3;
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
-                .thenReturn(Arrays.asList(primaryConfig, oemPaidConfig, oemPrivateConfig));
+                .thenReturn(Arrays.asList(primaryConfig, oemConfig, oemPrivateConfig));
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
         verify(mMockConnectivityManager).registerNetworkCallback(
@@ -1536,82 +1536,56 @@ public class WifiPickerTrackerTest {
             mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
                     mMockNetwork, mMockNetworkCapabilities);
 
-            // Connect to OEM-Paid network
-            Network oemPaidNetwork = mock(Network.class);
-            NetworkCapabilities oemPaidCapabilities = mock(NetworkCapabilities.class);
-            when(oemPaidCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID))
-                    .thenReturn(true);
-            WifiInfo oemPaidWifiInfo = mock(WifiInfo.class);
-            when(oemPaidWifiInfo.getNetworkId()).thenReturn(oemPaidConfig.networkId);
-            when(oemPaidWifiInfo.getRssi()).thenReturn(-50);
-            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(oemPaidWifiInfo));
-            when(oemPaidCapabilities.getTransportInfo()).thenReturn(oemPaidWifiInfo);
+            // Connect to OEM network
+            Network oemNetwork = mock(Network.class);
+            NetworkCapabilities oemCapabilities = mock(NetworkCapabilities.class);
+            WifiInfo oemWifiInfo = mock(WifiInfo.class);
+            when(oemWifiInfo.getNetworkId()).thenReturn(oemConfig.networkId);
+            when(oemWifiInfo.getRssi()).thenReturn(-50);
+            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(oemWifiInfo));
+            doReturn(true).when(() -> NonSdkApiWrapper.isOemCapabilities(oemCapabilities));
+            when(oemCapabilities.getTransportInfo()).thenReturn(oemWifiInfo);
             mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
-                    oemPaidNetwork, oemPaidCapabilities);
-
-            // Connect to OEM-Private network
-            Network oemPrivateNetwork = mock(Network.class);
-            NetworkCapabilities oemPrivateCapabilities = mock(NetworkCapabilities.class);
-            when(oemPrivateCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID))
-                    .thenReturn(true);
-            WifiInfo oemPrivateWifiInfo = mock(WifiInfo.class);
-            when(oemPrivateWifiInfo.getNetworkId()).thenReturn(oemPrivateConfig.networkId);
-            when(oemPrivateWifiInfo.getRssi()).thenReturn(-50);
-            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(oemPrivateWifiInfo));
-            when(oemPrivateCapabilities.getTransportInfo()).thenReturn(oemPrivateWifiInfo);
-            mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
-                    oemPrivateNetwork, oemPrivateCapabilities);
+                    oemNetwork, oemCapabilities);
 
             WifiEntry primaryWifiEntry = wifiPickerTracker.getActiveWifiEntries().get(0);
-            WifiEntry oemPaidWifiEntry = wifiPickerTracker.getActiveWifiEntries().get(1);
-            WifiEntry oemPrivateWifiEntry = wifiPickerTracker.getActiveWifiEntries().get(2);
+            WifiEntry oemWifiEntry = wifiPickerTracker.getActiveWifiEntries().get(1);
 
-            // Primary should go first, then the OEM networks in alphabetical title.
+            // Primary should go first, then the OEM network.
             assertThat(primaryWifiEntry.getTitle()).isEqualTo("primary");
-            assertThat(oemPaidWifiEntry.getTitle()).isEqualTo("oemPaid");
-            assertThat(oemPrivateWifiEntry.getTitle()).isEqualTo("oemPrivate");
+            assertThat(oemWifiEntry.getTitle()).isEqualTo("oem");
 
-            // All entries should be connected
+            // Both entries should be connected
             assertThat(primaryWifiEntry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
-            assertThat(oemPaidWifiEntry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
-            assertThat(oemPrivateWifiEntry.getConnectedState())
-                    .isEqualTo(CONNECTED_STATE_CONNECTED);
+            assertThat(oemWifiEntry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+
 
             // Only the primary network should be primary
             assertThat(primaryWifiEntry.isPrimaryNetwork()).isTrue();
-            assertThat(oemPaidWifiEntry.isPrimaryNetwork()).isFalse();
-            assertThat(oemPrivateWifiEntry.isPrimaryNetwork()).isFalse();
+            assertThat(oemWifiEntry.isPrimaryNetwork()).isFalse();
 
             // The primary should be returned in getWifiEntries()
             assertThat(wifiPickerTracker.getConnectedWifiEntry()).isEqualTo(primaryWifiEntry);
 
-            // Disconnect primary. Secondary OEM networks should not be primary
+            // Disconnect primary. Secondary OEM network should not be primary
             mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
             assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
             assertThat(primaryWifiEntry.getConnectedState())
                     .isEqualTo(CONNECTED_STATE_DISCONNECTED);
-            assertThat(wifiPickerTracker.getActiveWifiEntries())
-                    .containsExactly(oemPaidWifiEntry, oemPrivateWifiEntry);
-            assertThat(oemPaidWifiEntry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
-            assertThat(oemPrivateWifiEntry.getConnectedState())
-                    .isEqualTo(CONNECTED_STATE_CONNECTED);
+            assertThat(wifiPickerTracker.getActiveWifiEntries()).containsExactly(oemWifiEntry);
+            assertThat(oemWifiEntry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
 
-            // OEM paid becomes primary.
-            doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(oemPaidWifiInfo));
+            // OEM network becomes primary.
+            doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(oemWifiInfo));
             mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
-                    oemPaidNetwork, oemPaidCapabilities);
-            assertThat(wifiPickerTracker.getConnectedWifiEntry()).isEqualTo(oemPaidWifiEntry);
-            assertThat(wifiPickerTracker.getActiveWifiEntries())
-                    .containsExactly(oemPaidWifiEntry, oemPrivateWifiEntry);
-            assertThat(oemPaidWifiEntry.isPrimaryNetwork()).isTrue();
-            assertThat(oemPrivateWifiEntry.isPrimaryNetwork()).isFalse();
+                    oemNetwork, oemCapabilities);
+            assertThat(wifiPickerTracker.getConnectedWifiEntry()).isEqualTo(oemWifiEntry);
+            assertThat(wifiPickerTracker.getActiveWifiEntries()).containsExactly(oemWifiEntry);
+            assertThat(oemWifiEntry.isPrimaryNetwork()).isTrue();
 
-            // Disconnect the OEM networks.
-            mNetworkCallbackCaptor.getValue().onLost(oemPaidNetwork);
-            mNetworkCallbackCaptor.getValue().onLost(oemPrivateNetwork);
-            assertThat(oemPaidWifiEntry.getConnectedState())
-                    .isEqualTo(CONNECTED_STATE_DISCONNECTED);
-            assertThat(oemPrivateWifiEntry.getConnectedState())
+            // Disconnect the OEM network.
+            mNetworkCallbackCaptor.getValue().onLost(oemNetwork);
+            assertThat(oemWifiEntry.getConnectedState())
                     .isEqualTo(CONNECTED_STATE_DISCONNECTED);
             assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
             assertThat(wifiPickerTracker.getActiveWifiEntries()).isEmpty();
