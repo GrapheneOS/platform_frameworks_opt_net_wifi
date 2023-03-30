@@ -128,6 +128,14 @@ class NonSdkApiWrapper {
     }
 
     /**
+     * Returns true if the NetworkCapabilities is OEM_PAID or OEM_PRIVATE
+     */
+    static boolean isOemCapabilities(@NonNull NetworkCapabilities capabilities) {
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID)
+                || capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE);
+    }
+
+    /**
      * Returns the {@link WifiSsidPolicy} of the device.
      */
     @Nullable
