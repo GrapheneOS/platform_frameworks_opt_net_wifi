@@ -103,7 +103,7 @@ public class StandardWifiEntry extends WifiEntry {
     @NonNull private final StandardWifiEntryKey mKey;
 
     @NonNull private final WifiTrackerInjector mInjector;
-    @NonNull private final Context mContext;
+    @NonNull protected final Context mContext;
 
     // Map of security type to matching scan results
     @NonNull private final Map<Integer, List<ScanResult>> mMatchingScanResults = new ArrayMap<>();
