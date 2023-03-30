@@ -167,7 +167,7 @@ wifi_cc_defaults {
                 // whole_static_libs: ["libwifi-hal-mrvl"],
             },
             mediaTek: {
-                whole_static_libs: ["libwifi-hal-mt66xx"],
+                whole_static_libs: ["//vendor/mediatek/mokey:libwifi-hal-mt66xx"],
             },
             realtek: {
                 whole_static_libs: ["libwifi-hal-rtk"],
@@ -295,38 +295,6 @@ soong_config_module_type {
     ],
 }
 
-// libwifi-hal-syna
-
-wifi_cc_prebuilt_library_static {
-    name: "libwifi-hal-syna",
-    proprietary: true,
-    srcs: [":make-libwifi-hal-syna"],
-    compile_multilib: "first",
-    installable: false,
-    licenses: ["libwifi_hal_apache20_license"],
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            synadhd: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-wifi_makefile_goal {
-    name: "make-libwifi-hal-syna",
-    product_out_path: "obj/STATIC_LIBRARIES/libwifi-hal-syna_intermediates/libwifi-hal-syna.a",
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            synadhd: {
-                enabled: true,
-            },
-        },
-    },
-}
-
 // libwifi-hal-qcom
 
 wifi_cc_prebuilt_library_static {
@@ -385,38 +353,6 @@ wifi_makefile_goal {
     soong_config_variables: {
         board_wlan_device: {
             qcwcn: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-// libwifi-hal-mt66xx
-
-wifi_cc_prebuilt_library_static {
-    name: "libwifi-hal-mt66xx",
-    proprietary: true,
-    srcs: [":make-libwifi-hal-mt66xx"],
-    compile_multilib: "first",
-    installable: false,
-    licenses: ["libwifi_hal_apache20_license"],
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            mediaTek: {
-                enabled: true,
-            },
-        },
-    },
-}
-
-wifi_makefile_goal {
-    name: "make-libwifi-hal-mt66xx",
-    product_out_path: "obj/STATIC_LIBRARIES/libwifi-hal-mt66xx_intermediates/libwifi-hal-mt66xx.a",
-    enabled: false,
-    soong_config_variables: {
-        board_wlan_device: {
-            mediaTek: {
                 enabled: true,
             },
         },
