@@ -28,6 +28,7 @@ import android.net.wifi.sharedconnectivity.app.KnownNetwork;
 import android.net.wifi.sharedconnectivity.app.KnownNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
 import android.os.Handler;
+import android.text.BidiFormatter;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -89,7 +90,9 @@ public class KnownNetworkEntry extends StandardWifiEntry{
 
     @Override
     public synchronized String getSummary(boolean concise) {
-        return "Known"; // TODO(b/271869550): Fully implement this WIP string.
+        return mContext.getString(R.string.wifitrackerlib_known_network_summary,
+                BidiFormatter.getInstance().unicodeWrap(
+                        mKnownNetworkData.getNetworkProviderInfo().getDeviceName()));
     }
 
     @Override
