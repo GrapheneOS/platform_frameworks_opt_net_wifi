@@ -901,8 +901,7 @@ public class WifiEntry {
 
         // Treat non-primary, non-OEM connections as disconnected.
         if (!NonSdkApiWrapper.isPrimary(wifiInfo)
-                && !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PAID)
-                && !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)) {
+                && !NonSdkApiWrapper.isOemCapabilities(capabilities)) {
             onNetworkLost(network);
             return;
         }

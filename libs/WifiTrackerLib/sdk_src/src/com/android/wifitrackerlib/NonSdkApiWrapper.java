@@ -98,6 +98,16 @@ class NonSdkApiWrapper {
     }
 
     /**
+     * Returns true if the NetworkCapabilities is OEM_PAID or OEM_PRIVATE
+     */
+    static boolean isOemCapabilities(@NonNull NetworkCapabilities capabilities) {
+        // SUW can't access NET_CAPABILITY_OEM_PAID or NET_CAPABILITY_OEM_PRIVATE since they aren't
+        // public APIs. Return false here since we don't need to worry about secondary OEM networks
+        // in SUW for now.
+        return false;
+    }
+
+    /**
      * Returns the {@link WifiSsidPolicy} of the device.
      */
     @Nullable

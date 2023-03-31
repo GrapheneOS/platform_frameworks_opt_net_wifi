@@ -466,27 +466,15 @@ public class StandardWifiEntryTest {
         try {
             ExtendedMockito.doReturn(false)
                     .when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
-            // OEM-Paid
-            when(mMockNetworkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_OEM_PAID)).thenReturn(true);
-            when(mMockNetworkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)).thenReturn(false);
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-            assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
-
-            // OEM-Private
-            when(mMockNetworkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_OEM_PAID)).thenReturn(false);
-            when(mMockNetworkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)).thenReturn(true);
+            // Is OEM
+            ExtendedMockito.doReturn(true)
+                    .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
             entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
             assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
 
             // Not OEM anymore
-            when(mMockNetworkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_OEM_PAID)).thenReturn(false);
-            when(mMockNetworkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_OEM_PRIVATE)).thenReturn(false);
+            ExtendedMockito.doReturn(false)
+                    .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
             entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
             assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
         } finally {
