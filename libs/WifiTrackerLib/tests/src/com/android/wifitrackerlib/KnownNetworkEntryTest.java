@@ -20,9 +20,14 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 
 import static com.android.wifitrackerlib.StandardWifiEntry.ssidAndSecurityTypeToStandardWifiEntryKey;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
@@ -67,6 +72,22 @@ public class KnownNetworkEntryTest {
 
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
+
+        when(mMockContext.getString(eq(R.string.wifitrackerlib_known_network_summary), anyString()))
+                .thenAnswer(invocation -> {
+                    Object[] args = invocation.getArguments();
+                    return "Available from " + args[1];
+                });
+    }
+
+    @Test
+    public void testGetSummary_usesKnownNetworkData() {
+        final KnownNetworkEntry entry = new KnownNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_KNOWN_NETWORK_DATA);
+
+        assertThat(entry.getSummary()).isEqualTo("Available from My Phone");
     }
 
     @Test
