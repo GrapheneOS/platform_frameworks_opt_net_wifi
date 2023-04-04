@@ -253,11 +253,13 @@ public class Utils {
             final String suggestionOrSpecifierLabel =
                     getSuggestionOrSpecifierLabel(context, wifiConfiguration);
             if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
-                if (!isDefaultNetwork) {
-                    sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
+                if (isDefaultNetwork || (networkCapabilities != null
+                        && NonSdkApiWrapper.isOemCapabilities(networkCapabilities))) {
+                    sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
                             suggestionOrSpecifierLabel));
                 } else {
-                    sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
+                    // Pretend that non-default, non-OEM networks are unconnected.
+                    sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
                             suggestionOrSpecifierLabel));
                 }
                 shouldShowConnected = false;
