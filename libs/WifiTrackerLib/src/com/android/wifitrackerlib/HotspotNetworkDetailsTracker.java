@@ -111,7 +111,7 @@ public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleServiceConnected() {
-        if (ENABLE_SHARED_CONNECTIVITY_FEATURE && mSharedConnectivityManager != null) {
+        if (mEnableSharedConnectivityFeature && mSharedConnectivityManager != null) {
             mHotspotNetworkData = mSharedConnectivityManager.getHotspotNetworks().stream().filter(
                     network -> network.getDeviceId() == mChosenEntry.getHotspotNetworkEntryKey()
                             .getDeviceId()).findFirst().orElse(null);
@@ -126,7 +126,7 @@ public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleHotspotNetworksUpdated(List<HotspotNetwork> networks) {
-        if (ENABLE_SHARED_CONNECTIVITY_FEATURE) {
+        if (mEnableSharedConnectivityFeature) {
             mHotspotNetworkData = networks.stream().filter(network -> network.getDeviceId()
                     == mChosenEntry.getHotspotNetworkEntryKey().getDeviceId()).findFirst().orElse(
                     null);
