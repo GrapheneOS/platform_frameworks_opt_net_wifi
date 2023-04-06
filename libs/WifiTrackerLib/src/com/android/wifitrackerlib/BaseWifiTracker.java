@@ -92,7 +92,7 @@ public class BaseWifiTracker implements LifecycleObserver {
 
     private static boolean sVerboseLogging;
 
-    public static final boolean ENABLE_SHARED_CONNECTIVITY_FEATURE = false;
+    public static boolean mEnableSharedConnectivityFeature = false;
 
     public static boolean isVerboseLoggingEnabled() {
         return BaseWifiTracker.sVerboseLogging;
@@ -305,7 +305,7 @@ public class BaseWifiTracker implements LifecycleObserver {
         mConnectivityManager = connectivityManager;
         mConnectivityDiagnosticsManager =
                 context.getSystemService(ConnectivityDiagnosticsManager.class);
-        if (ENABLE_SHARED_CONNECTIVITY_FEATURE && BuildCompat.isAtLeastU()) {
+        if (mEnableSharedConnectivityFeature && BuildCompat.isAtLeastU()) {
             mSharedConnectivityManager =
                     context.getSystemService(SharedConnectivityManager.class);
         }

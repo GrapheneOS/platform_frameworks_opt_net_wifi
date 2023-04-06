@@ -172,6 +172,9 @@ public class HotspotNetworkEntry extends WifiEntry {
 
     @WorkerThread
     protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo) {
+        if (mKey.isVirtualEntry()) {
+            return false;
+        }
         return Objects.equals(mKey.getBssid(), wifiInfo.getBSSID());
     }
 
