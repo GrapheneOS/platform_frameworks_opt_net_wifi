@@ -38,6 +38,7 @@ import androidx.annotation.WorkerThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * WifiEntry representation of a Known Network provided via {@link SharedConnectivityManager}.
@@ -120,8 +121,12 @@ public class KnownNetworkEntry extends StandardWifiEntry{
 
     @WorkerThread
     protected synchronized boolean connectionInfoMatches(@NonNull WifiInfo wifiInfo) {
-        // We never need to show this network as connected, so return false.
-        return false;
+        if (wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
+            return false;
+        }
+        return Objects.equals(getStandardWifiEntryKey().getScanResultKey(),
+                ssidAndSecurityTypeToStandardWifiEntryKey(WifiInfo.sanitizeSsid(wifiInfo.getSSID()),
+                        wifiInfo.getCurrentSecurityType()).getScanResultKey());
     }
 
     /**
