@@ -218,9 +218,9 @@ public class HotspotNetworkEntry extends WifiEntry {
     /**
      * Connection strength between the host device and the internet.
      *
-     * @return Displayed connection strength in the range 0 to 3.
+     * @return Displayed connection strength in the range 0 to 4.
      */
-    @IntRange(from = 0, to = 3)
+    @IntRange(from = 0, to = 4)
     public int getUpstreamConnectionStrength() {
         if (mHotspotNetworkData == null) {
             return 0;
