@@ -22,6 +22,7 @@ import static android.net.wifi.WifiConfiguration.MeteredOverride;
 import static java.security.cert.PKIXReason.NO_TRUST_ANCHOR;
 
 import android.annotation.NonNull;
+import android.app.ActivityManager;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.net.wifi.ScanResult;
@@ -120,6 +121,7 @@ public class PasspointManager {
     private final AppOpsManager mAppOps;
     private final WifiCarrierInfoManager mWifiCarrierInfoManager;
     private final WifiPermissionsUtil mWifiPermissionsUtil;
+    private final boolean mIsLowMemory;
     /**
      * Map of package name of an app to the app ops changed listener for the app.
      */
@@ -326,6 +328,8 @@ public class PasspointManager {
                 new SharedDataSourceHandler()));
         mPasspointProvisioner = objectFactory.makePasspointProvisioner(context, wifiNative,
                 this, wifiMetrics);
+        ActivityManager activityManager = context.getSystemService(ActivityManager.class);
+        mIsLowMemory = activityManager.isLowRamDevice();
         mAppOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
         sPasspointManager = this;
         mWifiPermissionsUtil = wifiPermissionsUtil;
@@ -411,6 +415,16 @@ public class PasspointManager {
         }
         if (!mWifiPermissionsUtil.doesUidBelongToCurrentUser(uid)) {
             Log.e(TAG, "UID " + uid + " not visible to the current user");
+            return false;
+        }
+        if (config.getServiceFriendlyNames() != null && isFromSuggestion) {
+            Log.e(TAG, "Passpoint from suggestion should not have ServiceFriendlyNames");
+            return false;
+        }
+        if (getPasspointProviderWithPackage(packageName).size()
+                >= WifiManager.getMaxNumberOfNetworkSuggestionsPerApp(mIsLowMemory)) {
+            Log.e(TAG, "packageName " + packageName + " has too many passpoint with exceed the "
+                    + "limitation");
             return false;
         }
 
