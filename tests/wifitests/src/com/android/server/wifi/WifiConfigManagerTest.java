@@ -365,7 +365,7 @@ public class WifiConfigManagerTest extends WifiBaseTest {
     public void testAddWapiPskHexNetwork() {
         WifiConfiguration wapiPskNetwork = WifiConfigurationTestUtil.createWapiPskNetwork();
         wapiPskNetwork.preSharedKey =
-            "123456780abcdef0123456780abcdef0";
+            "123456780abcdef0123456780abcdef0123456780abcdef0123456780abcdef0";
         List<WifiConfiguration> networks = new ArrayList<>();
         networks.add(wapiPskNetwork);
 
