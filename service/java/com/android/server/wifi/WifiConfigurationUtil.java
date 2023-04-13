@@ -603,6 +603,10 @@ public class WifiConfigurationUtil {
                 && !validatePassword(config.preSharedKey, isAdd, false)) {
             return false;
         }
+        if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.WAPI_PSK)
+                && !validatePassword(config.preSharedKey, isAdd, false)) {
+            return false;
+        }
         if (config.allowedKeyManagement.get(WifiConfiguration.KeyMgmt.OWE)) {
             // PMF mandatory for OWE networks
             if (!config.requirePmf) {
