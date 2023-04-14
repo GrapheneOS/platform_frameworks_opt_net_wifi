@@ -265,6 +265,16 @@ public class HotspotNetworkEntry extends WifiEntry {
         return mHotspotNetworkData.getNetworkProviderInfo().getBatteryPercentage();
     }
 
+    /**
+     * If the host device is currently charging its battery.
+     */
+    public boolean isBatteryCharging() {
+        if (mHotspotNetworkData == null) {
+            return false;
+        }
+        return mHotspotNetworkData.getExtras().getBoolean("is_battery_charging", false);
+    }
+
     @Override
     public boolean canConnect() {
         return getConnectedState() == CONNECTED_STATE_DISCONNECTED;
