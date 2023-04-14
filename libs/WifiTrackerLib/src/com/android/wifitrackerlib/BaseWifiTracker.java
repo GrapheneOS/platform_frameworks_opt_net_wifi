@@ -631,26 +631,28 @@ public class BaseWifiTracker implements LifecycleObserver {
 
             @Override
             public void onResults(WifiScanner.ScanData[] results) {
-                if (!mIsActive) {
-                    return;
-                }
-                if (sVerboseLogging) {
-                    Log.v(mTag, "Received scan results from first scan request.");
-                }
-                List<ScanResult> scanResults = new ArrayList<>();
-                if (results != null) {
-                    for (WifiScanner.ScanData scanData : results) {
-                        scanResults.addAll(List.of(scanData.getResults()));
+                mWorkerHandler.post(() -> {
+                    if (!mIsActive) {
+                        return;
                     }
-                }
-                // Fake a SCAN_RESULTS_AVAILABLE_ACTION. The results should already be populated in
-                // mScanResultUpdater, which is the source of truth for the child classes.
-                mScanResultUpdater.update(scanResults);
-                handleScanResultsAvailableAction(
-                        new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
-                                .putExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
-                // Now start scanning via WifiManager.startScan().
-                postScan();
+                    if (sVerboseLogging) {
+                        Log.v(mTag, "Received scan results from first scan request.");
+                    }
+                    List<ScanResult> scanResults = new ArrayList<>();
+                    if (results != null) {
+                        for (WifiScanner.ScanData scanData : results) {
+                            scanResults.addAll(List.of(scanData.getResults()));
+                        }
+                    }
+                    // Fake a SCAN_RESULTS_AVAILABLE_ACTION. The results should already be populated
+                    // in mScanResultUpdater, which is the source of truth for the child classes.
+                    mScanResultUpdater.update(scanResults);
+                    handleScanResultsAvailableAction(
+                            new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+                                    .putExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
+                    // Now start scanning via WifiManager.startScan().
+                    postScan();
+                });
             }
 
             @Override
@@ -665,9 +667,11 @@ public class BaseWifiTracker implements LifecycleObserver {
 
             @Override
             public void onFailure(int reason, String description) {
-                Log.e(mTag, "Failed to scan! Reason: " + reason + ", ");
-                // First scan failed, start scanning normally anyway.
-                postScan();
+                mWorkerHandler.post(() -> {
+                    Log.e(mTag, "Failed to scan! Reason: " + reason + ", ");
+                    // First scan failed, start scanning normally anyway.
+                    postScan();
+                });
             }
         };
 
