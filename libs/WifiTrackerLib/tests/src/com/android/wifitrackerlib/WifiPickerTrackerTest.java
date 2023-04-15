@@ -2017,6 +2017,7 @@ public class WifiPickerTrackerTest {
         verify(mMockWifiManager, never()).startScan();
 
         mScanListenerCaptor.getValue().onResults(null);
+        mTestLooper.dispatchAll();
         verify(mMockWifiManager).startScan();
     }
 
@@ -2043,6 +2044,7 @@ public class WifiPickerTrackerTest {
         verify(mMockWifiManager, never()).startScan();
 
         mScanListenerCaptor.getValue().onFailure(0, "Reason");
+        mTestLooper.dispatchAll();
         verify(mMockWifiManager).startScan();
     }
 
