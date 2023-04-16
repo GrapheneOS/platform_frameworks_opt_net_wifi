@@ -101,6 +101,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
 
     private boolean mIsInitialized = false;
+    private boolean mIsStopped = true;
 
     // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -335,6 +336,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     @MainThread
     public void onStart() {
         mWorkerHandler.post(() -> {
+            mIsStopped = false;
             IntentFilter filter = new IntentFilter();
             filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
             filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -366,6 +368,7 @@ public class BaseWifiTracker implements LifecycleObserver {
     @MainThread
     public void onStop() {
         mWorkerHandler.post(() -> {
+            mIsStopped = true;
             mScanner.stop();
             try {
                 mContext.unregisterReceiver(mBroadcastReceiver);
@@ -680,30 +683,31 @@ public class BaseWifiTracker implements LifecycleObserver {
         }
 
         private void start() {
-            if (!mIsActive) {
-                mIsActive = true;
-                if (isVerboseLoggingEnabled()) {
-                    Log.v(mTag, "Scanner start");
-                }
-                if (BuildCompat.isAtLeastU()) {
-                    // Start off with a fast scan of 2.4GHz, 5GHz, and 6GHz RNR using WifiScanner.
-                    // After this is done, fall back to WifiManager.startScan() to get the rest of
-                    // the bands and hidden networks.
-                    // TODO(b/274177966): Move to using WifiScanner exclusively once we have
-                    //                    permission to use ScanSettings.hiddenNetworks.
-                    WifiScanner.ScanSettings scanSettings = new WifiScanner.ScanSettings();
-                    scanSettings.band = WifiScanner.WIFI_BAND_BOTH;
-                    scanSettings.setRnrSetting(WifiScanner.WIFI_RNR_ENABLED);
-                    WifiScanner wifiScanner = mContext.getSystemService(WifiScanner.class);
-                    if (wifiScanner != null) {
-                        wifiScanner.startScan(scanSettings, mFirstScanListener);
-                        return;
-                    } else {
-                        Log.e(mTag, "Failed to retrieve WifiScanner!");
-                    }
-                }
-                postScan();
+            if (mIsActive || mIsStopped) {
+                return;
             }
+            mIsActive = true;
+            if (isVerboseLoggingEnabled()) {
+                Log.v(mTag, "Scanner start");
+            }
+            if (BuildCompat.isAtLeastU()) {
+                // Start off with a fast scan of 2.4GHz, 5GHz, and 6GHz RNR using WifiScanner.
+                // After this is done, fall back to WifiManager.startScan() to get the rest of
+                // the bands and hidden networks.
+                // TODO(b/274177966): Move to using WifiScanner exclusively once we have
+                //                    permission to use ScanSettings.hiddenNetworks.
+                WifiScanner.ScanSettings scanSettings = new WifiScanner.ScanSettings();
+                scanSettings.band = WifiScanner.WIFI_BAND_BOTH;
+                scanSettings.setRnrSetting(WifiScanner.WIFI_RNR_ENABLED);
+                WifiScanner wifiScanner = mContext.getSystemService(WifiScanner.class);
+                if (wifiScanner != null) {
+                    wifiScanner.startScan(scanSettings, mFirstScanListener);
+                    return;
+                } else {
+                    Log.e(mTag, "Failed to retrieve WifiScanner!");
+                }
+            }
+            postScan();
         }
 
         private void stop() {
