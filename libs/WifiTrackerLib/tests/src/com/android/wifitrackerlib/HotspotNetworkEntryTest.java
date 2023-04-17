@@ -71,6 +71,7 @@ public class HotspotNetworkEntryTest {
                     .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
                     .setBatteryPercentage(100)
                     .setConnectionStrength(3)
+                    .setBatteryCharging(true)
                     .build())
             .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
             .setNetworkName("Google Fi")
@@ -261,6 +262,15 @@ public class HotspotNetworkEntryTest {
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
 
         assertThat(entry.getBatteryPercentage()).isEqualTo(100);
+    }
+
+    @Test
+    public void testIsBatteryCharging_usesHotspotNetworkData() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+
+        assertThat(entry.isBatteryCharging()).isTrue();
     }
 
     @Test

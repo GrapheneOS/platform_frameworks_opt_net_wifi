@@ -272,7 +272,7 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mHotspotNetworkData == null) {
             return false;
         }
-        return mHotspotNetworkData.getExtras().getBoolean("is_battery_charging", false);
+        return mHotspotNetworkData.getNetworkProviderInfo().isBatteryCharging();
     }
 
     @Override
