@@ -58,7 +58,7 @@
     <string name="wifitrackerlib_wifi_security_short_sae" msgid="107913757758514692">"WPA3"</string>
     <string name="wifitrackerlib_wifi_security_sae" msgid="6191706087425911867">"WPA3-Personal"</string>
     <string name="wifitrackerlib_wifi_security_short_owe" msgid="224333285610280433">"OWE"</string>
-    <string name="wifitrackerlib_wifi_security_owe" msgid="1018282395106838649">"Стандарт за сигурност Enhanced Open"</string>
+    <string name="wifitrackerlib_wifi_security_owe" msgid="1018282395106838649">"Enhanced Open"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"Няма"</string>
     <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"Изтекло"</string>
