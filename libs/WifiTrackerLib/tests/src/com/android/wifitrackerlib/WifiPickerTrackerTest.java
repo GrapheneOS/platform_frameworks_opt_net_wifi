@@ -2049,6 +2049,35 @@ public class WifiPickerTrackerTest {
     }
 
     @Test
+    public void testScanner_startAfterOnStop_doesNotStart() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+
+        // Stop and then get WIFI_STATE_ENABLED afterwards to trigger starting the scanner.
+        wifiPickerTracker.onStop();
+        mTestLooper.dispatchAll();
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_ENABLED));
+
+        // Scanner should not have started
+        verify(mMockWifiManager, never()).startScan();
+
+        // Start again and get WIFI_STATE_ENABLED
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION)
+                        .putExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_ENABLED));
+
+        // Scanner should start now
+        verify(mMockWifiManager, never()).startScan();
+    }
+
+    @Test
     public void testSharedConnectivityManager_onStart_registersCallback() {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
 
