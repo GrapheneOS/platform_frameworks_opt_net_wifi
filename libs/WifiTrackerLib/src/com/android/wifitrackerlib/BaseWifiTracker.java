@@ -87,7 +87,7 @@ import java.util.concurrent.Executor;
  * the worker thread and consumed by the main thread.
 */
 
-public class BaseWifiTracker implements LifecycleObserver {
+public class BaseWifiTracker {
     private final String mTag;
 
     private static boolean sVerboseLogging;
@@ -306,7 +306,25 @@ public class BaseWifiTracker implements LifecycleObserver {
             BaseWifiTrackerCallback listener,
             String tag) {
         mInjector = injector;
-        lifecycle.addObserver(this);
+        lifecycle.addObserver(new LifecycleObserver() {
+            @OnLifecycleEvent(Lifecycle.Event.ON_START)
+            @MainThread
+            public void onStart() {
+                BaseWifiTracker.this.onStart();
+            }
+
+            @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+            @MainThread
+            public void onStop() {
+                BaseWifiTracker.this.onStop();
+            }
+
+            @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+            @MainThread
+            public void onDestroy() {
+                BaseWifiTracker.this.onDestroy();
+            }
+        });
         mContext = context;
         mWifiManager = wifiManager;
         mConnectivityManager = connectivityManager;
@@ -332,7 +350,6 @@ public class BaseWifiTracker implements LifecycleObserver {
     /**
      * Registers the broadcast receiver and network callbacks and starts the scanning mechanism.
      */
-    @OnLifecycleEvent(Lifecycle.Event.ON_START)
     @MainThread
     public void onStart() {
         mWorkerHandler.post(() -> {
@@ -364,7 +381,6 @@ public class BaseWifiTracker implements LifecycleObserver {
     /**
      * Unregisters the broadcast receiver, network callbacks, and pauses the scanning mechanism.
      */
-    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     @MainThread
     public void onStop() {
         mWorkerHandler.post(() -> {
@@ -395,9 +411,8 @@ public class BaseWifiTracker implements LifecycleObserver {
      * Unregisters the broadcast receiver network callbacks in case the Activity is destroyed before
      * the worker thread runnable posted in onStop() runs.
      */
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     @MainThread
-    public void onDestroyed() {
+    public void onDestroy() {
         try {
             mContext.unregisterReceiver(mBroadcastReceiver);
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
