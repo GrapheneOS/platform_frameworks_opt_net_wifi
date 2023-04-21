@@ -1986,7 +1986,7 @@ public class WifiPickerTrackerTest {
                 mDefaultNetworkCallbackCaptor.capture(), any());
 
         wifiPickerTracker.onStop();
-        wifiPickerTracker.onDestroyed();
+        wifiPickerTracker.onDestroy();
         verify(mMockContext).unregisterReceiver(mBroadcastReceiverCaptor.getValue());
         verify(mMockConnectivityManager).unregisterNetworkCallback(
                 mDefaultNetworkCallbackCaptor.getValue());
