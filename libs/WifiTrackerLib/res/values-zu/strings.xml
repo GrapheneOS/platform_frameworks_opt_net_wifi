@@ -44,6 +44,10 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Ixhunywe kudivayisi. Ayikwazi ukunikeza i-inthanethi."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Ikhwalithi ephansi"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Ayivunyelwe yinhlangano yakho"</string>
+    <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"I-<xliff:g id="NETWORK_NAME">%1$s</xliff:g> evela ku-<xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
+    <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"I-<xliff:g id="NETWORK_NAME">%1$s</xliff:g> evela ku-<xliff:g id="DEVICE_NAME">%2$s</xliff:g>"</string>
+    <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"Iyaxhuma…"</string>
+    <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"Kutholakala ukusukela ku-<xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"I-WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"I-WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"I-WPA3-EAP"</string>

@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
     <string name="wifitrackerlib_checking_for_internet_access" msgid="4787495471423429472">"Preverjanje internetnega dostopa …"</string>
-    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Samodejno povezovanje izklopljeno"</string>
+    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Samodejno povezovanje je izklopljeno"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Shranila aplikacija <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Povezava ne bo samodejno vzpostavljena"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Ni dostopa do interneta"</string>
@@ -44,6 +44,10 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Povezava z napravo je vzpostavljena. Dostop do interneta ni na voljo."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Nizka kakovost"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Organizacija tega ne dovoljuje."</string>
+    <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"Omrežje <xliff:g id="NETWORK_NAME">%1$s</xliff:g> (<xliff:g id="MODEL_NAME">%2$s</xliff:g>)"</string>
+    <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"Omrežje <xliff:g id="NETWORK_NAME">%1$s</xliff:g> (<xliff:g id="DEVICE_NAME">%2$s</xliff:g>)"</string>
+    <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"Vzpostavljanje povezave …"</string>
+    <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"Na voljo iz naprave <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>

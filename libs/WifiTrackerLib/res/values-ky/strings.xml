@@ -44,6 +44,10 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Түзмөккө туташып турат. Интернет жок."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Начар сапат"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Уюмуңуз тыюу салган"</string>
+    <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g>–<xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="DEVICE_NAME">%2$s</xliff:g>–<xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"Туташууда…"</string>
+    <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> түзмөгүндө жеткиликтүү"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
