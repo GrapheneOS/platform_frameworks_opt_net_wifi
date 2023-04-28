@@ -309,6 +309,7 @@ public class StandardNetworkDetailsTrackerTest {
         when(scanData.getResults()).thenReturn(scanResults);
 
         mScanListenerCaptor.getValue().onResults(new WifiScanner.ScanData[]{scanData});
+        mTestLooper.dispatchAll();
 
         // Updated with the correct SSID and ignored the different SSID.
         assertThat(tracker.getWifiEntry().getLevel()).isEqualTo(BAD_LEVEL);
