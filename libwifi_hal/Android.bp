@@ -43,6 +43,7 @@ soong_config_module_type {
         "cflags",
         "defaults",
         "shared_libs",
+        "static_libs",
         "whole_static_libs",
     ],
 }
