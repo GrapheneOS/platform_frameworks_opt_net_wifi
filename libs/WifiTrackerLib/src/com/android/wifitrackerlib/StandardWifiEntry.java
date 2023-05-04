@@ -52,6 +52,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.wifi.MloLink;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
@@ -81,7 +82,6 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -976,8 +976,16 @@ public class StandardWifiEntry extends WifiEntry {
         if (BuildCompat.isAtLeastT() && wifiStandard == ScanResult.WIFI_STANDARD_11BE) {
             description.append(",mldMac=").append(scanResult.getApMldMacAddress());
             description.append(",linkId=").append(scanResult.getApMloLinkId());
-            description.append(",affLinks=").append(
-                    Arrays.toString(scanResult.getAffiliatedMloLinks().toArray()));
+            description.append(",affLinks=");
+            StringJoiner affLinks = new StringJoiner(",", "[", "]");
+            for (MloLink link : scanResult.getAffiliatedMloLinks()) {
+                affLinks.add(new StringJoiner(",", "{", "}")
+                        .add("apMacAddr=" + link.getApMacAddress())
+                        .add("freq=" + ScanResult.convertChannelToFrequencyMhzIfSupported(
+                                link.getChannel(), link.getBand()))
+                        .toString());
+            }
+            description.append(affLinks.toString());
         }
         final int ageSeconds = (int) (nowMs - scanResult.timestamp / 1000) / 1000;
         description.append(",").append(ageSeconds).append("s");
