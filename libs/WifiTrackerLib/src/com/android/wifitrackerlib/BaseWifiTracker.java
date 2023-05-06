@@ -650,7 +650,7 @@ public class BaseWifiTracker {
             @Override
             public void onResults(WifiScanner.ScanData[] results) {
                 mWorkerHandler.post(() -> {
-                    if (!mIsActive) {
+                    if (!mIsActive || mIsStopped) {
                         return;
                     }
                     if (sVerboseLogging) {
@@ -686,6 +686,9 @@ public class BaseWifiTracker {
             @Override
             public void onFailure(int reason, String description) {
                 mWorkerHandler.post(() -> {
+                    if (!mIsActive || mIsStopped) {
+                        return;
+                    }
                     Log.e(mTag, "Failed to scan! Reason: " + reason + ", ");
                     // First scan failed, start scanning normally anyway.
                     postScan();
@@ -735,6 +738,10 @@ public class BaseWifiTracker {
         }
 
         private void postScan() {
+            if (!mIsActive || mIsStopped) {
+                Log.wtf(mTag, "Tried to run scan loop when we've already stopped!");
+                return;
+            }
             if (mWifiManager.startScan()) {
                 mRetry = 0;
             } else if (++mRetry >= SCAN_RETRY_TIMES) {
