@@ -170,9 +170,11 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         }
 
         String[] aliases = ec.getCaCertificateAliases();
-        for (String s: aliases) {
-            if (!TextUtils.isEmpty(s) && certAlias.equals(s)) {
-                return true;
+        if (aliases != null) {
+            for (String s: aliases) {
+                if (!TextUtils.isEmpty(s) && certAlias.equals(s)) {
+                    return true;
+                }
             }
         }
         String clientAlias = ec.getClientCertificateAlias();
