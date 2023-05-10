@@ -58,6 +58,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiScanner;
 import android.net.wifi.WifiSsid;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -979,10 +980,29 @@ public class StandardWifiEntry extends WifiEntry {
             description.append(",affLinks=");
             StringJoiner affLinks = new StringJoiner(",", "[", "]");
             for (MloLink link : scanResult.getAffiliatedMloLinks()) {
+                final int scanResultBand;
+                switch (link.getBand()) {
+                    case WifiScanner.WIFI_BAND_24_GHZ:
+                        scanResultBand = ScanResult.WIFI_BAND_24_GHZ;
+                        break;
+                    case WifiScanner.WIFI_BAND_5_GHZ:
+                        scanResultBand = ScanResult.WIFI_BAND_5_GHZ;
+                        break;
+                    case WifiScanner.WIFI_BAND_6_GHZ:
+                        scanResultBand = ScanResult.WIFI_BAND_6_GHZ;
+                        break;
+                    case WifiScanner.WIFI_BAND_60_GHZ:
+                        scanResultBand = ScanResult.WIFI_BAND_60_GHZ;
+                        break;
+                    default:
+                        Log.e(TAG, "Unknown MLO link band: " + link.getBand());
+                        scanResultBand = ScanResult.UNSPECIFIED;
+                        break;
+                }
                 affLinks.add(new StringJoiner(",", "{", "}")
                         .add("apMacAddr=" + link.getApMacAddress())
                         .add("freq=" + ScanResult.convertChannelToFrequencyMhzIfSupported(
-                                link.getChannel(), link.getBand()))
+                                link.getChannel(), scanResultBand))
                         .toString());
             }
             description.append(affLinks.toString());
