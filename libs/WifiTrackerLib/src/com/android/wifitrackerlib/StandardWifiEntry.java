@@ -962,7 +962,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     // TODO(b/227622961): Remove the suppression once the linter recognizes BuildCompat.isAtLeastT()
-    @SuppressLint("NewApi")
+    @SuppressLint({"NewApi", "SwitchIntDef"})
     private synchronized String getScanResultDescription(ScanResult scanResult, long nowMs) {
         final StringBuilder description = new StringBuilder();
         description.append(" \n{");
