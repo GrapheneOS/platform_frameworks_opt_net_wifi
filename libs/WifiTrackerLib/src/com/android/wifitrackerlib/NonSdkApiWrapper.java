@@ -25,7 +25,6 @@ import android.net.NetworkCapabilities;
 import android.net.TransportInfo;
 import android.net.vcn.VcnTransportInfo;
 import android.net.wifi.WifiInfo;
-import android.os.Handler;
 import android.os.UserManager;
 import android.text.Annotation;
 import android.text.SpannableString;
@@ -108,16 +107,6 @@ class NonSdkApiWrapper {
      */
     static boolean isDemoMode(@NonNull Context context) {
         return UserManager.isDeviceInDemoMode(context);
-    }
-
-    /**
-     * Registers the default network callback.
-     */
-    static void registerSystemDefaultNetworkCallback(
-            @NonNull ConnectivityManager connectivityManager,
-            @NonNull ConnectivityManager.NetworkCallback callback,
-            @NonNull Handler handler) {
-        connectivityManager.registerSystemDefaultNetworkCallback(callback, handler);
     }
 
     /**

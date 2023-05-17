@@ -364,6 +364,8 @@ public class BaseWifiTracker {
                     /* broadcastPermission */ null, mWorkerHandler);
             mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
                     mWorkerHandler);
+            mConnectivityManager.registerDefaultNetworkCallback(mDefaultNetworkCallback,
+                    mWorkerHandler);
             mConnectivityDiagnosticsManager.registerConnectivityDiagnosticsCallback(mNetworkRequest,
                     mConnectivityDiagnosticsExecutor, mConnectivityDiagnosticsCallback);
             if (mSharedConnectivityManager != null && mSharedConnectivityCallback != null
@@ -371,8 +373,6 @@ public class BaseWifiTracker {
                 mSharedConnectivityManager.registerCallback(mSharedConnectivityExecutor,
                         mSharedConnectivityCallback);
             }
-            NonSdkApiWrapper.registerSystemDefaultNetworkCallback(
-                    mConnectivityManager, mDefaultNetworkCallback, mWorkerHandler);
             handleOnStart();
             mIsInitialized = true;
         });
