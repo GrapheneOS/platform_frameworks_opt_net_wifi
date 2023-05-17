@@ -79,7 +79,6 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -213,13 +212,7 @@ public class WifiPickerTrackerTest {
         when(mMockContext.getSystemService(SharedConnectivityManager.class))
                 .thenReturn(mMockSharedConnectivityManager);
         when(mMockContext.getString(anyInt())).thenReturn("");
-
-        BaseWifiTracker.mEnableSharedConnectivityFeature = true;
-    }
-
-    @After
-    public void tearDown() {
-        BaseWifiTracker.mEnableSharedConnectivityFeature = false;
+        when(mInjector.isSharedConnectivityFeatureEnabled()).thenReturn(true);
     }
 
     /**
