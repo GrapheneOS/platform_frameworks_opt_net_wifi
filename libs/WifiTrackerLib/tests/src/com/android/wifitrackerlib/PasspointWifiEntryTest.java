@@ -45,6 +45,7 @@ import android.os.test.TestLooper;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 
@@ -222,7 +223,7 @@ public class PasspointWifiEntryTest {
     }
 
     @Test
-    public void testShouldShowXLevelIcon_unvalidatedOrNotDefault_returnsTrue() {
+    public void testShouldShowXLevelIcon_unvalidatedOrLowQuality_returnsTrue() {
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
 
@@ -233,37 +234,27 @@ public class PasspointWifiEntryTest {
         // Disconnected should return false;
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
-        // Not validated, Not Default
+        // Connected but validation attempt not complete, should not show X level icon yet.
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-
-        // Validation attempt not complete, should not show X level icon yet.
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
-        // Validation attempt complete, should show X level icon now.
+        // Validation attempt complete, should show X level icon.
         ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport = mock(
                 ConnectivityDiagnosticsManager.ConnectivityReport.class);
         when(connectivityReport.getNetwork()).thenReturn(mMockNetwork);
         entry.updateConnectivityReport(connectivityReport);
-
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
 
-        // Not Validated, Default
-        entry.onDefaultNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-
-        assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
-
-        // Validated, Default
+        // Internet validated, should not show X level icon.
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(false);
 
-        // Validated, Not Default
-        Network otherNetwork = mock(Network.class);
-        when(otherNetwork.getNetId()).thenReturn(2);
-        entry.onDefaultNetworkCapabilitiesChanged(otherNetwork, new NetworkCapabilities());
-
+        // Cell becomes default (i.e. low quality wifi), show X level icon.
+        entry.onDefaultNetworkCapabilitiesChanged(Mockito.mock(Network.class),
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
         assertThat(entry.shouldShowXLevelIcon()).isEqualTo(true);
     }
 
