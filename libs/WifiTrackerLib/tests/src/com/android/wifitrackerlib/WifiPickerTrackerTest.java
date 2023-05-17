@@ -788,7 +788,19 @@ public class WifiPickerTrackerTest {
         // Cell default + primary network validation should trigger low quality
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isEqualTo(lowQuality);
 
-        // Lose the default network. Low quality should disappear, since cell isn't default anymore
+        // Cell + VPN is default should not trigger low quality, since the VPN underlying network is
+        // determined by the VPN app and not whether Wi-Fi is low quality or not.
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(Mockito.mock(Network.class),
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_VPN)
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isNotEqualTo(lowQuality);
+
+        // Set Cell to the default but then lose the default network. Low quality should disappear
+        // since cell default was lost.
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(Mockito.mock(Network.class),
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
         mDefaultNetworkCallbackCaptor.getValue().onLost(mock(Network.class));
         assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
     }
