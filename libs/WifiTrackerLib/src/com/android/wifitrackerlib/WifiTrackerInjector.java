@@ -19,6 +19,7 @@ package com.android.wifitrackerlib;
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.os.UserManager;
+import android.provider.DeviceConfig;
 import android.util.ArraySet;
 
 import androidx.annotation.NonNull;
@@ -29,6 +30,8 @@ import java.util.Set;
  * Wrapper class for commonly referenced objects and static data.
  */
 class WifiTrackerInjector {
+    private static final String DEVICE_CONFIG_NAMESPACE = "wifi";
+
     private final boolean mIsDemoMode;
     private final UserManager mUserManager;
     private final DevicePolicyManager mDevicePolicyManager;
@@ -64,5 +67,10 @@ class WifiTrackerInjector {
      */
     @NonNull Set<String> getNoAttributionAnnotationPackages() {
         return mNoAttributionAnnotationPackages;
+    }
+
+    public boolean isSharedConnectivityFeatureEnabled() {
+        return DeviceConfig.getBoolean(DEVICE_CONFIG_NAMESPACE,
+                "shared_connectivity_enabled", false);
     }
 }
