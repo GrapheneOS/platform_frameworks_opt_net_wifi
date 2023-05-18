@@ -23,7 +23,6 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiInfo;
-import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -72,19 +71,6 @@ class NonSdkApiWrapper {
     static boolean isDemoMode(@NonNull Context context) {
         // This should be false since SUW is not used in demo mode.
         return false;
-    }
-
-    /**
-     * Registers the system default network callback.
-     */
-    static void registerSystemDefaultNetworkCallback(
-            @NonNull ConnectivityManager connectivityManager,
-            @NonNull ConnectivityManager.NetworkCallback callback,
-            @NonNull Handler handler) {
-        // registerSystemDefaultNetworkCallback does not have visibility to non-updatable modules,
-        // so we have to use the regular registerDefaultNetworkCallback here.
-        // TODO(b/230643853): See if we can add registerSystemDefaultNetworkCallback to the SDK.
-        connectivityManager.registerDefaultNetworkCallback(callback, handler);
     }
 
     /**
