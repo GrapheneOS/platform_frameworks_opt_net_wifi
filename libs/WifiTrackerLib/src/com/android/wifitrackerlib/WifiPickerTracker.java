@@ -386,6 +386,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (WifiEntry entry : getAllWifiEntries()) {
             entry.onPrimaryWifiInfoChanged(primaryWifiInfo, networkInfo);
         }
+        updateWifiEntries();
     }
 
     @WorkerThread
