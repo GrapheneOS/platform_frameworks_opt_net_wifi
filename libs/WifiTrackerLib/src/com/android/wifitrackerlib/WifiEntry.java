@@ -365,10 +365,12 @@ public class WifiEntry {
      * Returns whether this network is the primary Wi-Fi network or not.
      */
     public boolean isPrimaryNetwork() {
-        if (mWifiInfo == null) {
+        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+            // In case we have mNetworkInfo but the state is disconnected.
             return false;
         }
-        return NonSdkApiWrapper.isPrimary(mWifiInfo);
+        return mNetworkInfo != null
+                || (mWifiInfo != null && NonSdkApiWrapper.isPrimary(mWifiInfo));
     }
 
     /**
