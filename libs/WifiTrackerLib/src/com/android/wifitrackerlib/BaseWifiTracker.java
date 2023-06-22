@@ -99,7 +99,6 @@ public class BaseWifiTracker {
     private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
 
     private boolean mIsInitialized = false;
-    private boolean mIsStopped = true;
 
     // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -115,11 +114,7 @@ public class BaseWifiTracker {
             if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
                 mWifiState = intent.getIntExtra(
                         WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED);
-                if (mWifiState == WifiManager.WIFI_STATE_ENABLED) {
-                    mScanner.start();
-                } else {
-                    mScanner.stop();
-                }
+                mScanner.onWifiStateChanged(mWifiState == WifiManager.WIFI_STATE_ENABLED);
                 notifyOnWifiStateChanged();
                 handleWifiStateChangedAction();
             } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
@@ -350,8 +345,11 @@ public class BaseWifiTracker {
      */
     @MainThread
     public void onStart() {
+        if (isVerboseLoggingEnabled()) {
+            Log.v(mTag, "onStart");
+        }
+        mScanner.onStart();
         mWorkerHandler.post(() -> {
-            mIsStopped = false;
             IntentFilter filter = new IntentFilter();
             filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
             filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -382,9 +380,11 @@ public class BaseWifiTracker {
      */
     @MainThread
     public void onStop() {
+        if (isVerboseLoggingEnabled()) {
+            Log.v(mTag, "onStop");
+        }
+        mScanner.onStop();
         mWorkerHandler.post(() -> {
-            mIsStopped = true;
-            mScanner.stop();
             try {
                 mContext.unregisterReceiver(mBroadcastReceiver);
                 mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
@@ -632,27 +632,28 @@ public class BaseWifiTracker {
     }
 
     /**
-     * Scanner to handle starting scans every SCAN_INTERVAL_MILLIS
+     * Helper class to handle starting scans every SCAN_INTERVAL_MILLIS.
+     *
+     * Scanning is only done when the activity is in the Started state and Wi-Fi is enabled.
      */
-    @WorkerThread
     private class Scanner extends Handler {
-        private static final int SCAN_RETRY_TIMES = 3;
-
-        private int mRetry = 0;
-        private boolean mIsActive;
+        private boolean mIsStartedState = false;
+        private boolean mIsWifiEnabled = false;
         private final WifiScanner.ScanListener mFirstScanListener = new WifiScanner.ScanListener() {
             @Override
+            @MainThread
             public void onPeriodChanged(int periodInMs) {
                 // No-op.
             }
 
             @Override
+            @MainThread
             public void onResults(WifiScanner.ScanData[] results) {
                 mWorkerHandler.post(() -> {
-                    if (!mIsActive || mIsStopped) {
+                    if (!shouldScan()) {
                         return;
                     }
-                    if (sVerboseLogging) {
+                    if (isVerboseLoggingEnabled()) {
                         Log.v(mTag, "Received scan results from first scan request.");
                     }
                     List<ScanResult> scanResults = new ArrayList<>();
@@ -668,29 +669,32 @@ public class BaseWifiTracker {
                             new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
                                     .putExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
                     // Now start scanning via WifiManager.startScan().
-                    postScan();
+                    scanLoop();
                 });
             }
 
             @Override
+            @MainThread
             public void onFullResult(ScanResult fullScanResult) {
                 // No-op.
             }
 
             @Override
+            @MainThread
             public void onSuccess() {
                 // No-op.
             }
 
             @Override
+            @MainThread
             public void onFailure(int reason, String description) {
                 mWorkerHandler.post(() -> {
-                    if (!mIsActive || mIsStopped) {
+                    if (!mIsWifiEnabled) {
                         return;
                     }
                     Log.e(mTag, "Failed to scan! Reason: " + reason + ", ");
                     // First scan failed, start scanning normally anyway.
-                    postScan();
+                    scanLoop();
                 });
             }
         };
@@ -699,14 +703,58 @@ public class BaseWifiTracker {
             super(looper);
         }
 
-        private void start() {
-            if (mIsActive || mIsStopped) {
+        /**
+         * Called when the activity enters the Started state.
+         * When this happens, evaluate if we need to start scanning.
+         */
+        @MainThread
+        private void onStart() {
+            mIsStartedState = true;
+            mWorkerHandler.post(this::possiblyStartScanning);
+        }
+
+        /**
+         * Called when the activity exits the Started state.
+         * When this happens, stop scanning.
+         */
+        @MainThread
+        private void onStop() {
+            mIsStartedState = false;
+            mWorkerHandler.post(this::stopScanning);
+        }
+
+        /**
+         * Called whenever the Wi-Fi state changes. If the new state differs from the old state,
+         * then re-evaluate whether we need to start or stop scanning.
+         * @param enabled Whether Wi-Fi is enabled or not.
+         */
+        @WorkerThread
+        private void onWifiStateChanged(boolean enabled) {
+            boolean oldEnabled = mIsWifiEnabled;
+            mIsWifiEnabled = enabled;
+            if (mIsWifiEnabled != oldEnabled) {
+                if (mIsWifiEnabled) {
+                    possiblyStartScanning();
+                } else {
+                    stopScanning();
+                }
+            }
+        }
+
+        /**
+         * Returns true if we should be scanning and false if not.
+         * Scanning should only happen when Wi-Fi is enabled and the activity is started.
+         */
+        private boolean shouldScan() {
+            return mIsWifiEnabled && mIsStartedState;
+        }
+
+        @WorkerThread
+        private void possiblyStartScanning() {
+            if (!shouldScan()) {
                 return;
             }
-            mIsActive = true;
-            if (isVerboseLoggingEnabled()) {
-                Log.v(mTag, "Scanner start");
-            }
+            Log.i(mTag, "Scanning started");
             if (BuildCompat.isAtLeastU()) {
                 // Start off with a fast scan of 2.4GHz, 5GHz, and 6GHz RNR using WifiScanner.
                 // After this is done, fall back to WifiManager.startScan() to get the rest of
@@ -718,40 +766,40 @@ public class BaseWifiTracker {
                 scanSettings.setRnrSetting(WifiScanner.WIFI_RNR_ENABLED);
                 WifiScanner wifiScanner = mContext.getSystemService(WifiScanner.class);
                 if (wifiScanner != null) {
+                    wifiScanner.stopScan(mFirstScanListener);
+                    if (isVerboseLoggingEnabled()) {
+                        Log.v(mTag, "Issuing scan request from WifiScanner");
+                    }
                     wifiScanner.startScan(scanSettings, mFirstScanListener);
                     return;
                 } else {
                     Log.e(mTag, "Failed to retrieve WifiScanner!");
                 }
             }
-            postScan();
+            scanLoop();
         }
 
-        private void stop() {
-            mIsActive = false;
-            if (isVerboseLoggingEnabled()) {
-                Log.v(mTag, "Scanner stop");
-            }
-            mRetry = 0;
+        @WorkerThread
+        private void stopScanning() {
+            Log.i(mTag, "Scanning stopped");
             removeCallbacksAndMessages(null);
         }
 
-        private void postScan() {
-            if (!mIsActive || mIsStopped) {
-                Log.wtf(mTag, "Tried to run scan loop when we've already stopped!");
+        @WorkerThread
+        private void scanLoop() {
+            if (!shouldScan()) {
+                Log.wtf(mTag, "Scan loop called even though we shouldn't be scanning!"
+                        + " mIsWifiEnabled=" + mIsWifiEnabled
+                        + " mIsStartedState=" + mIsStartedState);
                 return;
             }
-            if (mWifiManager.startScan()) {
-                mRetry = 0;
-            } else if (++mRetry >= SCAN_RETRY_TIMES) {
-                // TODO(b/70983952): See if toast is needed here
-                if (isVerboseLoggingEnabled()) {
-                    Log.v(mTag, "Scanner failed to start scan " + mRetry + " times!");
-                }
-                mRetry = 0;
-                return;
+            if (isVerboseLoggingEnabled()) {
+                Log.v(mTag, "Issuing scan request from WifiManager");
             }
-            postDelayed(this::postScan, mScanIntervalMillis);
+            // Remove any pending scanLoops in case possiblyStartScanning was called more than once.
+            removeCallbacksAndMessages(null);
+            mWifiManager.startScan();
+            postDelayed(this::scanLoop, mScanIntervalMillis);
         }
     }
 
