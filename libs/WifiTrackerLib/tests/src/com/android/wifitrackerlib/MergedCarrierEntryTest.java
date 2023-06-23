@@ -38,6 +38,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class MergedCarrierEntryTest {
+    @Mock private WifiTrackerInjector mMockInjector;
     @Mock private WifiEntry.ConnectCallback mMockConnectCallback;
     @Mock private WifiManager mMockWifiManager;
     @Mock private WifiInfo mMockWifiInfo;
@@ -58,6 +59,7 @@ public class MergedCarrierEntryTest {
         when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
+        when(mMockInjector.getContext()).thenReturn(mMockContext);
         when(mMockContext.getMainLooper()).thenReturn(Looper.getMainLooper());
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
@@ -68,8 +70,8 @@ public class MergedCarrierEntryTest {
     @Test
     public void testGetConnectedState_wifiInfoMatches_returnsConnected() {
         final int subId = 1;
-        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
-                false, mMockContext, subId);
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mMockInjector, mTestHandler,
+                mMockWifiManager, false, subId);
         when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
         when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
 
@@ -82,8 +84,8 @@ public class MergedCarrierEntryTest {
     public void testConnect_disablesNonCarrierMergedWifi() {
         Looper.prepare();
         final int subId = 1;
-        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
-                false, mMockContext, subId);
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mMockInjector, mTestHandler,
+                mMockWifiManager, false, subId);
 
         entry.connect(mMockConnectCallback);
         mTestLooper.dispatchAll();
@@ -96,8 +98,8 @@ public class MergedCarrierEntryTest {
     @Test
     public void testDisconnect_enablesNonCarrierMergedWifiAndTriggersScan() {
         final int subId = 1;
-        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
-                false, mMockContext, subId);
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mMockInjector, mTestHandler,
+                mMockWifiManager, false, subId);
 
         entry.disconnect(null);
         mTestLooper.dispatchAll();
@@ -108,8 +110,8 @@ public class MergedCarrierEntryTest {
     @Test
     public void testCanConnect_cellIsDefaultRoute_returnsFalse() {
         final int subId = 1;
-        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
-                false, mMockContext, subId);
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mMockInjector, mTestHandler,
+                mMockWifiManager, false, subId);
         entry.updateIsCellDefaultRoute(false);
 
         assertThat(entry.canConnect()).isTrue();
@@ -122,8 +124,8 @@ public class MergedCarrierEntryTest {
     @Test
     public void testGetSsid_connected_returnsSanitizedWifiInfoSsid() {
         final int subId = 1;
-        final MergedCarrierEntry entry = new MergedCarrierEntry(mTestHandler, mMockWifiManager,
-                false, mMockContext, subId);
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mMockInjector, mTestHandler,
+                mMockWifiManager, false, subId);
         when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
         when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
         final String ssid = "ssid";

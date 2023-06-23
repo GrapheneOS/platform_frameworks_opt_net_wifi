@@ -94,7 +94,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                                 uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId())))
                         .findAny();
         if (optionalPasspointConfig.isPresent()) {
-            mChosenEntry = new PasspointWifiEntry(mInjector, mContext, mMainHandler,
+            mChosenEntry = new PasspointWifiEntry(mInjector, mMainHandler,
                     optionalPasspointConfig.get(), mWifiManager,
                     false /* forSavedNetworksPage */);
         } else {
@@ -222,7 +222,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                         osuProviderToPasspointConfig.get(provider);
                 if (provisionedConfig != null && TextUtils.equals(mChosenEntry.getKey(),
                         uniqueIdToPasspointWifiEntryKey(provisionedConfig.getUniqueId()))) {
-                    mOsuWifiEntry = new OsuWifiEntry(mInjector, mContext, mMainHandler, provider,
+                    mOsuWifiEntry = new OsuWifiEntry(mInjector, mMainHandler, provider,
                             mWifiManager, false /* forSavedNetworksPage */);
                     mOsuWifiEntry.updateScanResultInfo(osuProviderToScans.get(provider));
                     mOsuWifiEntry.setAlreadyProvisioned(true);
