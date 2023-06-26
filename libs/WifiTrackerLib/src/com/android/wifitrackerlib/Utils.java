@@ -1080,26 +1080,59 @@ public class Utils {
     }
 
     /**
+     * Converts a frequency to one of
+     *      {@link WifiScanner#WIFI_BAND_UNSPECIFIED},
+     *      {@link WifiScanner#WIFI_BAND_24_GHZ},
+     *      {@link WifiScanner#WIFI_BAND_5_GHZ},
+     *      {@link WifiScanner#WIFI_BAND_6_GHZ}
+     */
+    public static int getBand(int freqMhz) {
+        if (freqMhz >= WifiEntry.MIN_FREQ_24GHZ && freqMhz < WifiEntry.MAX_FREQ_24GHZ) {
+            return WifiScanner.WIFI_BAND_24_GHZ;
+        } else if (freqMhz >= WifiEntry.MIN_FREQ_5GHZ && freqMhz < WifiEntry.MAX_FREQ_5GHZ) {
+            return WifiScanner.WIFI_BAND_5_GHZ;
+        } else if (freqMhz >= WifiEntry.MIN_FREQ_6GHZ && freqMhz < WifiEntry.MAX_FREQ_6GHZ) {
+            return WifiScanner.WIFI_BAND_6_GHZ;
+        } else {
+            return WifiScanner.WIFI_BAND_UNSPECIFIED;
+        }
+    }
+
+    /**
+     * Converts one of
+     *      {@link WifiScanner#WIFI_BAND_UNSPECIFIED},
+     *      {@link WifiScanner#WIFI_BAND_24_GHZ},
+     *      {@link WifiScanner#WIFI_BAND_5_GHZ},
+     *      {@link WifiScanner#WIFI_BAND_6_GHZ}
+     * to the display string of the corresponding Wi-Fi band.
+     */
+    public static String bandToBandString(@NonNull Context context, int scannerBand) {
+        switch (scannerBand) {
+            case WifiScanner.WIFI_BAND_24_GHZ:
+                return context.getResources().getString(R.string.wifitrackerlib_wifi_band_24_ghz);
+            case WifiScanner.WIFI_BAND_5_GHZ:
+                return context.getResources().getString(R.string.wifitrackerlib_wifi_band_5_ghz);
+            case WifiScanner.WIFI_BAND_6_GHZ:
+                return context.getResources().getString(R.string.wifitrackerlib_wifi_band_6_ghz);
+            default:
+                return context.getResources().getString(R.string.wifitrackerlib_wifi_band_unknown);
+        }
+    }
+
+    /**
      * Converts a frequency in MHz to the display string of the corresponding Wi-Fi band.
      */
-    public static String getBandString(@NonNull Context context, int freqMhz) {
-        if (freqMhz >= WifiEntry.MIN_FREQ_24GHZ && freqMhz < WifiEntry.MAX_FREQ_24GHZ) {
-            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_24_ghz);
-        } else if (freqMhz >= WifiEntry.MIN_FREQ_5GHZ && freqMhz < WifiEntry.MAX_FREQ_5GHZ) {
-            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_5_ghz);
-        } else if (freqMhz >= WifiEntry.MIN_FREQ_6GHZ && freqMhz < WifiEntry.MAX_FREQ_6GHZ) {
-            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_6_ghz);
-        } else {
-            return context.getResources().getString(R.string.wifitrackerlib_wifi_band_unknown);
-        }
+    public static String frequencyToBandString(@NonNull Context context, int freqMhz) {
+        return bandToBandString(context, getBand(freqMhz));
     }
 
     /**
      * Converts the band info in WifiInfo to the display string of the corresponding Wi-Fi band(s).
      */
-    public static String getBandString(@NonNull Context context, @NonNull WifiInfo wifiInfo) {
+    public static String wifiInfoToBandString(
+            @NonNull Context context, @NonNull WifiInfo wifiInfo) {
         if (!BuildCompat.isAtLeastU()) {
-            return getBandString(context, wifiInfo.getFrequency());
+            return frequencyToBandString(context, wifiInfo.getFrequency());
         }
 
         StringJoiner sj = new StringJoiner(
@@ -1109,27 +1142,49 @@ public class Utils {
                 .map(MloLink::getBand)
                 .distinct()
                 .sorted()
-                .forEach((band) -> {
-                    switch (band) {
-                        case WifiScanner.WIFI_BAND_24_GHZ:
-                            sj.add(context.getResources()
-                                    .getString(R.string.wifitrackerlib_wifi_band_24_ghz));
-                            break;
-                        case WifiScanner.WIFI_BAND_5_GHZ:
-                            sj.add(context.getResources()
-                                    .getString(R.string.wifitrackerlib_wifi_band_5_ghz));
-                            break;
-                        case WifiScanner.WIFI_BAND_6_GHZ:
-                            sj.add(context.getResources()
-                                    .getString(R.string.wifitrackerlib_wifi_band_6_ghz));
-                            break;
-                        default:
-                            sj.add(context.getResources()
-                                    .getString(R.string.wifitrackerlib_wifi_band_unknown));
-                    }
-                });
+                .forEach((band) -> sj.add(bandToBandString(context, band)));
         if (sj.length() == 0) {
-            return getBandString(context, wifiInfo.getFrequency());
+            return frequencyToBandString(context, wifiInfo.getFrequency());
+        }
+        return sj.toString();
+    }
+
+    /**
+     * Returns the link speed string of the WifiInfo for Tx if isTx is {@code true}, else
+     * return the Rx link speed.
+     */
+    public static String getSpeedString(
+            @NonNull Context context, @Nullable WifiInfo wifiInfo, boolean isTx) {
+        if (wifiInfo == null) {
+            return "";
+        }
+        int wifiInfoSpeedMbps =
+                isTx ? wifiInfo.getTxLinkSpeedMbps() : wifiInfo.getRxLinkSpeedMbps();
+        if (wifiInfoSpeedMbps <= 0) {
+            return "";
+        }
+        if (!BuildCompat.isAtLeastU()) {
+            return context.getString(R.string.wifitrackerlib_link_speed_mbps,
+                    wifiInfoSpeedMbps);
+        }
+        List<MloLink> activeMloLinks = wifiInfo.getAssociatedMloLinks().stream()
+                .filter((link) -> link.getState() == MloLink.MLO_LINK_STATE_ACTIVE)
+                .toList();
+        if (activeMloLinks.size() <= 1) {
+            return context.getString(R.string.wifitrackerlib_link_speed_mbps,
+                    wifiInfoSpeedMbps);
+        }
+        StringJoiner sj = new StringJoiner(
+                context.getString(R.string.wifitrackerlib_multiband_separator));
+        for (MloLink link : activeMloLinks) {
+            int linkSpeedMbps = isTx ? link.getTxLinkSpeedMbps() : link.getRxLinkSpeedMbps();
+            if (linkSpeedMbps <= 0) {
+                continue;
+            }
+            sj.add(context.getString(
+                    R.string.wifitrackerlib_link_speed_on_band,
+                    context.getString(R.string.wifitrackerlib_link_speed_mbps, linkSpeedMbps),
+                    bandToBandString(context, link.getBand())));
         }
         return sj.toString();
     }
