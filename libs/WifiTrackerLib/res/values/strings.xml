@@ -247,5 +247,5 @@
     <!-- Summary for the Wi-Fi 6Ghz band [CHAR LIMIT=50]-->
     <string name="wifitrackerlib_wifi_band_6_ghz">6 GHz</string>
     <!-- Separator between Wi-Fi bands in a list [CHAR LIMIT=50]-->
-    <string name="wifitrackerlib_multiband_separator">, </string>
+    <string name="wifitrackerlib_multiband_separator">", "</string>
 </resources>
