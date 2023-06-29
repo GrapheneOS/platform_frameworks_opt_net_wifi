@@ -48,7 +48,6 @@ import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 import android.annotation.SuppressLint;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.WifiSsidPolicy;
-import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -103,9 +102,6 @@ public class StandardWifiEntry extends WifiEntry {
 
     @NonNull private final StandardWifiEntryKey mKey;
 
-    @NonNull private final WifiTrackerInjector mInjector;
-    @NonNull protected final Context mContext;
-
     // Map of security type to matching scan results
     @NonNull private final Map<Integer, List<ScanResult>> mMatchingScanResults = new ArrayMap<>();
     // Map of security type to matching WifiConfiguration
@@ -137,12 +133,11 @@ public class StandardWifiEntry extends WifiEntry {
 
     StandardWifiEntry(
             @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
-            @NonNull StandardWifiEntryKey key, @NonNull WifiManager wifiManager,
+            @NonNull Handler callbackHandler,
+            @NonNull StandardWifiEntryKey key,
+            @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage) {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
-        mInjector = injector;
-        mContext = context;
+        super(injector, callbackHandler, wifiManager, forSavedNetworksPage);
         mKey = key;
         mIsWpa3SaeSupported = wifiManager.isWpa3SaeSupported();
         mIsWpa3SuiteBSupported = wifiManager.isWpa3SuiteBSupported();
@@ -155,13 +150,13 @@ public class StandardWifiEntry extends WifiEntry {
 
     StandardWifiEntry(
             @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
+            @NonNull Handler callbackHandler,
             @NonNull StandardWifiEntryKey key,
             @Nullable List<WifiConfiguration> configs,
             @Nullable List<ScanResult> scanResults,
             @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        this(injector, context, callbackHandler, key, wifiManager,
+        this(injector, callbackHandler, key, wifiManager,
                 forSavedNetworksPage);
         if (configs != null && !configs.isEmpty()) {
             updateConfig(configs);
