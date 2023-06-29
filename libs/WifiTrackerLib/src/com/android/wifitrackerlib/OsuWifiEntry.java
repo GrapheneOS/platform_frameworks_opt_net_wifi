@@ -21,7 +21,6 @@ import static androidx.core.util.Preconditions.checkNotNull;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.WifiEntry.ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN;
 
-import android.content.Context;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -56,7 +55,6 @@ class OsuWifiEntry extends WifiEntry {
     @NonNull private final List<ScanResult> mCurrentScanResults = new ArrayList<>();
 
     @NonNull private final String mKey;
-    @NonNull private final Context mContext;
     @NonNull private final OsuProvider mOsuProvider;
     private String mSsid;
     private String mOsuStatusString;
@@ -69,15 +67,14 @@ class OsuWifiEntry extends WifiEntry {
      */
     OsuWifiEntry(
             @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
+            @NonNull Handler callbackHandler,
             @NonNull OsuProvider osuProvider,
             @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
+        super(injector, callbackHandler, wifiManager, forSavedNetworksPage);
 
         checkNotNull(osuProvider, "Cannot construct with null osuProvider!");
 
-        mContext = context;
         mOsuProvider = osuProvider;
         mKey = osuProviderToOsuWifiEntryKey(osuProvider);
         mUserManager = injector.getUserManager();

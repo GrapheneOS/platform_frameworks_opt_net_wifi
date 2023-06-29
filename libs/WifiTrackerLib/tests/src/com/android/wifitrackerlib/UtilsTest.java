@@ -146,7 +146,7 @@ public class UtilsTest {
     private Handler mTestHandler;
 
     private StandardWifiEntry getStandardWifiEntry(WifiConfiguration config) {
-        return new StandardWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        return new StandardWifiEntry(mMockInjector, mTestHandler,
                 new StandardWifiEntryKey(config), Collections.singletonList(config), null,
                 mMockWifiManager, false /* forSavedNetworksPage */);
     }

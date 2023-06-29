@@ -70,8 +70,6 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     @NonNull private final String mKey;
     @NonNull private final String mFqdn;
     @NonNull private final String mFriendlyName;
-    @NonNull private final WifiTrackerInjector mInjector;
-    @NonNull private final Context mContext;
     @Nullable
     private PasspointConfiguration mPasspointConfig;
     @Nullable private WifiConfiguration mWifiConfig;
@@ -95,15 +93,13 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
      */
     PasspointWifiEntry(
             @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
+            @NonNull Handler callbackHandler,
             @NonNull PasspointConfiguration passpointConfig,
             @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
+        super(injector, callbackHandler, wifiManager, forSavedNetworksPage);
 
         checkNotNull(passpointConfig, "Cannot construct with null PasspointConfiguration!");
-        mInjector = injector;
-        mContext = context;
         mPasspointConfig = passpointConfig;
         mKey = uniqueIdToPasspointWifiEntryKey(passpointConfig.getUniqueId());
         mFqdn = passpointConfig.getHomeSp().getFqdn();
@@ -125,14 +121,12 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             @NonNull WifiConfiguration wifiConfig,
             @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
+        super(injector, callbackHandler, wifiManager, forSavedNetworksPage);
 
         checkNotNull(wifiConfig, "Cannot construct with null WifiConfiguration!");
         if (!wifiConfig.isPasspoint()) {
             throw new IllegalArgumentException("Given WifiConfiguration is not for Passpoint!");
         }
-        mInjector = injector;
-        mContext = context;
         mWifiConfig = wifiConfig;
         mKey = uniqueIdToPasspointWifiEntryKey(wifiConfig.getKey());
         mFqdn = wifiConfig.FQDN;
