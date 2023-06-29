@@ -288,7 +288,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mHotspotNetworkEntryCache.clear();
         }
         mNetworkRequestEntry = null;
-        mMergedCarrierEntry = null;
     }
 
     @WorkerThread
