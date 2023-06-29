@@ -74,6 +74,7 @@ public class KnownNetworkEntryTest {
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
 
+        when(mMockInjector.getContext()).thenReturn(mMockContext);
         when(mMockContext.getString(eq(R.string.wifitrackerlib_known_network_summary), anyString()))
                 .thenAnswer(invocation -> {
                     Object[] args = invocation.getArguments();
@@ -84,7 +85,7 @@ public class KnownNetworkEntryTest {
     @Test
     public void testGetSummary_usesKnownNetworkData() {
         final KnownNetworkEntry entry = new KnownNetworkEntry(
-                mMockInjector, mMockContext, mTestHandler,
+                mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_KNOWN_NETWORK_DATA);
 
@@ -94,7 +95,7 @@ public class KnownNetworkEntryTest {
     @Test
     public void testConnect_serviceCalled() {
         final KnownNetworkEntry entry = new KnownNetworkEntry(
-                mMockInjector, mMockContext, mTestHandler,
+                mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_KNOWN_NETWORK_DATA);
 
@@ -105,7 +106,7 @@ public class KnownNetworkEntryTest {
     @Test
     public void testConnect_nullManager_failureCallback() {
         final KnownNetworkEntry entry = new KnownNetworkEntry(
-                mMockInjector, mMockContext, mTestHandler,
+                mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
                 mMockWifiManager, /* sharedConnectivityManager= */ null, TEST_KNOWN_NETWORK_DATA);
 
@@ -119,7 +120,7 @@ public class KnownNetworkEntryTest {
     @Test
     public void testConnect_onConnectionStatusChanged_failureCallback() {
         final KnownNetworkEntry entry = new KnownNetworkEntry(
-                mMockInjector, mMockContext, mTestHandler,
+                mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_KNOWN_NETWORK_DATA);
 

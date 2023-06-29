@@ -202,6 +202,7 @@ public class WifiPickerTrackerTest {
         when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
                 .thenReturn(mMockLinkProperties);
         when(mMockSharedConnectivityManager.unregisterCallback(any())).thenReturn(true);
+        when(mInjector.getContext()).thenReturn(mMockContext);
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getSystemService(TelephonyManager.class))
                 .thenReturn(mMockTelephonyManager);
