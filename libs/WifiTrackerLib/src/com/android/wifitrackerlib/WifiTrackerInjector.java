@@ -29,9 +29,10 @@ import java.util.Set;
 /**
  * Wrapper class for commonly referenced objects and static data.
  */
-class WifiTrackerInjector {
+public class WifiTrackerInjector {
     private static final String DEVICE_CONFIG_NAMESPACE = "wifi";
 
+    @NonNull private final Context mContext;
     private final boolean mIsDemoMode;
     private final UserManager mUserManager;
     private final DevicePolicyManager mDevicePolicyManager;
@@ -39,6 +40,7 @@ class WifiTrackerInjector {
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     WifiTrackerInjector(@NonNull Context context) {
+        mContext = context;
         mIsDemoMode = NonSdkApiWrapper.isDemoMode(context);
         mUserManager = context.getSystemService(UserManager.class);
         mDevicePolicyManager = context.getSystemService(DevicePolicyManager.class);
@@ -48,6 +50,10 @@ class WifiTrackerInjector {
         for (int i = 0; i < noAttributionAnnotationPackages.length; i++) {
             mNoAttributionAnnotationPackages.add(noAttributionAnnotationPackages[i]);
         }
+    }
+
+    @NonNull Context getContext() {
+        return mContext;
     }
 
     boolean isDemoMode() {

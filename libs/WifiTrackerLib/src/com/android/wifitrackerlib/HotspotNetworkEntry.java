@@ -123,7 +123,7 @@ public class HotspotNetworkEntry extends WifiEntry {
             @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull HotspotNetwork hotspotNetworkData) {
-        super(callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
+        super(injector, callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
         mInjector = injector;
         mContext = context;
         mSharedConnectivityManager = sharedConnectivityManager;
@@ -140,7 +140,7 @@ public class HotspotNetworkEntry extends WifiEntry {
             @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull HotspotNetworkEntryKey key) {
-        super(callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
+        super(injector, callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
         mInjector = injector;
         mContext = context;
         mSharedConnectivityManager = sharedConnectivityManager;

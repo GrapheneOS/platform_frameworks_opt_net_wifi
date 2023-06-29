@@ -236,8 +236,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             // we aren't initialized yet.
             int subId = SubscriptionManager.getDefaultDataSubscriptionId();
             if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-                mMergedCarrierEntry = new MergedCarrierEntry(mWorkerHandler, mWifiManager,
-                        /* forSavedNetworksPage */ false, mContext, subId);
+                mMergedCarrierEntry = new MergedCarrierEntry(mInjector, mWorkerHandler,
+                        mWifiManager, /* forSavedNetworksPage */ false, subId);
             }
         }
         return mMergedCarrierEntry;
@@ -288,7 +288,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mHotspotNetworkEntryCache.clear();
         }
         mNetworkRequestEntry = null;
-        mMergedCarrierEntry = null;
     }
 
     @WorkerThread
@@ -638,8 +637,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             if (mMergedCarrierEntry != null && subId == mMergedCarrierEntry.getSubscriptionId()) {
                 return;
             }
-            mMergedCarrierEntry = new MergedCarrierEntry(mWorkerHandler, mWifiManager,
-                    /* forSavedNetworksPage */ false, mContext, subId);
+            mMergedCarrierEntry = new MergedCarrierEntry(mInjector, mWorkerHandler, mWifiManager,
+                    /* forSavedNetworksPage */ false, subId);
             Network currentNetwork = mWifiManager.getCurrentNetwork();
             if (currentNetwork != null) {
                 NetworkCapabilities networkCapabilities =
@@ -704,7 +703,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (ScanResultKey scanKey: newScanKeys) {
             final StandardWifiEntryKey entryKey =
                     new StandardWifiEntryKey(scanKey, true /* isTargetingNewNetworks */);
-            final StandardWifiEntry newEntry = new StandardWifiEntry(mInjector, mContext,
+            final StandardWifiEntry newEntry = new StandardWifiEntry(mInjector,
                     mMainHandler, entryKey, mStandardWifiConfigCache.get(entryKey),
                     scanResultsByKey.get(scanKey), mWifiManager,
                     false /* forSavedNetworksPage */);
@@ -756,7 +755,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     || !scanResultsByKey.containsKey(scanKey)) {
                 continue;
             }
-            final StandardWifiEntry newEntry = new StandardWifiEntry(mInjector, mContext,
+            final StandardWifiEntry newEntry = new StandardWifiEntry(mInjector,
                     mMainHandler, entryKey, mSuggestedConfigCache.get(entryKey),
                     scanResultsByKey.get(scanKey), mWifiManager,
                     false /* forSavedNetworksPage */);
@@ -793,7 +792,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                             mMainHandler, wifiConfig, mWifiManager,
                             false /* forSavedNetworksPage */));
                 } else if (mPasspointConfigCache.containsKey(key)) {
-                    mPasspointWifiEntryCache.put(key, new PasspointWifiEntry(mInjector, mContext,
+                    mPasspointWifiEntryCache.put(key, new PasspointWifiEntry(mInjector,
                             mMainHandler, mPasspointConfigCache.get(key), mWifiManager,
                             false /* forSavedNetworksPage */));
                 } else {
@@ -828,7 +827,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         // Create a new entry for each OsuProvider not already matched to an OsuWifiEntry
         for (OsuProvider provider : osuProviderToScans.keySet()) {
-            OsuWifiEntry newEntry = new OsuWifiEntry(mInjector, mContext, mMainHandler, provider,
+            OsuWifiEntry newEntry = new OsuWifiEntry(mInjector, mMainHandler, provider,
                     mWifiManager, false /* forSavedNetworksPage */);
             newEntry.updateScanResultInfo(osuProviderToScans.get(provider));
             mOsuWifiEntryCache.put(osuProviderToOsuWifiEntryKey(provider), newEntry);
@@ -912,7 +911,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (ScanResultKey scanKey : newScanKeys) {
             final StandardWifiEntryKey entryKey =
                     new StandardWifiEntryKey(scanKey, true /* isTargetingNewNetworks */);
-            final KnownNetworkEntry newEntry = new KnownNetworkEntry(mInjector, mContext,
+            final KnownNetworkEntry newEntry = new KnownNetworkEntry(mInjector,
                     mMainHandler, entryKey, null /* configs */,
                     scanResultsByKey.get(scanKey), mWifiManager,
                     mSharedConnectivityManager, knownNetworkDataByKey.get(scanKey));
@@ -1178,7 +1177,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         final StandardWifiEntryKey entryKey = new StandardWifiEntryKey(matchingConfigs.get(0));
         if (mNetworkRequestEntry == null
                 || !mNetworkRequestEntry.getStandardWifiEntryKey().equals(entryKey)) {
-            mNetworkRequestEntry = new NetworkRequestEntry(mInjector, mContext, mMainHandler,
+            mNetworkRequestEntry = new NetworkRequestEntry(mInjector, mMainHandler,
                     entryKey, mWifiManager, false /* forSavedNetworksPage */);
             mNetworkRequestEntry.updateConfig(matchingConfigs);
             updateNetworkRequestEntryScans(mScanResultUpdater.getScanResults());
@@ -1215,7 +1214,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 }
             }
             final StandardWifiEntry connectedEntry =
-                    new StandardWifiEntry(mInjector, mContext, mMainHandler, entryKey, configs,
+                    new StandardWifiEntry(mInjector, mMainHandler, entryKey, configs,
                             null, mWifiManager, false /* forSavedNetworksPage */);
             connectedEntry.onNetworkCapabilitiesChanged(network, capabilities);
             mStandardWifiEntryCache.add(connectedEntry);
@@ -1247,7 +1246,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 }
             }
             final StandardWifiEntry connectedEntry =
-                    new StandardWifiEntry(mInjector, mContext, mMainHandler, entryKey, configs,
+                    new StandardWifiEntry(mInjector, mMainHandler, entryKey, configs,
                             null, mWifiManager, false /* forSavedNetworksPage */);
             connectedEntry.onNetworkCapabilitiesChanged(network, capabilities);
             mSuggestedWifiEntryCache.add(connectedEntry);
@@ -1280,7 +1279,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 uniqueIdToPasspointWifiEntryKey(cachedWifiConfig.getKey()));
         PasspointWifiEntry connectedEntry;
         if (passpointConfig != null) {
-            connectedEntry = new PasspointWifiEntry(mInjector, mContext, mMainHandler,
+            connectedEntry = new PasspointWifiEntry(mInjector, mMainHandler,
                     passpointConfig, mWifiManager,
                     false /* forSavedNetworksPage */);
         } else {

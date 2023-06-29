@@ -16,7 +16,6 @@
 
 package com.android.wifitrackerlib;
 
-import android.content.Context;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -38,10 +37,10 @@ public class NetworkRequestEntry extends StandardWifiEntry {
 
     NetworkRequestEntry(
             @NonNull WifiTrackerInjector injector,
-            @NonNull Context context, @NonNull Handler callbackHandler,
+            @NonNull Handler callbackHandler,
             @NonNull StandardWifiEntryKey key, @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage) throws IllegalArgumentException {
-        super(injector, context, callbackHandler, key, wifiManager, forSavedNetworksPage);
+        super(injector, callbackHandler, key, wifiManager, forSavedNetworksPage);
     }
 
     @Override

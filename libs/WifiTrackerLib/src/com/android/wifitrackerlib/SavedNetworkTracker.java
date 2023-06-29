@@ -468,7 +468,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
 
         // Create new entry for each unmatched config
         for (StandardWifiEntryKey key : wifiConfigsByKey.keySet()) {
-            mStandardWifiEntryCache.add(new StandardWifiEntry(mInjector, mContext, mMainHandler,
+            mStandardWifiEntryCache.add(new StandardWifiEntry(mInjector, mMainHandler,
                     key, wifiConfigsByKey.get(key), null, mWifiManager,
                     true /* forSavedNetworksPage */));
         }
@@ -500,7 +500,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         // Create new entry for each unmatched config
         for (String key : passpointConfigsByKey.keySet()) {
             mPasspointWifiEntryCache.put(key,
-                    new PasspointWifiEntry(mInjector, mContext, mMainHandler,
+                    new PasspointWifiEntry(mInjector, mMainHandler,
                             passpointConfigsByKey.get(key), mWifiManager,
                             true /* forSavedNetworksPage */));
         }
