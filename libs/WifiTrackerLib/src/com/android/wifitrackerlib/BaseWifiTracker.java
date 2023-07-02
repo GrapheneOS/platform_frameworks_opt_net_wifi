@@ -21,6 +21,7 @@ import static android.net.NetworkCapabilities.TRANSPORT_WIFI;
 import static android.os.Build.VERSION_CODES;
 
 import android.annotation.TargetApi;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -134,6 +135,7 @@ public class BaseWifiTracker {
 
     protected final WifiTrackerInjector mInjector;
     protected final Context mContext;
+    protected final @NonNull ActivityManager mActivityManager;
     protected final WifiManager mWifiManager;
     protected final ConnectivityManager mConnectivityManager;
     protected final ConnectivityDiagnosticsManager mConnectivityDiagnosticsManager;
@@ -299,6 +301,7 @@ public class BaseWifiTracker {
             BaseWifiTrackerCallback listener,
             String tag) {
         mInjector = injector;
+        mActivityManager = context.getSystemService(ActivityManager.class);
         lifecycle.addObserver(new LifecycleObserver() {
             @OnLifecycleEvent(Lifecycle.Event.ON_START)
             @MainThread
@@ -793,6 +796,12 @@ public class BaseWifiTracker {
                         + " mIsStartedState=" + mIsStartedState);
                 return;
             }
+            if (!isAppVisible()) {
+                Log.wtf(mTag, "Scan loop called even though app isn't visible anymore!"
+                        + " mIsWifiEnabled=" + mIsWifiEnabled
+                        + " mIsStartedState=" + mIsStartedState);
+                return;
+            }
             if (isVerboseLoggingEnabled()) {
                 Log.v(mTag, "Issuing scan request from WifiManager");
             }
@@ -801,6 +810,13 @@ public class BaseWifiTracker {
             mWifiManager.startScan();
             postDelayed(this::scanLoop, mScanIntervalMillis);
         }
+    }
+
+    private boolean isAppVisible() {
+        ActivityManager.RunningAppProcessInfo processInfo =
+                new ActivityManager.RunningAppProcessInfo();
+        ActivityManager.getMyMemoryState(processInfo);
+        return processInfo.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
     }
 
     /**
