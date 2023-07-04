@@ -62,6 +62,7 @@ import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiScanner;
+import android.os.Build;
 import android.os.Handler;
 import android.os.PersistableBundle;
 import android.os.test.TestLooper;
@@ -72,6 +73,7 @@ import android.telephony.TelephonyManager;
 import android.text.SpannableString;
 import android.text.style.ClickableSpan;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.os.BuildCompat;
 
 import com.android.wifitrackerlib.shadow.ShadowSystem;
@@ -88,6 +90,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 
 @Config(shadows = {ShadowSystem.class})
 public class UtilsTest {
@@ -130,6 +133,8 @@ public class UtilsTest {
     private static final String BAND_24_GHZ = "2.4 GHz";
     private static final String BAND_5_GHZ = "5 GHz";
     private static final String BAND_6_GHZ = "6 GHz";
+    private static final String STRING_LINK_SPEED_MBPS = " Mbps";
+    private static final String STRING_LINK_SPEED_ON_BAND = " on ";
 
     @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
@@ -191,6 +196,8 @@ public class UtilsTest {
                 .thenReturn(STRING_NETWORK_AVAILABLE_SIGN_IN);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator))
                 .thenReturn(STRING_SUMMARY_SEPARATOR);
+        when(mMockContext.getString(R.string.wifitrackerlib_multiband_separator))
+                .thenReturn(BAND_SEPARATOR);
         when(mMockContext.getString(R.string.wifi_connected_low_quality))
                 .thenReturn(STRING_CONNECTED_LOW_QUALITY);
         when(mMockContext.getString(R.string.wifitrackerlib_wifi_limited_connection))
@@ -207,6 +214,11 @@ public class UtilsTest {
                 any())).thenAnswer((answer) -> STRING_CONNECTED_VIA_APP + answer.getArguments()[1]);
         when(mMockContext.getString(eq(R.string.wifitrackerlib_available_via_app),
                 any())).thenAnswer((answer) -> STRING_AVAILABLE_VIA_APP + answer.getArguments()[1]);
+        when(mMockContext.getString(eq(R.string.wifitrackerlib_link_speed_mbps),
+                any())).thenAnswer((answer) -> answer.getArguments()[1] + STRING_LINK_SPEED_MBPS);
+        when(mMockContext.getString(eq(R.string.wifitrackerlib_link_speed_on_band),
+                any())).thenAnswer((answer) -> answer.getArguments()[1] + STRING_LINK_SPEED_ON_BAND
+                + answer.getArguments()[2]);
     }
 
     @Test
@@ -682,7 +694,7 @@ public class UtilsTest {
         when(wifiInfo.getWifiStandard()).thenReturn(ScanResult.WIFI_STANDARD_11BE);
         when(wifiInfo.getAssociatedMloLinks()).thenReturn(mloLinks);
 
-        assertThat(Utils.getBandString(mMockContext, wifiInfo))
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo))
                 .isEqualTo("2.4 GHz, 5 GHz, 6 GHz");
     }
 
@@ -694,16 +706,16 @@ public class UtilsTest {
         when(wifiInfo.getAssociatedMloLinks()).thenReturn(Collections.emptyList());
 
         when(wifiInfo.getFrequency()).thenReturn(0);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_UNKNOWN);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_UNKNOWN);
 
         when(wifiInfo.getFrequency()).thenReturn(2400);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_24_GHZ);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_24_GHZ);
 
         when(wifiInfo.getFrequency()).thenReturn(5200);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_5_GHZ);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_5_GHZ);
 
         when(wifiInfo.getFrequency()).thenReturn(6000);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_6_GHZ);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_6_GHZ);
     }
 
     @Test
@@ -712,16 +724,16 @@ public class UtilsTest {
         WifiInfo wifiInfo = mock(WifiInfo.class);
 
         when(wifiInfo.getFrequency()).thenReturn(0);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_UNKNOWN);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_UNKNOWN);
 
         when(wifiInfo.getFrequency()).thenReturn(2400);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_24_GHZ);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_24_GHZ);
 
         when(wifiInfo.getFrequency()).thenReturn(5200);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_5_GHZ);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_5_GHZ);
 
         when(wifiInfo.getFrequency()).thenReturn(6000);
-        assertThat(Utils.getBandString(mMockContext, wifiInfo)).isEqualTo(BAND_6_GHZ);
+        assertThat(Utils.wifiInfoToBandString(mMockContext, wifiInfo)).isEqualTo(BAND_6_GHZ);
     }
 
     @Test
@@ -893,5 +905,123 @@ public class UtilsTest {
                 Arrays.asList(WifiInfo.SECURITY_TYPE_PASSPOINT_R3,
                         WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2)))
                 .isEqualTo(WifiInfo.SECURITY_TYPE_PASSPOINT_R3);
+    }
+
+    @Test
+    public void testGetSpeedStringUnknownSpeed() {
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getTxLinkSpeedMbps()).thenReturn(WifiInfo.LINK_SPEED_UNKNOWN);
+        when(wifiInfo.getRxLinkSpeedMbps()).thenReturn(WifiInfo.LINK_SPEED_UNKNOWN);
+
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, true))
+                .isEqualTo("");
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, false))
+                .isEqualTo("");
+    }
+
+    @Test
+    public void testGetSpeedString() {
+        int txSpeedMbps = 15;
+        int rxSpeedMbps = 100;
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getTxLinkSpeedMbps()).thenReturn(txSpeedMbps);
+        when(wifiInfo.getRxLinkSpeedMbps()).thenReturn(rxSpeedMbps);
+
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, true))
+                .isEqualTo(txSpeedMbps + STRING_LINK_SPEED_MBPS);
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, false))
+                .isEqualTo(rxSpeedMbps + STRING_LINK_SPEED_MBPS);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private MloLink createMockMloLink(int band, int linkState, int txSpeedMbps, int rxSpeedMbps) {
+        if (!BuildCompat.isAtLeastU()) {
+            return null;
+        }
+        MloLink link = mock(MloLink.class);
+        when(link.getBand()).thenReturn(band);
+        when(link.getState()).thenReturn(linkState);
+        when(link.getTxLinkSpeedMbps()).thenReturn(txSpeedMbps);
+        when(link.getRxLinkSpeedMbps()).thenReturn(rxSpeedMbps);
+        return link;
+    }
+
+    @Test
+    public void testGetSpeedStringWithSingleMloLink() {
+        assumeTrue(BuildCompat.isAtLeastU());
+        int txSpeedMbps = 15;
+        int rxSpeedMbps = 100;
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getTxLinkSpeedMbps()).thenReturn(txSpeedMbps);
+        when(wifiInfo.getRxLinkSpeedMbps()).thenReturn(rxSpeedMbps);
+        List<MloLink> links = List.of(
+                createMockMloLink(WifiScanner.WIFI_BAND_24_GHZ, MloLink.MLO_LINK_STATE_ACTIVE,
+                        txSpeedMbps, rxSpeedMbps)
+        );
+        when(wifiInfo.getAssociatedMloLinks()).thenReturn(links);
+
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, true))
+                .isEqualTo(txSpeedMbps + STRING_LINK_SPEED_MBPS);
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, false))
+                .isEqualTo(rxSpeedMbps + STRING_LINK_SPEED_MBPS);
+    }
+
+    @Test
+    public void testGetSpeedStringWithMultipleMloLinks() {
+        assumeTrue(BuildCompat.isAtLeastU());
+        int txSpeedMbps = 15;
+        int rxSpeedMbps = 100;
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getTxLinkSpeedMbps()).thenReturn(txSpeedMbps);
+        when(wifiInfo.getRxLinkSpeedMbps()).thenReturn(rxSpeedMbps);
+        List<MloLink> links = List.of(
+                createMockMloLink(WifiScanner.WIFI_BAND_UNSPECIFIED, MloLink.MLO_LINK_STATE_ACTIVE,
+                        txSpeedMbps, rxSpeedMbps),
+                createMockMloLink(WifiScanner.WIFI_BAND_24_GHZ, MloLink.MLO_LINK_STATE_ACTIVE,
+                        txSpeedMbps, rxSpeedMbps),
+                createMockMloLink(WifiScanner.WIFI_BAND_24_GHZ, MloLink.MLO_LINK_STATE_IDLE,
+                        txSpeedMbps, rxSpeedMbps),
+                createMockMloLink(WifiScanner.WIFI_BAND_5_GHZ, MloLink.MLO_LINK_STATE_ACTIVE,
+                        txSpeedMbps, rxSpeedMbps),
+                createMockMloLink(WifiScanner.WIFI_BAND_5_GHZ, MloLink.MLO_LINK_STATE_ACTIVE,
+                        txSpeedMbps, rxSpeedMbps),
+                createMockMloLink(WifiScanner.WIFI_BAND_6_GHZ, MloLink.MLO_LINK_STATE_ACTIVE,
+                        txSpeedMbps, rxSpeedMbps),
+                createMockMloLink(WifiScanner.WIFI_BAND_6_GHZ, MloLink.MLO_LINK_STATE_ACTIVE,
+                        -1, 0)
+        );
+        when(wifiInfo.getAssociatedMloLinks()).thenReturn(links);
+
+        // The idle 2 Ghz link should not be included
+        // The extra 5 Ghz link should be included
+        // The extra 5 Ghz link should be included
+        // The 6 Ghz link with non-positive link speed should not be included
+        String expectedTxSpeed = new StringJoiner(BAND_SEPARATOR)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_UNKNOWN)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_24_GHZ)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_5_GHZ)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_5_GHZ)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_6_GHZ).toString();
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, true))
+                .isEqualTo(expectedTxSpeed);
+
+        String expectedRxSpeed = new StringJoiner(BAND_SEPARATOR)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_UNKNOWN)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_24_GHZ)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_5_GHZ)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_5_GHZ)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_6_GHZ).toString();
+        assertThat(Utils.getSpeedString(mMockContext, wifiInfo, false))
+                .isEqualTo(expectedRxSpeed);
     }
 }
