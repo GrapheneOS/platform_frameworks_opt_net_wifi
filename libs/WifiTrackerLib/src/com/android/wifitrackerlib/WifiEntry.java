@@ -665,6 +665,20 @@ public class WifiEntry {
         return "";
     }
 
+    /**
+     * Returns the string displayed for Tx link speed.
+     */
+    public String getTxSpeedString() {
+        return Utils.getSpeedString(mContext, mWifiInfo, /* isTx */ true);
+    }
+
+    /**
+     * Returns the string displayed for Rx link speed.
+     */
+    public String getRxSpeedString() {
+        return Utils.getSpeedString(mContext, mWifiInfo, /* isTx */ false);
+    }
+
     /** Returns whether subscription of the entry is expired */
     public boolean isExpired() {
         return false;
