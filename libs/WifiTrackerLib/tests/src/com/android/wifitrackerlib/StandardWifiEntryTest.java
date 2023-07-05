@@ -1775,4 +1775,48 @@ public class StandardWifiEntryTest {
 
         assertThat(pskWifiEntry.canEasyConnect()).isFalse();
     }
+
+    @Test
+    public void testHasAdminRestrictions_noUserRestrictionSet_returnsFalse() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI);
+        scan.capabilities = "PSK";
+        when(mUserManager.hasUserRestriction(
+                UserManager.DISALLOW_ADD_WIFI_CONFIG)).thenReturn(false);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        when(spyEntry.isSaved()).thenReturn(false);
+        when(spyEntry.isSuggestion()).thenReturn(false);
+
+        assertThat(spyEntry.hasAdminRestrictions()).isEqualTo(false);
+    }
+
+    @Test
+    public void testHasAdminRestrictions_userRestrictionSet_returnsTrue() {
+        assumeTrue(BuildCompat.isAtLeastT());
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI);
+        scan.capabilities = "PSK";
+        when(mUserManager.hasUserRestriction(
+                UserManager.DISALLOW_ADD_WIFI_CONFIG)).thenReturn(true);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        when(spyEntry.isSaved()).thenReturn(false);
+        when(spyEntry.isSuggestion()).thenReturn(false);
+
+        assertThat(spyEntry.hasAdminRestrictions()).isEqualTo(true);
+    }
 }

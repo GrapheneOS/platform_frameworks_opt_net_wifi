@@ -1070,7 +1070,8 @@ public class StandardWifiEntry extends WifiEntry {
         mIsAdminRestricted = false;
     }
 
-    private boolean hasAdminRestrictions() {
+    @Override
+    public synchronized boolean hasAdminRestrictions() {
         if ((mHasAddConfigUserRestriction && !(isSaved() || isSuggestion()))
                 || mIsAdminRestricted) {
             return true;
