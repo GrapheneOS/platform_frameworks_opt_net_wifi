@@ -754,6 +754,13 @@ public class WifiEntry {
     }
 
     /**
+     * Whether there are admin restrictions preventing connection to this network.
+     */
+    public boolean hasAdminRestrictions() {
+        return false;
+    }
+
+    /**
      * Sets the callback listener for WifiEntryCallback methods.
      * Subsequent calls will overwrite the previous listener.
      */
