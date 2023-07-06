@@ -204,7 +204,8 @@ class OsuWifiEntry extends WifiEntry {
         mIsAlreadyProvisioned = isAlreadyProvisioned;
     }
 
-    private boolean hasAdminRestrictions() {
+    @Override
+    public synchronized boolean hasAdminRestrictions() {
         if (mHasAddConfigUserRestriction && !mIsAlreadyProvisioned) {
             return true;
         }
