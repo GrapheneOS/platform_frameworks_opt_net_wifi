@@ -132,6 +132,7 @@ public class BaseWifiTracker {
     };
     private final BaseWifiTracker.Scanner mScanner;
     private final BaseWifiTrackerCallback mListener;
+    private final @NonNull LifecycleObserver mLifecycleObserver;
 
     protected final WifiTrackerInjector mInjector;
     protected final Context mContext;
@@ -277,7 +278,12 @@ public class BaseWifiTracker {
     /**
      * Constructor for BaseWifiTracker.
      * @param injector Injector for commonly referenced objects.
-     * @param lifecycle Lifecycle this is tied to for lifecycle callbacks.
+     * @param lifecycle Lifecycle to register the internal LifecycleObserver with. Note that we
+     *                  register the LifecycleObserver inside the constructor, which may cause an
+     *                  NPE if the Lifecycle invokes onStart/onStop/onDestroyed within
+     *                  {@link Lifecycle#addObserver}. To avoid this, pass {@code null} here and
+     *                  register the LifecycleObserver from {@link #getLifecycleObserver()}
+     *                  instead.
      * @param context Context for registering broadcast receiver and for resource strings.
      * @param wifiManager Provides all Wi-Fi info.
      * @param connectivityManager Provides network info.
@@ -290,7 +296,7 @@ public class BaseWifiTracker {
     @SuppressWarnings("StaticAssignmentInConstructor")
     BaseWifiTracker(
             @NonNull WifiTrackerInjector injector,
-            @NonNull Lifecycle lifecycle, @NonNull Context context,
+            @Nullable Lifecycle lifecycle, @NonNull Context context,
             @NonNull WifiManager wifiManager,
             @NonNull ConnectivityManager connectivityManager,
             @NonNull Handler mainHandler,
@@ -302,7 +308,7 @@ public class BaseWifiTracker {
             String tag) {
         mInjector = injector;
         mActivityManager = context.getSystemService(ActivityManager.class);
-        lifecycle.addObserver(new LifecycleObserver() {
+        mLifecycleObserver = new LifecycleObserver() {
             @OnLifecycleEvent(Lifecycle.Event.ON_START)
             @MainThread
             public void onStart() {
@@ -320,7 +326,10 @@ public class BaseWifiTracker {
             public void onDestroy() {
                 BaseWifiTracker.this.onDestroy();
             }
-        });
+        };
+        if (lifecycle != null) {
+            lifecycle.addObserver(mLifecycleObserver);
+        }
         mContext = context;
         mWifiManager = wifiManager;
         mConnectivityManager = connectivityManager;
@@ -341,6 +350,14 @@ public class BaseWifiTracker {
                 maxScanAgeMillis + scanIntervalMillis);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
         sVerboseLogging = mWifiManager.isVerboseLoggingEnabled();
+    }
+
+    /**
+     * Returns the LifecycleObserver to listen on the app's lifecycle state.
+     */
+    @AnyThread
+    public LifecycleObserver getLifecycleObserver() {
+        return mLifecycleObserver;
     }
 
     /**
