@@ -249,7 +249,7 @@
     <!-- Separator between Wi-Fi bands in a list [CHAR LIMIT=50]-->
     <string name="wifitrackerlib_multiband_separator">", "</string>
     <!-- Summary for link speed on Mbps -->
-    <string name="wifitrackerlib_link_speed_mbps"><xliff:g id="link_speed_mbps" example="233">%1$s</xliff:g> Mbps</string>
+    <string name="wifitrackerlib_link_speed_mbps"><xliff:g id="link_speed_mbps" example="233">%1$d</xliff:g> Mbps</string>
     <!-- Summary for link speed on a specific band -->
     <string name="wifitrackerlib_link_speed_on_band"><xliff:g id="link_speed" example="233 Mbps">%1$s</xliff:g> on <xliff:g id="band" example="2.4 GHz">%2$s</xliff:g></string>
 </resources>
