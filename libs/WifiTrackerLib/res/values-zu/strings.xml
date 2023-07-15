@@ -89,8 +89,6 @@
     <string name="wifitrackerlib_wifi_band_5_ghz" msgid="2179047349922091556">"5 GHz"</string>
     <string name="wifitrackerlib_wifi_band_6_ghz" msgid="6532408050869498777">"6 GHz"</string>
     <string name="wifitrackerlib_multiband_separator" msgid="6838172120482590336">", "</string>
-    <!-- no translation found for wifitrackerlib_link_speed_mbps (5880214340478706112) -->
-    <skip />
-    <!-- no translation found for wifitrackerlib_link_speed_on_band (2433114336144744962) -->
-    <skip />
+    <string name="wifitrackerlib_link_speed_mbps" msgid="5880214340478706112">"<xliff:g id="LINK_SPEED_MBPS">%1$d</xliff:g> Mbps"</string>
+    <string name="wifitrackerlib_link_speed_on_band" msgid="2433114336144744962">"I-<xliff:g id="LINK_SPEED">%1$s</xliff:g> ku-<xliff:g id="BAND">%2$s</xliff:g>"</string>
 </resources>
