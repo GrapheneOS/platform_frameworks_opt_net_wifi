@@ -195,10 +195,11 @@ public class WifiPickerTrackerTest {
                 });
         // A real NetworkCapabilities is needed here in order to create a copy (with location info)
         // using the NetworkCapabilities constructor in handleOnStart.
-        when(mMockConnectivityManager.getNetworkCapabilities(mMockNetwork))
-                .thenReturn(new NetworkCapabilities.Builder()
-                        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                        .build());
+        NetworkCapabilities realNetCaps = new NetworkCapabilities.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setTransportInfo(mMockWifiInfo)
+                .build();
+        when(mMockConnectivityManager.getNetworkCapabilities(mMockNetwork)).thenReturn(realNetCaps);
         when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
                 .thenReturn(mMockLinkProperties);
         when(mMockSharedConnectivityManager.unregisterCallback(any())).thenReturn(true);
@@ -758,6 +759,39 @@ public class WifiPickerTrackerTest {
         // Lose the default network
         mDefaultNetworkCallbackCaptor.getValue().onLost(mock(Network.class));
         assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
+    }
+
+    /**
+     * Tests that a connected WifiEntry will become the default network if the network underlies
+     * the current default network.
+     */
+    @Test
+    public void testGetConnectedEntry_defaultNetworkHasUnderlyingWifi_becomesDefaultNetwork() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager)
+                .registerNetworkCallback(any(), mNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+
+        Network vpnNetwork = mock(Network.class);
+        NetworkCapabilities vpnCaps = mock(NetworkCapabilities.class);
+        when(vpnCaps.getUnderlyingNetworks()).thenReturn(List.of(mMockNetwork));
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(vpnNetwork, vpnCaps);
+
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isTrue();
     }
 
     /**
