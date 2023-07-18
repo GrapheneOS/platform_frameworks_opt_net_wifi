@@ -188,6 +188,21 @@ public class BaseWifiTracker {
                 @WorkerThread
                 public void onCapabilitiesChanged(@NonNull Network network,
                         @NonNull NetworkCapabilities networkCapabilities) {
+                    List<Network> underlyingNetworks =
+                            networkCapabilities.getUnderlyingNetworks();
+                    if (underlyingNetworks != null) {
+                        for (Network underlyingNetwork : underlyingNetworks) {
+                            NetworkCapabilities underlyingNetworkCapabilities =
+                                    mConnectivityManager.getNetworkCapabilities(underlyingNetwork);
+                            if (Utils.getWifiInfo(underlyingNetworkCapabilities) != null) {
+                                // If the default network has an underlying Wi-Fi network (e.g. it's
+                                // a VPN), treat the Wi-Fi network as the default network.
+                                handleDefaultNetworkCapabilitiesChanged(
+                                        underlyingNetwork, underlyingNetworkCapabilities);
+                                return;
+                            }
+                        }
+                    }
                     handleDefaultNetworkCapabilitiesChanged(network, networkCapabilities);
                 }
 
