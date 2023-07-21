@@ -410,7 +410,8 @@ public class WifiConfigurationUtilTest extends WifiBaseTest {
         WifiConfiguration config = WifiConfigurationTestUtil.createWapiPskNetwork();
         assertTrue(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
 
-        config.preSharedKey = "abcd123456788990013453445345465465476546";
+        config.preSharedKey = "01234567890123456789012345678901234567890123456789012345678901234567"
+                + "890123456789012345678901234567890";
         assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
         config.preSharedKey = "";
         assertFalse(WifiConfigurationUtil.validate(config, WifiConfigurationUtil.VALIDATE_FOR_ADD));
