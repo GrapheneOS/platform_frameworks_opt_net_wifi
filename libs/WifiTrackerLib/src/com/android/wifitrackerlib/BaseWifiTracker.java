@@ -799,6 +799,8 @@ public class BaseWifiTracker {
                 WifiScanner.ScanSettings scanSettings = new WifiScanner.ScanSettings();
                 scanSettings.band = WifiScanner.WIFI_BAND_BOTH;
                 scanSettings.setRnrSetting(WifiScanner.WIFI_RNR_ENABLED);
+                scanSettings.reportEvents = WifiScanner.REPORT_EVENT_FULL_SCAN_RESULT
+                        | WifiScanner.REPORT_EVENT_AFTER_EACH_SCAN;
                 WifiScanner wifiScanner = mContext.getSystemService(WifiScanner.class);
                 if (wifiScanner != null) {
                     wifiScanner.stopScan(mFirstScanListener);
