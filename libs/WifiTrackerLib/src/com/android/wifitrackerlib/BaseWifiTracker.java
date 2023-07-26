@@ -124,6 +124,8 @@ public class BaseWifiTracker {
                 handleConfiguredNetworksChangedAction(intent);
             } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
                 handleNetworkStateChangedAction(intent);
+            } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
+                handleRssiChangedAction(intent);
             } else if (TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED.equals(action)) {
                 handleDefaultSubscriptionChanged(intent.getIntExtra(
                         "subscription", SubscriptionManager.INVALID_SUBSCRIPTION_ID));
@@ -390,6 +392,9 @@ public class BaseWifiTracker {
             filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
             filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
             filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+            if (isVerboseLoggingEnabled()) {
+                filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
+            }
             filter.addAction(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
             filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
             mContext.registerReceiver(mBroadcastReceiver, filter,
@@ -528,6 +533,14 @@ public class BaseWifiTracker {
      */
     @WorkerThread
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
+        // Do nothing.
+    }
+
+    /**
+     * Handle receiving the WifiManager.NETWORK_STATE_CHANGED_ACTION broadcast
+     */
+    @WorkerThread
+    protected void handleRssiChangedAction(@NonNull Intent intent) {
         // Do nothing.
     }
 
