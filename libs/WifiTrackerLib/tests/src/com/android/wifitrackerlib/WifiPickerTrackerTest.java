@@ -613,9 +613,44 @@ public class WifiPickerTrackerTest {
 
         // Network should be returned in getConnectedWifiEntry() even though it's not L3 connected.
         verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
-//        assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
+        assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
         assertThat(wifiPickerTracker.getConnectedWifiEntry()).isEqualTo(entry);
         assertThat(entry.isPrimaryNetwork()).isTrue();
+    }
+
+    /**
+     * Tests that an L2 connected network request (i.e. from NETWORK_STATE_CHANGED) will correctly
+     * be returned in getConnectedEntry().
+     */
+    @Test
+    public void testGetConnectedEntry_networkRequestL2Connected_returnsConnectedEntry() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        config.fromWifiNetworkSpecifier = true;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(
+                mBroadcastReceiverCaptor.capture(), any(), any(), any());
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
+
+        // Simulate an L2 connected network that's still authenticating.
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
+        when(mockNetworkInfo.getDetailedState())
+                .thenReturn(NetworkInfo.DetailedState.AUTHENTICATING);
+        Intent networkStateChanged = new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        networkStateChanged.putExtra(WifiManager.EXTRA_NETWORK_INFO, mockNetworkInfo);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, networkStateChanged);
+
+        // Network should be returned in getConnectedWifiEntry() even though it's not L3 connected.
+        verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNotNull();
     }
 
     /**
