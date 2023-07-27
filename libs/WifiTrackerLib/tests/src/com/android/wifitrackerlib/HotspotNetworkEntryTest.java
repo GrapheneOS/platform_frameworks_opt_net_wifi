@@ -17,6 +17,7 @@
 package com.android.wifitrackerlib;
 
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
@@ -75,7 +76,6 @@ public class HotspotNetworkEntryTest {
             .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
             .setNetworkName("Google Fi")
             .setHotspotSsid("Instant Hotspot abcde")
-            .setHotspotBssid("0a:0b:0c:0d:0e:0f")
             .addHotspotSecurityType(SECURITY_TYPE_PSK)
             .build();
 
@@ -107,35 +107,39 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testConnectionInfoMatches_matchesBssid() {
+    public void testConnectionInfoMatches_matchesSsidAndSecurity() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
-        when(mMockWifiInfo.getBSSID()).thenReturn("00:00:00:00:00:00");
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot fghij");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_SAE);
 
         assertThat(entry.connectionInfoMatches(mMockWifiInfo)).isFalse();
 
-        when(mMockWifiInfo.getBSSID()).thenReturn("0a:0b:0c:0d:0e:0f");
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
 
         assertThat(entry.connectionInfoMatches(mMockWifiInfo)).isTrue();
     }
 
     @Test
-    public void testOnNetworkCapabilitiesChanged_matchingBSSID_becomesConnected() {
+    public void testOnNetworkCapabilitiesChanged_matchingSsidAndSecurity_becomesConnected() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
         when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
 
-        // Ignore non-matching BSSID
-        when(mMockWifiInfo.getBSSID()).thenReturn("00:00:00:00:00:00");
+        // Ignore non-matching SSID and security type
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot fghij");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_SAE);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
         assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
         assertThat(entry.canConnect()).isTrue();
         assertThat(entry.canDisconnect()).isFalse();
 
-        // Matching BSSID should result in connected
-        when(mMockWifiInfo.getBSSID()).thenReturn("0a:0b:0c:0d:0e:0f");
+        // Matching SSID and security type should result in connected
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
         assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
         assertThat(entry.canConnect()).isFalse();
@@ -147,7 +151,8 @@ public class HotspotNetworkEntryTest {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
-        when(mMockWifiInfo.getBSSID()).thenReturn("0a:0b:0c:0d:0e:0f");
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
         when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
