@@ -42,6 +42,7 @@ import org.json.JSONObject;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Objects;
 
 /**
@@ -175,7 +176,9 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mKey.isVirtualEntry()) {
             return false;
         }
-        return Objects.equals(mKey.getBssid(), wifiInfo.getBSSID());
+        return Objects.equals(mKey.getScanResultKey(),
+                new StandardWifiEntry.ScanResultKey(WifiInfo.sanitizeSsid(wifiInfo.getSSID()),
+                        Collections.singletonList(wifiInfo.getCurrentSecurityType())));
     }
 
     @Override
@@ -348,13 +351,10 @@ public class HotspotNetworkEntry extends WifiEntry {
     static class HotspotNetworkEntryKey {
         private static final String KEY_IS_VIRTUAL_ENTRY_KEY = "IS_VIRTUAL_ENTRY_KEY";
         private static final String KEY_DEVICE_ID_KEY = "DEVICE_ID_KEY";
-        private static final String KEY_BSSID_KEY = "BSSID_KEY";
         private static final String KEY_SCAN_RESULT_KEY = "SCAN_RESULT_KEY";
 
         private boolean mIsVirtualEntry;
         private long mDeviceId;
-        @Nullable
-        private String mBssid;
         @Nullable
         private StandardWifiEntry.ScanResultKey mScanResultKey;
 
@@ -365,15 +365,12 @@ public class HotspotNetworkEntry extends WifiEntry {
          */
         HotspotNetworkEntryKey(@NonNull HotspotNetwork hotspotNetworkData) {
             mDeviceId = hotspotNetworkData.getDeviceId();
-            if (hotspotNetworkData.getHotspotSsid() == null
-                    || (hotspotNetworkData.getHotspotBssid() == null)
-                    || (hotspotNetworkData.getHotspotSecurityTypes() == null)) {
+            if (hotspotNetworkData.getHotspotSsid() == null || (
+                    hotspotNetworkData.getHotspotSecurityTypes() == null)) {
                 mIsVirtualEntry = true;
-                mBssid = null;
                 mScanResultKey = null;
             } else {
                 mIsVirtualEntry = false;
-                mBssid = hotspotNetworkData.getHotspotBssid();
                 mScanResultKey = new StandardWifiEntry.ScanResultKey(
                         hotspotNetworkData.getHotspotSsid(),
                         new ArrayList<>(hotspotNetworkData.getHotspotSecurityTypes()));
@@ -398,9 +395,6 @@ public class HotspotNetworkEntry extends WifiEntry {
                 if (keyJson.has(KEY_DEVICE_ID_KEY)) {
                     mDeviceId = keyJson.getLong(KEY_DEVICE_ID_KEY);
                 }
-                if (keyJson.has(KEY_BSSID_KEY)) {
-                    mBssid = keyJson.getString(KEY_BSSID_KEY);
-                }
                 if (keyJson.has(KEY_SCAN_RESULT_KEY)) {
                     mScanResultKey = new StandardWifiEntry.ScanResultKey(keyJson.getString(
                             KEY_SCAN_RESULT_KEY));
@@ -419,9 +413,6 @@ public class HotspotNetworkEntry extends WifiEntry {
             try {
                 keyJson.put(KEY_IS_VIRTUAL_ENTRY_KEY, mIsVirtualEntry);
                 keyJson.put(KEY_DEVICE_ID_KEY, mDeviceId);
-                if (mBssid != null) {
-                    keyJson.put(KEY_BSSID_KEY, mBssid);
-                }
                 if (mScanResultKey != null) {
                     keyJson.put(KEY_SCAN_RESULT_KEY, mScanResultKey.toString());
                 }
@@ -438,14 +429,6 @@ public class HotspotNetworkEntry extends WifiEntry {
 
         public long getDeviceId() {
             return mDeviceId;
-        }
-
-        /**
-         * Returns the BSSID of this HotspotNetworkEntryKey to match against wifiInfo
-         */
-        @Nullable
-        String getBssid() {
-            return mBssid;
         }
 
         /**
