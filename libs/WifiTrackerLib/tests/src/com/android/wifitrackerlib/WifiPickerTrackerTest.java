@@ -2429,9 +2429,7 @@ public class WifiPickerTrackerTest {
                 .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
                 .setNetworkName("Google Fi")
                 .setHotspotSsid("Instant Hotspot abcde")
-                .setHotspotBssid("0a:0b:0c:0d:0e:0f")
                 .addHotspotSecurityType(SECURITY_TYPE_PSK)
-                .addHotspotSecurityType(SECURITY_TYPE_SAE)
                 .build();
         when(mMockSharedConnectivityManager.getHotspotNetworks()).thenReturn(
                 Collections.singletonList(testHotspotNetwork));
@@ -2465,9 +2463,7 @@ public class WifiPickerTrackerTest {
                 .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
                 .setNetworkName("Google Fi")
                 .setHotspotSsid("Instant Hotspot abcde")
-                .setHotspotBssid("0a:0b:0c:0d:0e:0f")
                 .addHotspotSecurityType(SECURITY_TYPE_PSK)
-                .addHotspotSecurityType(SECURITY_TYPE_SAE)
                 .build();
         when(mMockSharedConnectivityManager.getHotspotNetworks()).thenReturn(
                 Collections.singletonList(testHotspotNetwork));
@@ -2510,22 +2506,19 @@ public class WifiPickerTrackerTest {
                 .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
                 .setNetworkName("Google Fi")
                 .setHotspotSsid("Instant Hotspot abcde")
-                .setHotspotBssid("0a:0b:0c:0d:0e:0f")
                 .addHotspotSecurityType(SECURITY_TYPE_PSK)
-                .addHotspotSecurityType(SECURITY_TYPE_SAE)
                 .build();
         when(mMockSharedConnectivityManager.getHotspotNetworks()).thenReturn(
                 Collections.singletonList(testHotspotNetwork));
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"Instant Hotspot abcde\"";
-        config.BSSID = "0a:0b:0c:0d:0e:0f";
         config.networkId = 1;
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
-        when(mMockWifiInfo.getBSSID()).thenReturn("0a:0b:0c:0d:0e:0f");
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
         when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
         when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(
                 buildScanResult("Instant Hotspot abcde", "0a:0b:0c:0d:0e:0f", START_MILLIS,
