@@ -2167,6 +2167,27 @@ public class WifiPickerTrackerTest {
         verify(mMockWifiManager).startScan();
     }
 
+    /**
+     * Tests that the BaseWifiTracker.Scanner does not scan if scanning was disabled.
+     */
+    @Test
+    public void testScanner_scanningDisabled_scannerDoesNotStart() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.disableScanning();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
+                new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION).putExtra(
+                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_ENABLED));
+
+        ArgumentCaptor<WifiScanner.ScanListener> mScanListenerCaptor =
+                ArgumentCaptor.forClass(WifiScanner.ScanListener.class);
+        verify(mWifiScanner, never()).startScan(any(), mScanListenerCaptor.capture());
+        verify(mMockWifiManager, never()).startScan();
+    }
+
     @Test
     public void testScanner_startAfterOnStop_doesNotStart() {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();

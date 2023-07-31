@@ -100,6 +100,7 @@ public class BaseWifiTracker {
     private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
 
     private boolean mIsInitialized = false;
+    private boolean mIsScanningDisabled = false;
 
     // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -367,6 +368,13 @@ public class BaseWifiTracker {
                 maxScanAgeMillis + scanIntervalMillis);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
         sVerboseLogging = mWifiManager.isVerboseLoggingEnabled();
+    }
+
+    /**
+     * Disable the scanning mechanism permanently.
+     */
+    public void disableScanning() {
+        mIsScanningDisabled = true;
     }
 
     /**
@@ -794,7 +802,7 @@ public class BaseWifiTracker {
          * Scanning should only happen when Wi-Fi is enabled and the activity is started.
          */
         private boolean shouldScan() {
-            return mIsWifiEnabled && mIsStartedState;
+            return mIsWifiEnabled && mIsStartedState && !mIsScanningDisabled;
         }
 
         @WorkerThread
