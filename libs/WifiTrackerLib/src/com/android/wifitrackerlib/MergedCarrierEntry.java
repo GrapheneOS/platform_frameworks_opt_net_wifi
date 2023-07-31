@@ -167,7 +167,10 @@ public class MergedCarrierEntry extends WifiEntry {
         }
     }
 
-    /* package */ int getSubscriptionId() {
+    /**
+     * Returns the current subscription ID this merged carrier network is for.
+     */
+    public int getSubscriptionId() {
         return mSubscriptionId;
     }
 
