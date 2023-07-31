@@ -379,14 +379,24 @@ public class WifiPickerTracker extends BaseWifiTracker {
     protected void handleNetworkStateChangedAction(@NonNull Intent intent) {
         WifiInfo primaryWifiInfo = mWifiManager.getConnectionInfo();
         NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-        if (primaryWifiInfo == null || networkInfo == null) {
-            return;
+        if (primaryWifiInfo != null) {
+            conditionallyCreateConnectedWifiEntry(primaryWifiInfo);
         }
-        conditionallyCreateConnectedWifiEntry(primaryWifiInfo);
         for (WifiEntry entry : getAllWifiEntries()) {
             entry.onPrimaryWifiInfoChanged(primaryWifiInfo, networkInfo);
         }
         updateWifiEntries();
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleRssiChangedAction(@NonNull Intent intent) {
+        // RSSI is available via the new WifiInfo object, which is used to populate the RSSI in the
+        // verbose summary.
+        WifiInfo primaryWifiInfo = mWifiManager.getConnectionInfo();
+        for (WifiEntry entry : getAllWifiEntries()) {
+            entry.onPrimaryWifiInfoChanged(primaryWifiInfo, null);
+        }
     }
 
     @WorkerThread
