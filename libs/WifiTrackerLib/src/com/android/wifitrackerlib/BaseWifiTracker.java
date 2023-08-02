@@ -194,16 +194,15 @@ public class BaseWifiTracker {
                     List<Network> underlyingNetworks =
                             networkCapabilities.getUnderlyingNetworks();
                     if (underlyingNetworks != null) {
-                        for (Network underlyingNetwork : underlyingNetworks) {
-                            NetworkCapabilities underlyingNetworkCapabilities =
-                                    mConnectivityManager.getNetworkCapabilities(underlyingNetwork);
-                            if (Utils.getWifiInfo(underlyingNetworkCapabilities) != null) {
-                                // If the default network has an underlying Wi-Fi network (e.g. it's
-                                // a VPN), treat the Wi-Fi network as the default network.
-                                handleDefaultNetworkCapabilitiesChanged(
-                                        underlyingNetwork, underlyingNetworkCapabilities);
-                                return;
-                            }
+                        Network currentWifiNetwork = mWifiManager.getCurrentNetwork();
+                        if (underlyingNetworks.contains(currentWifiNetwork)) {
+                            // If the default network has an underlying Wi-Fi network (e.g. it's
+                            // a VPN), treat the Wi-Fi network as the default network.
+                            handleDefaultNetworkCapabilitiesChanged(currentWifiNetwork,
+                                    new NetworkCapabilities.Builder(networkCapabilities)
+                                            .setTransportInfo(mWifiManager.getConnectionInfo())
+                                            .build());
+                            return;
                         }
                     }
                     handleDefaultNetworkCapabilitiesChanged(network, networkCapabilities);

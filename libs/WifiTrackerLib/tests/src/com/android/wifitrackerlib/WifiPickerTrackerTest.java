@@ -197,7 +197,7 @@ public class WifiPickerTrackerTest {
         // using the NetworkCapabilities constructor in handleOnStart.
         NetworkCapabilities realNetCaps = new NetworkCapabilities.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .setTransportInfo(mMockWifiInfo)
+                .setTransportInfo(mock(WifiInfo.class))
                 .build();
         when(mMockConnectivityManager.getNetworkCapabilities(mMockNetwork)).thenReturn(realNetCaps);
         when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
@@ -822,8 +822,10 @@ public class WifiPickerTrackerTest {
                 mDefaultNetworkCallbackCaptor.capture(), any());
 
         Network vpnNetwork = mock(Network.class);
-        NetworkCapabilities vpnCaps = mock(NetworkCapabilities.class);
-        when(vpnCaps.getUnderlyingNetworks()).thenReturn(List.of(mMockNetwork));
+        NetworkCapabilities vpnCaps = new NetworkCapabilities.Builder()
+                .addCapability(NetworkCapabilities.TRANSPORT_VPN)
+                .setUnderlyingNetworks(List.of(mMockNetwork))
+                .build();
         mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(vpnNetwork, vpnCaps);
 
         assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isTrue();
