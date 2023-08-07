@@ -1119,18 +1119,9 @@ public class WifiEntry {
         @Override
         public void onSuccess() {
             synchronized (WifiEntry.this) {
+                // Wait for L3 connection before returning the success result.
                 mCalledConnect = true;
             }
-            // If we aren't connected to the network after 10 seconds, trigger the failure callback
-            mCallbackHandler.postDelayed(() -> {
-                final ConnectCallback connectCallback = mConnectCallback;
-                if (connectCallback != null && mCalledConnect
-                        && getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-                    connectCallback.onConnectResult(
-                            ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
-                    mCalledConnect = false;
-                }
-            }, 10_000 /* delayMillis */);
         }
 
         @Override
@@ -1138,8 +1129,7 @@ public class WifiEntry {
             mCallbackHandler.post(() -> {
                 final ConnectCallback connectCallback = mConnectCallback;
                 if (connectCallback != null) {
-                    connectCallback.onConnectResult(
-                            ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
+                    connectCallback.onConnectResult(ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
                 }
             });
         }
