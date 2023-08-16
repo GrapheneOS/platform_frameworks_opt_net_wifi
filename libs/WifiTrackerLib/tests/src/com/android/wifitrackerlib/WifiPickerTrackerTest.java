@@ -2350,6 +2350,40 @@ public class WifiPickerTrackerTest {
     }
 
     @Test
+    public void testKnownNetworks_newKnownNetworkMatchesSavedNetwork_knownNetworkNotIncluded() {
+        final KnownNetwork testKnownNetwork = new KnownNetwork.Builder()
+                .setNetworkSource(KnownNetwork.NETWORK_SOURCE_NEARBY_SELF)
+                .setSsid("ssid")
+                .addSecurityType(SECURITY_TYPE_PSK)
+                .addSecurityType(SECURITY_TYPE_SAE)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .build();
+        when(mMockWifiManager.getScanResults()).thenReturn(
+                Collections.singletonList(buildScanResult("ssid", "bssid", START_MILLIS,
+                        "[PSK/SAE]")));
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        wifiPickerTracker.handleKnownNetworksUpdated(Collections.singletonList(testKnownNetwork));
+
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof KnownNetworkEntry).toList()).isEmpty();
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof StandardWifiEntry).toList()).hasSize(1);
+    }
+
+    @Test
     public void testKnownNetworks_onKnownNetworkConnectionStatusChanged_matchingEntryCalled() {
         final KnownNetwork testKnownNetwork1 = new KnownNetwork.Builder()
                 .setNetworkSource(KnownNetwork.NETWORK_SOURCE_NEARBY_SELF)
