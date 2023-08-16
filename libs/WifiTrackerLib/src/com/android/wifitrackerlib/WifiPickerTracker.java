@@ -576,6 +576,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                             hotspotNetworkEntry.getHotspotNetworkEntryKey().getScanResultKey());
                 }
             }
+            Set<ScanResultKey> savedEntryKeys = new ArraySet<>();
             for (StandardWifiEntry entry : mStandardWifiEntryCache) {
                 entry.updateAdminRestrictions();
                 if (mActiveWifiEntries.contains(entry)) {
@@ -590,14 +591,19 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     if (passpointUtf8Ssids.contains(entry.getSsid())) {
                         continue;
                     }
+                    if (mInjector.isSharedConnectivityFeatureEnabled()) {
+                        // Filter out any unsaved entries that are matched with a KnownNetworkEntry
+                        if (knownNetworkKeys
+                                .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
+                            continue;
+                        }
+                    }
+                } else {
+                    // Create a set of saved entry keys
+                    savedEntryKeys.add(entry.getStandardWifiEntryKey().getScanResultKey());
                 }
                 if (mInjector.isSharedConnectivityFeatureEnabled()) {
-                    // Filter out any StandardWifiEntry that is matched with a KnownNetworkEntry
-                    if (knownNetworkKeys
-                            .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
-                        continue;
-                    }
-                    // Filter out any StandardWifiEntry that is matched with a HotspotNetworkEntry
+                    // Filter out any entries that are matched with a HotspotNetworkEntry
                     if (hotspotNetworkKeys
                             .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
                         continue;
@@ -617,7 +623,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
             if (mInjector.isSharedConnectivityFeatureEnabled()) {
                 mWifiEntries.addAll(mKnownNetworkEntryCache.stream().filter(entry ->
-                        entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(
+                        (entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED)
+                                && !(savedEntryKeys.contains(
+                                entry.getStandardWifiEntryKey().getScanResultKey()))).collect(
                         toList()));
                 mWifiEntries.addAll(mHotspotNetworkEntryCache.stream().filter(entry ->
                         entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(
