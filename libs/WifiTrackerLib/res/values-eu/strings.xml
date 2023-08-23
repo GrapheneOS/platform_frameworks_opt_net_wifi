@@ -75,7 +75,7 @@
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"Izena ematen…"</string>
     <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"Ezin izan da erregistratu. Berriro saiatzeko, ukitu hau."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"Erregistratu da. Konektatzen…"</string>
-    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Gailuaren kokapenaren jarraipena egiteko balio duen SIM ID bat jasotzen du sare honek. "<annotation id="url">"Lortu informazio gehiago"</annotation></string>
+    <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"Gailuaren kokapenaren jarraipena egiteko balio duen SIM identifikatzaile bat jasotzen du sare honek. "<annotation id="url">"Lortu informazio gehiago"</annotation></string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"Oraingoz ez da automatikoki konektatuko wifira"</string>
     <string name="wifitrackerlib_wifi_standard_unknown" msgid="8339211498889012019">"Ezezaguna"</string>
     <string name="wifitrackerlib_wifi_standard_legacy" msgid="7760511318791054384">"Zaharkitua"</string>
