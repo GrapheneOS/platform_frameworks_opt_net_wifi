@@ -182,6 +182,14 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
+    public int getLevel() {
+        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+            return WIFI_LEVEL_MAX;
+        }
+        return super.getLevel();
+    }
+
+    @Override
     public String getTitle() {
         if (mHotspotNetworkData == null) {
             return "";
