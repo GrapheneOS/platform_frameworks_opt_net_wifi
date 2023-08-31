@@ -19,7 +19,7 @@
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
     <string name="wifitrackerlib_checking_for_internet_access" msgid="4787495471423429472">"Recherche d\'un accès Internet…"</string>
     <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"La connexion automatique est désactivée"</string>
-    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Enregistrés par <xliff:g id="NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Enregistré par <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Reconnexion automatique impossible"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Aucun accès à Internet"</string>
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"Problème d\'authentification"</string>
@@ -57,7 +57,7 @@
     <string name="wifitrackerlib_wifi_security_short_eap_suiteb" msgid="6335062557041604336">"Suite-B-192"</string>
     <string name="wifitrackerlib_wifi_security_eap_suiteb" msgid="4715703239786225763">"WPA3-Enterprise 192 bits"</string>
     <string name="wifitrackerlib_wifi_security_short_wpa_wpa2" msgid="6770438383385707243">"WPA/WPA2"</string>
-    <string name="wifitrackerlib_wifi_security_wpa_wpa2" msgid="5767878305316110228">"WPA/WPA2-Personal"</string>
+    <string name="wifitrackerlib_wifi_security_wpa_wpa2" msgid="5767878305316110228">"WPA/WPA2-Personnel"</string>
     <string name="wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3" msgid="4489424775550194618">"WPA/WPA2/WPA3"</string>
     <string name="wifitrackerlib_wifi_security_wpa_wpa2_wpa3" msgid="4154428413248489642">"WPA/WPA2/WPA3-Personal"</string>
     <string name="wifitrackerlib_wifi_security_wep" msgid="7714779033848180369">"WEP"</string>
