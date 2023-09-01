@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 
 /**
  * WifiEntry representation of an Online Sign-up entry, uniquely identified by FQDN.
@@ -311,5 +312,14 @@ class OsuWifiEntry extends WifiEntry {
                 connectCallback.onConnectResult(CONNECT_STATUS_FAILURE_UNKNOWN);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        StringJoiner sj = new StringJoiner("][", "[", "]");
+        sj.add("FriendlyName:" + mOsuProvider.getFriendlyName());
+        sj.add("ServerUri:" + mOsuProvider.getServerUri());
+        sj.add("SSID:" + mSsid);
+        return super.toString() + sj;
     }
 }
