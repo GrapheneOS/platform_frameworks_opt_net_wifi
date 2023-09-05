@@ -606,7 +606,7 @@ public class WifiPickerTrackerTest {
 
         // Simulate an L2 connected network that's still authenticating.
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
-        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
         NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
         when(mockNetworkInfo.getDetailedState())
                 .thenReturn(NetworkInfo.DetailedState.AUTHENTICATING);
@@ -619,6 +619,7 @@ public class WifiPickerTrackerTest {
         assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
         assertThat(wifiPickerTracker.getConnectedWifiEntry()).isEqualTo(entry);
         assertThat(entry.isPrimaryNetwork()).isTrue();
+        assertThat(entry.getLevel()).isEqualTo(GOOD_LEVEL);
     }
 
     /**
