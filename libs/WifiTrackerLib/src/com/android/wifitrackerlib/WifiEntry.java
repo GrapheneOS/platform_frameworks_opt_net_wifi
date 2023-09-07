@@ -987,8 +987,14 @@ public class WifiEntry {
         if (!network.equals(mNetwork)) {
             return;
         }
-
         // Network matches, so this network is disconnected.
+        clearConnectionInfo();
+    }
+
+    /**
+     * Clears any connection info from this entry.
+     */
+    synchronized void clearConnectionInfo() {
         mWifiInfo = null;
         mNetworkInfo = null;
         mNetworkCapabilities = null;
