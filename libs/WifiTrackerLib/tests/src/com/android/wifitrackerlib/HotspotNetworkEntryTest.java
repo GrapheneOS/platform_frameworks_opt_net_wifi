@@ -21,6 +21,7 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
+import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_MAX;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -266,6 +267,19 @@ public class HotspotNetworkEntryTest {
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
 
         assertThat(entry.getBatteryPercentage()).isEqualTo(100);
+    }
+
+    @Test
+    public void testGetLevel_statusNotConnected_returnsMaxValue() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot fghij");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_SAE);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+
+        assertThat(entry.getLevel()).isEqualTo(WIFI_LEVEL_MAX);
     }
 
     @Test
