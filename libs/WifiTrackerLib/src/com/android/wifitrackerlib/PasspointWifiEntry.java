@@ -617,4 +617,17 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     public PasspointConfiguration getPasspointConfig() {
         return mPasspointConfig;
     }
+
+    @Override
+    public String toString() {
+        StringJoiner sj = new StringJoiner("][", "[", "]");
+        sj.add("FQDN:" + mFqdn);
+        sj.add("FriendlyName:" + mFriendlyName);
+        if (mPasspointConfig != null) {
+            sj.add("UniqueId:" + mPasspointConfig.getUniqueId());
+        } else if (mWifiConfig != null) {
+            sj.add("UniqueId:" + mWifiConfig.getKey());
+        }
+        return super.toString() + sj;
+    }
 }
