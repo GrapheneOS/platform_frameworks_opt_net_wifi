@@ -2694,4 +2694,59 @@ public class WifiPickerTrackerTest {
         verify(connectCallback1).onConnectResult(anyInt());
         verify(connectCallback2, never()).onConnectResult(anyInt());
     }
+
+    @Test
+    public void testHotspotNetworks_multipleAvailableNetworks_sortedByUpstreamConnectionStrength() {
+        final HotspotNetwork testHotspotNetwork1 = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone 1", "Pixel 5")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(2)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .build();
+        final HotspotNetwork testHotspotNetwork2 = new HotspotNetwork.Builder()
+                .setDeviceId(2)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone 2", "Pixel 6")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(4)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .build();
+        final HotspotNetwork testHotspotNetwork3 = new HotspotNetwork.Builder()
+                .setDeviceId(3)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone 3", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .build();
+        when(mMockSharedConnectivityManager.getHotspotNetworks()).thenReturn(
+                List.of(testHotspotNetwork1, testHotspotNetwork2, testHotspotNetwork3));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockSharedConnectivityManager).registerCallback(any(),
+                mSharedConnectivityCallbackCaptor.capture());
+
+        mSharedConnectivityCallbackCaptor.getValue().onServiceConnected();
+        mTestLooper.dispatchAll();
+
+        assertThat(wifiPickerTracker.getWifiEntries()).hasSize(3);
+        assertThat(((HotspotNetworkEntry) wifiPickerTracker.getWifiEntries().get(0))
+                .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(2);
+        assertThat(((HotspotNetworkEntry) wifiPickerTracker.getWifiEntries().get(1))
+                .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(3);
+        assertThat(((HotspotNetworkEntry) wifiPickerTracker.getWifiEntries().get(2))
+                .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(1);
+    }
 }
