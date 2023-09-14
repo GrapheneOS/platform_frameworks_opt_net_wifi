@@ -16,6 +16,7 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.os.Build.VERSION_CODES;
 
 import android.annotation.TargetApi;
@@ -28,6 +29,7 @@ import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
 import android.os.Handler;
 import android.text.BidiFormatter;
+import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
@@ -190,7 +192,7 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
-    public String getTitle() {
+    public synchronized String getTitle() {
         if (mHotspotNetworkData == null) {
             return "";
         }
@@ -198,7 +200,7 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
-    public String getSummary(boolean concise) {
+    public synchronized String getSummary(boolean concise) {
         if (mHotspotNetworkData == null) {
             return "";
         }
@@ -216,7 +218,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      *
      * @return Display string.
      */
-    public String getAlternateSummary() {
+    public synchronized String getAlternateSummary() {
         if (mHotspotNetworkData == null) {
             return "";
         }
@@ -226,13 +228,73 @@ public class HotspotNetworkEntry extends WifiEntry {
                         mHotspotNetworkData.getNetworkProviderInfo().getDeviceName()));
     }
 
+    @Override
+    public synchronized String getSsid() {
+        StandardWifiEntry.ScanResultKey scanResultKey = mKey.getScanResultKey();
+        if (scanResultKey == null) {
+            return null;
+        }
+        return scanResultKey.getSsid();
+    }
+
+    @Override
+    @Nullable
+    public synchronized String getMacAddress() {
+        if (mWifiInfo == null) {
+            return null;
+        }
+        final String wifiInfoMac = mWifiInfo.getMacAddress();
+        if (!TextUtils.isEmpty(wifiInfoMac)
+                && !TextUtils.equals(wifiInfoMac, DEFAULT_MAC_ADDRESS)) {
+            return wifiInfoMac;
+        }
+        if (getPrivacy() != PRIVACY_RANDOMIZED_MAC) {
+            final String[] factoryMacs = mWifiManager.getFactoryMacAddresses();
+            if (factoryMacs.length > 0) {
+                return factoryMacs[0];
+            }
+        }
+        return null;
+    }
+
+    @Override
+    @Privacy
+    public int getPrivacy() {
+        return PRIVACY_RANDOMIZED_MAC;
+    }
+
+    @Override
+    public synchronized String getSecurityString(boolean concise) {
+        if (mHotspotNetworkData == null) {
+            return "";
+        }
+        return Utils.getSecurityString(mContext,
+                new ArrayList<>(mHotspotNetworkData.getHotspotSecurityTypes()), concise);
+    }
+
+    @Override
+    public synchronized String getStandardString() {
+        if (mWifiInfo == null) {
+            return "";
+        }
+        return Utils.getStandardString(mContext, mWifiInfo.getWifiStandard());
+    }
+
+    @Override
+    public synchronized String getBandString() {
+        if (mWifiInfo == null) {
+            return "";
+        }
+        return Utils.wifiInfoToBandString(mContext, mWifiInfo);
+    }
+
     /**
      * Connection strength between the host device and the internet.
      *
      * @return Displayed connection strength in the range 0 to 4.
      */
     @IntRange(from = 0, to = 4)
-    public int getUpstreamConnectionStrength() {
+    public synchronized int getUpstreamConnectionStrength() {
         if (mHotspotNetworkData == null) {
             return 0;
         }
@@ -245,7 +307,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * @return NetworkType enum.
      */
     @NetworkType
-    public int getNetworkType() {
+    public synchronized int getNetworkType() {
         if (mHotspotNetworkData == null) {
             return HotspotNetwork.NETWORK_TYPE_UNKNOWN;
         }
@@ -258,7 +320,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * @return DeviceType enum.
      */
     @DeviceType
-    public int getDeviceType() {
+    public synchronized int getDeviceType() {
         if (mHotspotNetworkData == null) {
             return NetworkProviderInfo.DEVICE_TYPE_UNKNOWN;
         }
@@ -269,7 +331,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * The battery percentage of the host device.
      */
     @IntRange(from = 0, to = 100)
-    public int getBatteryPercentage() {
+    public synchronized int getBatteryPercentage() {
         if (mHotspotNetworkData == null) {
             return 0;
         }
@@ -279,7 +341,7 @@ public class HotspotNetworkEntry extends WifiEntry {
     /**
      * If the host device is currently charging its battery.
      */
-    public boolean isBatteryCharging() {
+    public synchronized boolean isBatteryCharging() {
         if (mHotspotNetworkData == null) {
             return false;
         }
@@ -287,12 +349,12 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
-    public boolean canConnect() {
+    public synchronized boolean canConnect() {
         return getConnectedState() == CONNECTED_STATE_DISCONNECTED;
     }
 
     @Override
-    public void connect(@Nullable ConnectCallback callback) {
+    public synchronized void connect(@Nullable ConnectCallback callback) {
         mConnectCallback = callback;
         if (mSharedConnectivityManager == null) {
             if (callback != null) {
@@ -305,12 +367,12 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
-    public boolean canDisconnect() {
+    public synchronized boolean canDisconnect() {
         return getConnectedState() != CONNECTED_STATE_DISCONNECTED;
     }
 
     @Override
-    public void disconnect(@Nullable DisconnectCallback callback) {
+    public synchronized void disconnect(@Nullable DisconnectCallback callback) {
         mDisconnectCallback = callback;
         if (mSharedConnectivityManager == null) {
             if (callback != null) {

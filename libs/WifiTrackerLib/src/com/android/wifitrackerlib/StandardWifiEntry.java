@@ -585,74 +585,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized String getSecurityString(boolean concise) {
-        if (mTargetSecurityTypes.size() == 0) {
-            return concise ? "" : mContext.getString(R.string.wifitrackerlib_wifi_security_none);
-        }
-        if (mTargetSecurityTypes.size() == 1) {
-            final int security = mTargetSecurityTypes.get(0);
-            switch(security) {
-                case SECURITY_TYPE_EAP:
-                    return concise ? mContext.getString(
-                            R.string.wifitrackerlib_wifi_security_short_eap_wpa_wpa2) :
-                            mContext.getString(
-                                    R.string.wifitrackerlib_wifi_security_eap_wpa_wpa2);
-                case SECURITY_TYPE_EAP_WPA3_ENTERPRISE:
-                    return concise ? mContext.getString(
-                            R.string.wifitrackerlib_wifi_security_short_eap_wpa3) :
-                            mContext.getString(
-                                    R.string.wifitrackerlib_wifi_security_eap_wpa3);
-                case SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT:
-                    return concise ? mContext.getString(
-                            R.string.wifitrackerlib_wifi_security_short_eap_suiteb) :
-                            mContext.getString(R.string.wifitrackerlib_wifi_security_eap_suiteb);
-                case SECURITY_TYPE_PSK:
-                    return concise ? mContext.getString(
-                            R.string.wifitrackerlib_wifi_security_short_wpa_wpa2) :
-                            mContext.getString(
-                                    R.string.wifitrackerlib_wifi_security_wpa_wpa2);
-                case SECURITY_TYPE_WEP:
-                    return mContext.getString(R.string.wifitrackerlib_wifi_security_wep);
-                case SECURITY_TYPE_SAE:
-                    return concise ? mContext.getString(
-                            R.string.wifitrackerlib_wifi_security_short_sae) :
-                            mContext.getString(R.string.wifitrackerlib_wifi_security_sae);
-                case SECURITY_TYPE_OWE:
-                    return concise ? mContext.getString(
-                            R.string.wifitrackerlib_wifi_security_short_owe) :
-                            mContext.getString(R.string.wifitrackerlib_wifi_security_owe);
-                case SECURITY_TYPE_OPEN:
-                    return concise ? "" : mContext.getString(
-                            R.string.wifitrackerlib_wifi_security_none);
-            }
-        }
-        if (mTargetSecurityTypes.size() == 2) {
-            if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)
-                    && mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
-                StringJoiner sj = new StringJoiner("/");
-                sj.add(mContext.getString(R.string.wifitrackerlib_wifi_security_none));
-                sj.add(concise ? mContext.getString(
-                        R.string.wifitrackerlib_wifi_security_short_owe) :
-                        mContext.getString(R.string.wifitrackerlib_wifi_security_owe));
-                return sj.toString();
-            }
-            if (mTargetSecurityTypes.contains(SECURITY_TYPE_PSK)
-                    && mTargetSecurityTypes.contains(SECURITY_TYPE_SAE)) {
-                return concise ? mContext.getString(
-                        R.string.wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3) :
-                        mContext.getString(
-                                R.string.wifitrackerlib_wifi_security_wpa_wpa2_wpa3);
-            }
-            if (mTargetSecurityTypes.contains(SECURITY_TYPE_EAP)
-                    && mTargetSecurityTypes.contains(SECURITY_TYPE_EAP_WPA3_ENTERPRISE)) {
-                return concise ? mContext.getString(
-                        R.string.wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3) :
-                        mContext.getString(
-                                R.string.wifitrackerlib_wifi_security_eap_wpa_wpa2_wpa3);
-            }
-        }
-        // Unknown security types
-        Log.e(TAG, "Couldn't get string for security types: " + mTargetSecurityTypes);
-        return concise ? "" : mContext.getString(R.string.wifitrackerlib_wifi_security_none);
+        return Utils.getSecurityString(mContext, mTargetSecurityTypes, concise);
     }
 
     @Override
