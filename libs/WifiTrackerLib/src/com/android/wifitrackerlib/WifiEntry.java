@@ -36,6 +36,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.text.TextUtils;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
@@ -213,6 +214,8 @@ public class WifiEntry {
                             entry.getConnectedState() != CONNECTED_STATE_CONNECTED)
                     .thenComparing((WifiEntry entry) -> !(entry instanceof KnownNetworkEntry))
                     .thenComparing((WifiEntry entry) -> !(entry instanceof HotspotNetworkEntry))
+                    .thenComparing((WifiEntry entry) -> (entry instanceof HotspotNetworkEntry)
+                            ? -((HotspotNetworkEntry) entry).getUpstreamConnectionStrength() : 0)
                     .thenComparing((WifiEntry entry) -> !entry.canConnect())
                     .thenComparing((WifiEntry entry) -> !entry.isSubscription())
                     .thenComparing((WifiEntry entry) -> !entry.isSaved())
@@ -1170,34 +1173,61 @@ public class WifiEntry {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append(getKey())
-                .append(",title:")
-                .append(getTitle())
-                .append(",summary:")
-                .append(getSummary())
-                .append(",isSaved:")
-                .append(isSaved())
-                .append(",isSubscription:")
-                .append(isSubscription())
-                .append(",isSuggestion:")
-                .append(isSuggestion())
-                .append(",level:")
-                .append(getLevel())
-                .append(shouldShowXLevelIcon() ? "X" : "")
-                .append(",security:")
-                .append(getSecurityTypes())
-                .append(",connected:")
-                .append(getConnectedState() == CONNECTED_STATE_CONNECTED ? "true" : "false")
-                .append(",connectedInfo:")
-                .append(getConnectedInfo())
-                .append(",hasInternet:")
-                .append(hasInternetAccess())
-                .append(",isDefault:")
-                .append(mIsDefaultNetwork)
-                .append(",isPrimary:")
-                .append(isPrimaryNetwork())
-                .toString();
+        StringJoiner sj = new StringJoiner("][", "[", "]");
+        sj.add(this.getClass().getSimpleName());
+        sj.add(getTitle());
+        sj.add(getSummary());
+        sj.add("Level:" + getLevel() + (shouldShowXLevelIcon() ? "!" : ""));
+        String security = getSecurityString(true);
+        if (!TextUtils.isEmpty(security)) {
+            sj.add(security);
+        }
+        int connectedState = getConnectedState();
+        if (connectedState == CONNECTED_STATE_CONNECTED) {
+            sj.add("Connected");
+        } else if (connectedState == CONNECTED_STATE_CONNECTING) {
+            sj.add("Connecting...");
+        }
+        if (hasInternetAccess()) {
+            sj.add("Internet");
+        }
+        if (isDefaultNetwork()) {
+            sj.add("Default");
+        }
+        if (isPrimaryNetwork()) {
+            sj.add("Primary");
+        }
+        if (isLowQuality()) {
+            sj.add("LowQuality");
+        }
+        if (isSaved()) {
+            sj.add("Saved");
+        }
+        if (isSubscription()) {
+            sj.add("Subscription");
+        }
+        if (isSuggestion()) {
+            sj.add("Suggestion");
+        }
+        if (isMetered()) {
+            sj.add("Metered");
+        }
+        if ((isSaved() || isSuggestion() || isSubscription()) && !isAutoJoinEnabled()) {
+            sj.add("AutoJoinDisabled");
+        }
+        if (isExpired()) {
+            sj.add("Expired");
+        }
+        if (canSignIn()) {
+            sj.add("SignIn");
+        }
+        if (shouldEditBeforeConnect()) {
+            sj.add("EditBeforeConnect");
+        }
+        if (hasAdminRestrictions()) {
+            sj.add("AdminRestricted");
+        }
+        return sj.toString();
     }
 
     /**

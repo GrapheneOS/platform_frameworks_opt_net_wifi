@@ -19,6 +19,14 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_OPEN;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_OWE;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
+import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 
 import static java.util.Comparator.comparingInt;
 
@@ -1198,5 +1206,79 @@ public class Utils {
             return (WifiInfo) transportInfo;
         }
         return NonSdkApiWrapper.getVcnWifiInfo(capabilities);
+    }
+
+    /**
+     * Converts security types to a display string.
+     */
+    public static String getSecurityString(@NonNull Context context,
+            @NonNull List<Integer> securityTypes, boolean concise) {
+        if (securityTypes.size() == 0) {
+            return concise ? "" : context.getString(R.string.wifitrackerlib_wifi_security_none);
+        }
+        if (securityTypes.size() == 1) {
+            final int security = securityTypes.get(0);
+            switch(security) {
+                case SECURITY_TYPE_EAP:
+                    return concise ? context.getString(
+                            R.string.wifitrackerlib_wifi_security_short_eap_wpa_wpa2) :
+                            context.getString(
+                                    R.string.wifitrackerlib_wifi_security_eap_wpa_wpa2);
+                case SECURITY_TYPE_EAP_WPA3_ENTERPRISE:
+                    return concise ? context.getString(
+                            R.string.wifitrackerlib_wifi_security_short_eap_wpa3) :
+                            context.getString(
+                                    R.string.wifitrackerlib_wifi_security_eap_wpa3);
+                case SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT:
+                    return concise ? context.getString(
+                            R.string.wifitrackerlib_wifi_security_short_eap_suiteb) :
+                            context.getString(R.string.wifitrackerlib_wifi_security_eap_suiteb);
+                case SECURITY_TYPE_PSK:
+                    return concise ? context.getString(
+                            R.string.wifitrackerlib_wifi_security_short_wpa_wpa2) :
+                            context.getString(
+                                    R.string.wifitrackerlib_wifi_security_wpa_wpa2);
+                case SECURITY_TYPE_WEP:
+                    return context.getString(R.string.wifitrackerlib_wifi_security_wep);
+                case SECURITY_TYPE_SAE:
+                    return concise ? context.getString(
+                            R.string.wifitrackerlib_wifi_security_short_sae) :
+                            context.getString(R.string.wifitrackerlib_wifi_security_sae);
+                case SECURITY_TYPE_OWE:
+                    return concise ? context.getString(
+                            R.string.wifitrackerlib_wifi_security_short_owe) :
+                            context.getString(R.string.wifitrackerlib_wifi_security_owe);
+                case SECURITY_TYPE_OPEN:
+                    return concise ? "" : context.getString(
+                            R.string.wifitrackerlib_wifi_security_none);
+            }
+        }
+        if (securityTypes.size() == 2) {
+            if (securityTypes.contains(SECURITY_TYPE_OPEN)
+                    && securityTypes.contains(SECURITY_TYPE_OWE)) {
+                StringJoiner sj = new StringJoiner("/");
+                sj.add(context.getString(R.string.wifitrackerlib_wifi_security_none));
+                sj.add(concise ? context.getString(
+                        R.string.wifitrackerlib_wifi_security_short_owe) :
+                        context.getString(R.string.wifitrackerlib_wifi_security_owe));
+                return sj.toString();
+            }
+            if (securityTypes.contains(SECURITY_TYPE_PSK)
+                    && securityTypes.contains(SECURITY_TYPE_SAE)) {
+                return concise ? context.getString(
+                        R.string.wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3) :
+                        context.getString(
+                                R.string.wifitrackerlib_wifi_security_wpa_wpa2_wpa3);
+            }
+            if (securityTypes.contains(SECURITY_TYPE_EAP)
+                    && securityTypes.contains(SECURITY_TYPE_EAP_WPA3_ENTERPRISE)) {
+                return concise ? context.getString(
+                        R.string.wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3) :
+                        context.getString(
+                                R.string.wifitrackerlib_wifi_security_eap_wpa_wpa2_wpa3);
+            }
+        }
+        // Unknown security types
+        return concise ? "" : context.getString(R.string.wifitrackerlib_wifi_security_none);
     }
 }

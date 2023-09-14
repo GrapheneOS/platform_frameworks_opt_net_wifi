@@ -70,11 +70,11 @@ import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -633,9 +633,19 @@ public class WifiPickerTracker extends BaseWifiTracker {
             }
             Collections.sort(mWifiEntries, WifiEntry.WIFI_PICKER_COMPARATOR);
             if (isVerboseLoggingEnabled()) {
-                Log.v(TAG, "Connected WifiEntries: "
-                        + Arrays.toString(mActiveWifiEntries.toArray()));
-                Log.v(TAG, "Updated WifiEntries: " + Arrays.toString(mWifiEntries.toArray()));
+                StringJoiner entryLog = new StringJoiner("\n");
+                int numEntries = mActiveWifiEntries.size() + mWifiEntries.size();
+                int index = 1;
+                for (WifiEntry entry : mActiveWifiEntries) {
+                    entryLog.add("Entry " + index + "/" + numEntries + ": " + entry);
+                    index++;
+                }
+                for (WifiEntry entry : mWifiEntries) {
+                    entryLog.add("Entry " + index + "/" + numEntries + ": " + entry);
+                    index++;
+                }
+                Log.v(TAG, entryLog.toString());
+                Log.v(TAG, "MergedCarrierEntry: " + mMergedCarrierEntry);
             }
         }
         notifyOnWifiEntriesChanged();
@@ -897,6 +907,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
                                             + "updateKnownNetworkEntryScans");
                             return data1; // When duplicate data is encountered, use first one.
                         }));
+
+        // Remove entries not in latest data set from service
+        mKnownNetworkEntryCache.removeIf(entry -> !knownNetworkDataByKey.keySet().contains(
+                entry.getStandardWifiEntryKey().getScanResultKey()));
 
         // Create set of ScanResultKeys for known networks from service that are included in scan
         final Set<ScanResultKey> newScanKeys = knownNetworkDataByKey.keySet().stream().filter(

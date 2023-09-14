@@ -16,11 +16,13 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.ScanResult.WIFI_STANDARD_11N;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
+import static com.android.wifitrackerlib.WifiEntry.MIN_FREQ_24GHZ;
 import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_MAX;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -35,6 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiInfo;
@@ -57,6 +60,7 @@ public class HotspotNetworkEntryTest {
     @Mock private WifiEntry.DisconnectCallback mMockDisconnectCallback;
     @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
+    @Mock private Resources mMockResources;
     @Mock private WifiManager mMockWifiManager;
     @Mock private SharedConnectivityManager mMockSharedConnectivityManager;
     @Mock private WifiInfo mMockWifiInfo;
@@ -89,7 +93,12 @@ public class HotspotNetworkEntryTest {
 
         when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
         when(mMockWifiInfo.isPrimary()).thenReturn(true);
-        when(mMockWifiInfo.getRssi()).thenReturn(WifiInfo.INVALID_RSSI);
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
+        when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
+        when(mMockWifiInfo.getMacAddress()).thenReturn("01:02:03:04:05:06");
+        when(mMockWifiInfo.getWifiStandard()).thenReturn(WIFI_STANDARD_11N);
+        when(mMockWifiInfo.getFrequency()).thenReturn(MIN_FREQ_24GHZ);
 
         when(mMockContext.getString(R.string.wifitrackerlib_hotspot_network_connecting))
                 .thenReturn("Connecting…");
@@ -105,6 +114,15 @@ public class HotspotNetworkEntryTest {
                     Object[] args = invocation.getArguments();
                     return args[1] + " from " + args[2];
                 });
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_security_wpa_wpa2))
+                .thenReturn("WPA/WPA2-Personal");
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_standard_11n))
+                .thenReturn("Wi‑Fi 4");
+        when(mMockContext.getResources()).thenReturn(mMockResources);
+        when(mMockResources.getString(R.string.wifitrackerlib_wifi_band_24_ghz)).thenReturn(
+                "2.4 GHz");
+        when(mMockResources.getString(R.string.wifitrackerlib_multiband_separator)).thenReturn(
+                ", ");
     }
 
     @Test
@@ -128,7 +146,6 @@ public class HotspotNetworkEntryTest {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
-        when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
 
         // Ignore non-matching SSID and security type
         when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot fghij");
@@ -152,9 +169,6 @@ public class HotspotNetworkEntryTest {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
-        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
-        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
-        when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         // Non-matching network loss should be ignored
@@ -231,6 +245,63 @@ public class HotspotNetworkEntryTest {
         mTestLooper.dispatchAll();
 
         assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
+    }
+
+    @Test
+    public void testGetSsid_usesHotspotNetworkData() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+
+        assertThat(entry.getSsid()).isEqualTo("Instant Hotspot abcde");
+    }
+
+    @Test
+    public void testGetMacAddress_usesWifiInfo() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+
+        assertThat(entry.getMacAddress()).isEqualTo("01:02:03:04:05:06");
+    }
+
+    @Test
+    public void testGetPrivacy_returnsRandomized() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+
+        assertThat(entry.getPrivacy()).isEqualTo(HotspotNetworkEntry.PRIVACY_RANDOMIZED_MAC);
+    }
+
+    @Test
+    public void testGetSecurityString_usesHotspotNetworkData() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+
+        assertThat(entry.getSecurityString(false)).isEqualTo("WPA/WPA2-Personal");
+    }
+
+    @Test
+    public void testGetStandardString_usesWifiInfo() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+
+        assertThat(entry.getStandardString()).isEqualTo("Wi‑Fi 4");
+    }
+
+    @Test
+    public void testGetBandString_usesWifiInfo() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+
+        assertThat(entry.getBandString()).isEqualTo("2.4 GHz");
     }
 
     @Test
