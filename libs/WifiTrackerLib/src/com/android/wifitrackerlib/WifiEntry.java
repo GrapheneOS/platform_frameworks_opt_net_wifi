@@ -214,6 +214,8 @@ public class WifiEntry {
                             entry.getConnectedState() != CONNECTED_STATE_CONNECTED)
                     .thenComparing((WifiEntry entry) -> !(entry instanceof KnownNetworkEntry))
                     .thenComparing((WifiEntry entry) -> !(entry instanceof HotspotNetworkEntry))
+                    .thenComparing((WifiEntry entry) -> (entry instanceof HotspotNetworkEntry)
+                            ? -((HotspotNetworkEntry) entry).getUpstreamConnectionStrength() : 0)
                     .thenComparing((WifiEntry entry) -> !entry.canConnect())
                     .thenComparing((WifiEntry entry) -> !entry.isSubscription())
                     .thenComparing((WifiEntry entry) -> !entry.isSaved())
