@@ -2442,6 +2442,41 @@ public class WifiPickerTrackerTest {
     }
 
     @Test
+    public void testKnownNetworks_entryRemoved() {
+        final KnownNetwork testKnownNetwork = new KnownNetwork.Builder()
+                .setNetworkSource(KnownNetwork.NETWORK_SOURCE_NEARBY_SELF)
+                .setSsid("ssid")
+                .addSecurityType(SECURITY_TYPE_PSK)
+                .addSecurityType(SECURITY_TYPE_SAE)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .build();
+        when(mMockSharedConnectivityManager.getKnownNetworks()).thenReturn(
+                Collections.singletonList(testKnownNetwork));
+        when(mMockWifiManager.getScanResults()).thenReturn(
+                Collections.singletonList(buildScanResult("ssid", "bssid", START_MILLIS,
+                        "[PSK/SAE]")));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockSharedConnectivityManager).registerCallback(any(),
+                mSharedConnectivityCallbackCaptor.capture());
+        mSharedConnectivityCallbackCaptor.getValue().onServiceConnected();
+        mTestLooper.dispatchAll();
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof KnownNetworkEntry).toList()).hasSize(1);
+
+        wifiPickerTracker.handleKnownNetworksUpdated(Collections.emptyList());
+
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof KnownNetworkEntry).toList()).isEmpty();
+    }
+
+    @Test
     public void testHotspotNetworks_noActiveHotspot_virtualEntryIncluded() {
         final HotspotNetwork testHotspotNetwork = new HotspotNetwork.Builder()
                 .setDeviceId(1)

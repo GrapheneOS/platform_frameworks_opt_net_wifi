@@ -908,6 +908,10 @@ public class WifiPickerTracker extends BaseWifiTracker {
                             return data1; // When duplicate data is encountered, use first one.
                         }));
 
+        // Remove entries not in latest data set from service
+        mKnownNetworkEntryCache.removeIf(entry -> !knownNetworkDataByKey.keySet().contains(
+                entry.getStandardWifiEntryKey().getScanResultKey()));
+
         // Create set of ScanResultKeys for known networks from service that are included in scan
         final Set<ScanResultKey> newScanKeys = knownNetworkDataByKey.keySet().stream().filter(
                 scanResultsByKey::containsKey).collect(Collectors.toSet());
