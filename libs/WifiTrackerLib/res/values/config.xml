@@ -16,5 +16,5 @@
   -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Enables verbose logging on user debug builds by default -->
-    <bool name="wifitrackerlib_enable_verbose_logging_for_userdebug">true</bool>
+    <bool name="wifitrackerlib_enable_verbose_logging_for_userdebug">false</bool>
 </resources>
