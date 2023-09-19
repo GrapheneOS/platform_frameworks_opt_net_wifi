@@ -248,6 +248,23 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
+    public void testGetSummary_connectionSuccess_resetsConnectingString() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+        entry.connect(mMockConnectCallback);
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
+        mTestLooper.dispatchAll();
+
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        entry.onNetworkLost(mMockNetwork);
+
+        assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
+    }
+
+    @Test
     public void testGetSsid_usesHotspotNetworkData() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
