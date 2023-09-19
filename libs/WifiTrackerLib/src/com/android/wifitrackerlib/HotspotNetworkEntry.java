@@ -62,8 +62,6 @@ public class HotspotNetworkEntry extends WifiEntry {
     @Nullable private HotspotNetwork mHotspotNetworkData;
     @NonNull private HotspotNetworkEntryKey mKey;
 
-    private boolean mServerInitiatedConnection = false;
-
     /**
      * If editing this IntDef also edit the definition in:
      * {@link android.net.wifi.sharedconnectivity.app.HotspotNetwork}
@@ -204,7 +202,7 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mHotspotNetworkData == null) {
             return "";
         }
-        if (getConnectedState() != CONNECTED_STATE_CONNECTED && mServerInitiatedConnection) {
+        if (mCalledConnect) {
             return mContext.getString(R.string.wifitrackerlib_hotspot_network_connecting);
         }
         return mContext.getString(R.string.wifitrackerlib_hotspot_network_summary,
@@ -397,7 +395,7 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mConnectCallback == null) return;
         switch (status) {
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT:
-                mServerInitiatedConnection = true;
+                mCalledConnect = true;
                 notifyOnUpdated();
                 break;
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN_ERROR:
@@ -410,7 +408,7 @@ public class HotspotNetworkEntry extends WifiEntry {
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED:
                 mCallbackHandler.post(() -> mConnectCallback.onConnectResult(
                         ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN));
-                mServerInitiatedConnection = false;
+                mCalledConnect = false;
                 notifyOnUpdated();
                 break;
             default:
