@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
@@ -83,6 +84,7 @@ public class SavedNetworkTrackerTest {
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
+    @Mock private Resources mResources;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private ConnectivityDiagnosticsManager mMockConnectivityDiagnosticsManager;
@@ -149,6 +151,7 @@ public class SavedNetworkTrackerTest {
         when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
                 .thenReturn(mMockLinkProperties);
         when(mInjector.getContext()).thenReturn(mMockContext);
+        when(mMockContext.getResources()).thenReturn(mResources);
         when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
                 .thenReturn(mMockConnectivityDiagnosticsManager);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
@@ -540,6 +543,40 @@ public class SavedNetworkTrackerTest {
         assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
 
         mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
+
+        assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+    }
+
+    /**
+     * Tests that disconnecting from a network during the stopped state will result in the network
+     * being disconnected once we've started again.
+     */
+    @Test
+    public void testGetConnectedEntry_disconnectFromNetworkWhileStopped_becomesDisconnected() {
+        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
+
+        final WifiEntry entry = savedNetworkTracker.getSavedWifiEntries().get(0);
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+
+        // Simulate network disconnecting while in stopped state
+        savedNetworkTracker.onStop();
+        mTestLooper.dispatchAll();
+        when(mMockWifiManager.getCurrentNetwork()).thenReturn(null);
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
 
         assertThat(entry.getConnectedState()).isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
     }

@@ -178,4 +178,11 @@ public class MergedCarrierEntry extends WifiEntry {
         mIsCellDefaultRoute = isCellDefaultRoute;
         notifyOnUpdated();
     }
+
+    @Override
+    public String toString() {
+        StringJoiner sj = new StringJoiner("][", "[", "]");
+        sj.add("SubId:" + mSubscriptionId);
+        return super.toString() + sj;
+    }
 }

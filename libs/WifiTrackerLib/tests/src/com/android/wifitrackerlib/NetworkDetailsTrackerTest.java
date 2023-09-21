@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -55,6 +56,7 @@ public class NetworkDetailsTrackerTest {
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
+    @Mock private Resources mResources;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private Clock mMockClock;
@@ -87,6 +89,7 @@ public class NetworkDetailsTrackerTest {
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
+        when(mMockContext.getResources()).thenReturn(mResources);
     }
 
     /**

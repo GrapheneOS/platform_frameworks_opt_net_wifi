@@ -41,6 +41,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import android.content.BroadcastReceiver;
@@ -205,6 +206,8 @@ public class WifiPickerTrackerTest {
         when(mMockSharedConnectivityManager.unregisterCallback(any())).thenReturn(true);
         when(mInjector.getContext()).thenReturn(mMockContext);
         when(mMockContext.getResources()).thenReturn(mMockResources);
+        when(mMockContext.getSystemService(ConnectivityManager.class))
+                .thenReturn(mMockConnectivityManager);
         when(mMockContext.getSystemService(TelephonyManager.class))
                 .thenReturn(mMockTelephonyManager);
         when(mMockContext.getSystemService(SubscriptionManager.class))
@@ -708,6 +711,80 @@ public class WifiPickerTrackerTest {
 
         verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
         assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
+    }
+
+    /**
+     * Tests that disconnecting from a network during the stopped state will result in the network
+     * being disconnected once we've started again.
+     */
+    @Test
+    public void testGetConnectedEntry_disconnectFromNetworkWhileStopped_returnsNull() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
+
+        // Simulate network disconnecting while in stopped state
+        wifiPickerTracker.onStop();
+        mTestLooper.dispatchAll();
+        when(mMockWifiManager.getCurrentNetwork()).thenReturn(null);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        verify(mMockCallback, atLeastOnce()).onWifiEntriesChanged();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
+    }
+
+    /**
+     * Tests that captive portal will auto open if the activity stops and starts before we've
+     * connected, such as if the user needs to input a password in a full screen dialog.
+     */
+    @Test
+    public void testCaptivePortal_activityStopsAndStartsBeforeConnection_captivePortalAutoOpens() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
+                buildScanResult("ssid", "bssid", START_MILLIS)));
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
+        final WifiEntry entry = wifiPickerTracker.getWifiEntries().get(0);
+
+        // Simulate user connection
+        entry.connect(null);
+        // Activity is stopped and started
+        wifiPickerTracker.onStop();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        // Verify captive portal auto-opens upon connection.
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockNetworkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
+                    mMockNetwork, mMockNetworkCapabilities);
+            verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
+        } finally {
+            session.finishMocking();
+        }
     }
 
     /**
@@ -2447,6 +2524,41 @@ public class WifiPickerTrackerTest {
     }
 
     @Test
+    public void testKnownNetworks_entryRemoved() {
+        final KnownNetwork testKnownNetwork = new KnownNetwork.Builder()
+                .setNetworkSource(KnownNetwork.NETWORK_SOURCE_NEARBY_SELF)
+                .setSsid("ssid")
+                .addSecurityType(SECURITY_TYPE_PSK)
+                .addSecurityType(SECURITY_TYPE_SAE)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .build();
+        when(mMockSharedConnectivityManager.getKnownNetworks()).thenReturn(
+                Collections.singletonList(testKnownNetwork));
+        when(mMockWifiManager.getScanResults()).thenReturn(
+                Collections.singletonList(buildScanResult("ssid", "bssid", START_MILLIS,
+                        "[PSK/SAE]")));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockSharedConnectivityManager).registerCallback(any(),
+                mSharedConnectivityCallbackCaptor.capture());
+        mSharedConnectivityCallbackCaptor.getValue().onServiceConnected();
+        mTestLooper.dispatchAll();
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof KnownNetworkEntry).toList()).hasSize(1);
+
+        wifiPickerTracker.handleKnownNetworksUpdated(Collections.emptyList());
+
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof KnownNetworkEntry).toList()).isEmpty();
+    }
+
+    @Test
     public void testHotspotNetworks_noActiveHotspot_virtualEntryIncluded() {
         final HotspotNetwork testHotspotNetwork = new HotspotNetwork.Builder()
                 .setDeviceId(1)
@@ -2658,5 +2770,60 @@ public class WifiPickerTrackerTest {
 
         verify(connectCallback1).onConnectResult(anyInt());
         verify(connectCallback2, never()).onConnectResult(anyInt());
+    }
+
+    @Test
+    public void testHotspotNetworks_multipleAvailableNetworks_sortedByUpstreamConnectionStrength() {
+        final HotspotNetwork testHotspotNetwork1 = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone 1", "Pixel 5")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(2)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .build();
+        final HotspotNetwork testHotspotNetwork2 = new HotspotNetwork.Builder()
+                .setDeviceId(2)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone 2", "Pixel 6")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(4)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .build();
+        final HotspotNetwork testHotspotNetwork3 = new HotspotNetwork.Builder()
+                .setDeviceId(3)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone 3", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .build();
+        when(mMockSharedConnectivityManager.getHotspotNetworks()).thenReturn(
+                List.of(testHotspotNetwork1, testHotspotNetwork2, testHotspotNetwork3));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockSharedConnectivityManager).registerCallback(any(),
+                mSharedConnectivityCallbackCaptor.capture());
+
+        mSharedConnectivityCallbackCaptor.getValue().onServiceConnected();
+        mTestLooper.dispatchAll();
+
+        assertThat(wifiPickerTracker.getWifiEntries()).hasSize(3);
+        assertThat(((HotspotNetworkEntry) wifiPickerTracker.getWifiEntries().get(0))
+                .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(2);
+        assertThat(((HotspotNetworkEntry) wifiPickerTracker.getWifiEntries().get(1))
+                .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(3);
+        assertThat(((HotspotNetworkEntry) wifiPickerTracker.getWifiEntries().get(2))
+                .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(1);
     }
 }

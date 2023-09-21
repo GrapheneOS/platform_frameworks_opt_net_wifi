@@ -43,6 +43,7 @@ soong_config_module_type {
         "cflags",
         "defaults",
         "shared_libs",
+        "static_libs",
         "whole_static_libs",
     ],
 }
@@ -168,6 +169,9 @@ wifi_cc_defaults {
             },
             mediaTek: {
                 whole_static_libs: ["//vendor/mediatek/mokey:libwifi-hal-mt66xx"],
+            },
+            nxp: {
+                whole_static_libs: ["//vendor/nxp/boreal/wifi:libwifi-hal-nxp"],
             },
             realtek: {
                 whole_static_libs: ["libwifi-hal-rtk"],
