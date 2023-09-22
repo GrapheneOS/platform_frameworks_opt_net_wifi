@@ -34,7 +34,7 @@
     <string name="wifitrackerlib_wifi_mbo_assoc_disallowed_cannot_connect" msgid="2692286425448897083">"ਕਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ। ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"</string>
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"ਕਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ। ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ਡਿਸਕਨੈਕਟ ਕੀਤਾ"</string>
-    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ਰੱਖਿਅਤ ਕੀਤਾ ਗਿਆ"</string>
+    <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ਰੱਖਿਅਤ ਹੈ"</string>
     <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"ਗੈਰ-ਮੀਟਰਬੱਧ ਕੀਤਾ ਗਿਆ"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> ਰਾਹੀਂ ਕਨੈਕਟ ਕੀਤਾ ਗਿਆ"</string>
