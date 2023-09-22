@@ -520,6 +520,19 @@ public class WifiPickerTracker extends BaseWifiTracker {
         }
     }
 
+    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @WorkerThread
+    @Override
+    protected void handleServiceDisconnected() {
+        if (mInjector.isSharedConnectivityFeatureEnabled()) {
+            mKnownNetworkDataCache.clear();
+            mHotspotNetworkDataCache.clear();
+            mKnownNetworkEntryCache.clear();
+            mHotspotNetworkEntryCache.clear();
+            updateWifiEntries();
+        }
+    }
+
     /**
      * Update the list returned by getWifiEntries() with the current states of the entry caches.
      */
