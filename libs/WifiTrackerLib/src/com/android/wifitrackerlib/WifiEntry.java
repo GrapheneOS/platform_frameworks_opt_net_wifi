@@ -912,10 +912,10 @@ public class WifiEntry {
             }
             return;
         }
-        mWifiInfo = primaryWifiInfo;
         if (networkInfo != null) {
             mNetworkInfo = networkInfo;
         }
+        updateWifiInfo(primaryWifiInfo);
         notifyOnUpdated();
     }
 
@@ -949,9 +949,20 @@ public class WifiEntry {
 
         // Connection info matches, so the Network/NetworkCapabilities represent this network
         // and the network is currently connecting or connected.
-        mWifiInfo = wifiInfo;
         mNetwork = network;
         mNetworkCapabilities = capabilities;
+        updateWifiInfo(wifiInfo);
+        notifyOnUpdated();
+    }
+
+    private synchronized void updateWifiInfo(WifiInfo wifiInfo) {
+        if (wifiInfo == null) {
+            mWifiInfo = null;
+            mConnectedInfo = null;
+            updateSecurityTypes();
+            return;
+        }
+        mWifiInfo = wifiInfo;
         final int wifiInfoRssi = mWifiInfo.getRssi();
         if (wifiInfoRssi != INVALID_RSSI) {
             mLevel = mWifiManager.calculateSignalLevel(wifiInfoRssi);
@@ -976,7 +987,6 @@ public class WifiEntry {
             mConnectedInfo.wifiStandard = mWifiInfo.getWifiStandard();
         }
         updateSecurityTypes();
-        notifyOnUpdated();
     }
 
     /**
@@ -995,10 +1005,9 @@ public class WifiEntry {
      * Clears any connection info from this entry.
      */
     synchronized void clearConnectionInfo() {
-        mWifiInfo = null;
+        updateWifiInfo(null);
         mNetworkInfo = null;
         mNetworkCapabilities = null;
-        mConnectedInfo = null;
         mConnectivityReport = null;
         mIsDefaultNetwork = false;
         if (mCalledDisconnect) {
@@ -1011,7 +1020,6 @@ public class WifiEntry {
                 }
             });
         }
-        updateSecurityTypes();
         notifyOnUpdated();
     }
 
