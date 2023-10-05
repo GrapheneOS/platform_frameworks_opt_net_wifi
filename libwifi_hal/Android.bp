@@ -54,6 +54,7 @@ soong_config_string_variable {
         "synadhd",
         "qcwcn",
         "mrvl",
+        "nxp",
         "MediaTek",
         "realtek",
         "emulator",

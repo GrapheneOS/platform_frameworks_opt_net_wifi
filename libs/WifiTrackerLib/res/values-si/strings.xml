@@ -44,6 +44,10 @@
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"උපාංගයට සම්බන්ධයි. අන්තර්ජාලය සැපයීමට නොහැකිය."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"අඩු ගුණත්වය"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"ඔබගේ සංවිධානය විසින් ඉඩ නොදේ"</string>
+    <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> සිට <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="DEVICE_NAME">%2$s</xliff:g> සිට <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"සම්බන්ධ වෙමින්…"</string>
+    <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> වෙතින් තිබේ"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
@@ -80,4 +84,9 @@
     <string name="wifitrackerlib_wifi_standard_11ax" msgid="4071875115186480116">"Wi‑Fi 6"</string>
     <string name="wifitrackerlib_wifi_standard_11ad" msgid="4955749187120493383">"WiGig"</string>
     <string name="wifitrackerlib_wifi_standard_11be" msgid="1886834788680487835">"Wi‑Fi 7"</string>
+    <string name="wifitrackerlib_wifi_band_unknown" msgid="5576746583228374334">"නොදනී"</string>
+    <string name="wifitrackerlib_wifi_band_24_ghz" msgid="5374362780653321244">"2.4 GHz"</string>
+    <string name="wifitrackerlib_wifi_band_5_ghz" msgid="2179047349922091556">"5 GHz"</string>
+    <string name="wifitrackerlib_wifi_band_6_ghz" msgid="6532408050869498777">"6 GHz"</string>
+    <string name="wifitrackerlib_multiband_separator" msgid="2696920984391378575">","</string>
 </resources>
