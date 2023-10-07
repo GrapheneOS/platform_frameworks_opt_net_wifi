@@ -24,7 +24,7 @@ java_defaults {
         "androidx.test.rules",
         "frameworks-base-testutils",
         "mockito-target-extended-minus-junit4",
-        "truth-prebuilt",
+        "truth",
         "Robolectric_all-target",
     ],
 
