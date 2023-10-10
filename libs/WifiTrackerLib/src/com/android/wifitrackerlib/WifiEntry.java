@@ -244,6 +244,7 @@ public class WifiEntry {
     protected NetworkInfo mNetworkInfo;
     protected Network mNetwork;
     protected NetworkCapabilities mNetworkCapabilities;
+    protected Network mDefaultNetwork;
     protected NetworkCapabilities mDefaultNetworkCapabilities;
     protected ConnectivityDiagnosticsManager.ConnectivityReport mConnectivityReport;
     protected ConnectedInfo mConnectedInfo;
@@ -255,7 +256,6 @@ public class WifiEntry {
     protected boolean mCalledConnect = false;
     protected boolean mCalledDisconnect = false;
 
-    protected boolean mIsDefaultNetwork;
 
     private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
 
@@ -368,7 +368,7 @@ public class WifiEntry {
      * currently being used to provide internet connection).
      */
     public boolean isDefaultNetwork() {
-        return mIsDefaultNetwork;
+        return mNetwork != null && mNetwork.equals(mDefaultNetwork);
     }
 
     /**
@@ -740,7 +740,7 @@ public class WifiEntry {
             sb.append("hasInternet:")
                     .append(hasInternetAccess())
                     .append(", isDefaultNetwork:")
-                    .append(mIsDefaultNetwork)
+                    .append(isDefaultNetwork())
                     .append(", isLowQuality:")
                     .append(isLowQuality());
         }
@@ -1009,7 +1009,6 @@ public class WifiEntry {
         mNetworkInfo = null;
         mNetworkCapabilities = null;
         mConnectivityReport = null;
-        mIsDefaultNetwork = false;
         if (mCalledDisconnect) {
             mCalledDisconnect = false;
             mCallbackHandler.post(() -> {
@@ -1030,9 +1029,8 @@ public class WifiEntry {
     synchronized void onDefaultNetworkCapabilitiesChanged(
             @NonNull Network network,
             @NonNull NetworkCapabilities capabilities) {
-        onNetworkCapabilitiesChanged(network, capabilities);
+        mDefaultNetwork = network;
         mDefaultNetworkCapabilities = capabilities;
-        mIsDefaultNetwork = network.equals(mNetwork);
         notifyOnUpdated();
     }
 
@@ -1040,8 +1038,8 @@ public class WifiEntry {
      * Notifies this WifiEntry that the default network was lost.
      */
     synchronized void onDefaultNetworkLost() {
+        mDefaultNetwork = null;
         mDefaultNetworkCapabilities = null;
-        mIsDefaultNetwork = false;
         notifyOnUpdated();
     }
 
