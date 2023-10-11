@@ -361,17 +361,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
         // Update scans since config changes may result in different entries being shown.
-        final List<ScanResult> scanResults = mScanResultUpdater.getScanResults();
-        updateStandardWifiEntryScans(scanResults);
-        updateNetworkRequestEntryScans(scanResults);
-        updatePasspointWifiEntryScans(scanResults);
-        updateOsuWifiEntryScans(scanResults);
-        if (mInjector.isSharedConnectivityFeatureEnabled() && BuildCompat.isAtLeastU()) {
-            updateKnownNetworkEntryScans(scanResults);
-            // Updating the hotspot entries here makes the UI more reliable when switching pages or
-            // when toggling settings while the internet picker is shown.
-            updateHotspotNetworkEntries();
-        }
+        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
