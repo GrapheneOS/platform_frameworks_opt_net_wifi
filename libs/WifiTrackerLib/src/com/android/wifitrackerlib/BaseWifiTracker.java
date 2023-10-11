@@ -192,18 +192,19 @@ public class BaseWifiTracker {
                 @WorkerThread
                 public void onCapabilitiesChanged(@NonNull Network network,
                         @NonNull NetworkCapabilities networkCapabilities) {
-                    List<Network> underlyingNetworks =
-                            networkCapabilities.getUnderlyingNetworks();
+                    // If the default network has an underlying Wi-Fi network (e.g. it's
+                    // a VPN), treat the Wi-Fi network as the default network.
+                    List<Network> underlyingNetworks = BuildCompat.isAtLeastT()
+                            ? networkCapabilities.getUnderlyingNetworks() : null;
                     if (underlyingNetworks != null) {
-                        Network currentWifiNetwork = mWifiManager.getCurrentNetwork();
-                        if (underlyingNetworks.contains(currentWifiNetwork)) {
-                            // If the default network has an underlying Wi-Fi network (e.g. it's
-                            // a VPN), treat the Wi-Fi network as the default network.
-                            handleDefaultNetworkCapabilitiesChanged(currentWifiNetwork,
-                                    new NetworkCapabilities.Builder(networkCapabilities)
-                                            .setTransportInfo(mWifiManager.getConnectionInfo())
-                                            .build());
-                            return;
+                        for (Network underlyingNetwork : underlyingNetworks) {
+                            NetworkCapabilities underlyingNetworkCapabilities =
+                                    mConnectivityManager.getNetworkCapabilities(underlyingNetwork);
+                            if (underlyingNetworkCapabilities.hasTransport(TRANSPORT_WIFI)) {
+                                handleDefaultNetworkCapabilitiesChanged(
+                                        underlyingNetwork, underlyingNetworkCapabilities);
+                                return;
+                            }
                         }
                     }
                     handleDefaultNetworkCapabilitiesChanged(network, networkCapabilities);
