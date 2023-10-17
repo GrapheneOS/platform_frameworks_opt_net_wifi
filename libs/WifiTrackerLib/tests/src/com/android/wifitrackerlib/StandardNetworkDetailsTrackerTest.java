@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.wifi.ScanResult;
@@ -70,6 +71,7 @@ public class StandardNetworkDetailsTrackerTest {
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
+    @Mock private Resources mResources;
     @Mock private WifiManager mMockWifiManager;
     @Mock private WifiScanner mWifiScanner;
     @Mock private ConnectivityManager mMockConnectivityManager;
@@ -116,6 +118,7 @@ public class StandardNetworkDetailsTrackerTest {
                 .thenReturn(TestUtils.OKAY_LEVEL);
         when(mMockWifiManager.calculateSignalLevel(TestUtils.BAD_RSSI))
                 .thenReturn(TestUtils.BAD_LEVEL);
+        when(mMockContext.getResources()).thenReturn(mResources);
         when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
                 .thenReturn(mMockConnectivityDiagnosticsManager);
         when(mMockContext.getSystemService(WifiScanner.class)).thenReturn(mWifiScanner);

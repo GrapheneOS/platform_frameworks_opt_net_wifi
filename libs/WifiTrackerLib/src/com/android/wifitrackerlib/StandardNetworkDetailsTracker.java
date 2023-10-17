@@ -83,10 +83,10 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
                 mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, TAG);
         mKey = new StandardWifiEntryKey(key);
         if (mKey.isNetworkRequest()) {
-            mChosenEntry = new NetworkRequestEntry(mInjector, mContext, mMainHandler, mKey,
+            mChosenEntry = new NetworkRequestEntry(mInjector, mMainHandler, mKey,
                     mWifiManager, false /* forSavedNetworksPage */);
         } else {
-            mChosenEntry = new StandardWifiEntry(mInjector, mContext, mMainHandler, mKey,
+            mChosenEntry = new StandardWifiEntry(mInjector, mMainHandler, mKey,
                     mWifiManager, false /* forSavedNetworksPage */);
         }
         // It is safe to call updateStartInfo() in the main thread here since onStart() won't have

@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
@@ -83,6 +84,7 @@ public class SavedNetworkTrackerTest {
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
+    @Mock private Resources mResources;
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private ConnectivityDiagnosticsManager mMockConnectivityDiagnosticsManager;
@@ -148,6 +150,8 @@ public class SavedNetworkTrackerTest {
                         .build());
         when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
                 .thenReturn(mMockLinkProperties);
+        when(mInjector.getContext()).thenReturn(mMockContext);
+        when(mMockContext.getResources()).thenReturn(mResources);
         when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
                 .thenReturn(mMockConnectivityDiagnosticsManager);
         when(mMockClock.millis()).thenReturn(START_MILLIS);

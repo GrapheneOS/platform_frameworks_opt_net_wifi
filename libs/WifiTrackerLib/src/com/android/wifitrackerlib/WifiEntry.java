@@ -23,6 +23,7 @@ import static androidx.core.util.Preconditions.checkNotNull;
 import static com.android.wifitrackerlib.Utils.getNetworkPart;
 import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultipleSecurityTypes;
 
+import android.content.Context;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -35,6 +36,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.text.TextUtils;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
@@ -212,6 +214,8 @@ public class WifiEntry {
                             entry.getConnectedState() != CONNECTED_STATE_CONNECTED)
                     .thenComparing((WifiEntry entry) -> !(entry instanceof KnownNetworkEntry))
                     .thenComparing((WifiEntry entry) -> !(entry instanceof HotspotNetworkEntry))
+                    .thenComparing((WifiEntry entry) -> (entry instanceof HotspotNetworkEntry)
+                            ? -((HotspotNetworkEntry) entry).getUpstreamConnectionStrength() : 0)
                     .thenComparing((WifiEntry entry) -> !entry.canConnect())
                     .thenComparing((WifiEntry entry) -> !entry.isSubscription())
                     .thenComparing((WifiEntry entry) -> !entry.isSaved())
@@ -227,6 +231,8 @@ public class WifiEntry {
 
     protected final boolean mForSavedNetworksPage;
 
+    @NonNull protected final WifiTrackerInjector mInjector;
+    @NonNull protected final Context mContext;
     protected final WifiManager mWifiManager;
 
     // Callback associated with this WifiEntry. Subclasses should call its methods appropriately.
@@ -253,10 +259,14 @@ public class WifiEntry {
 
     private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
 
-    public WifiEntry(@NonNull Handler callbackHandler, @NonNull WifiManager wifiManager,
-            boolean forSavedNetworksPage) throws IllegalArgumentException {
+    public WifiEntry(@NonNull WifiTrackerInjector injector, @NonNull Handler callbackHandler,
+            @NonNull WifiManager wifiManager, boolean forSavedNetworksPage)
+            throws IllegalArgumentException {
+        checkNotNull(injector, "Cannot construct with null injector!");
         checkNotNull(callbackHandler, "Cannot construct with null handler!");
         checkNotNull(wifiManager, "Cannot construct with null WifiManager!");
+        mInjector = injector;
+        mContext = mInjector.getContext();
         mCallbackHandler = callbackHandler;
         mForSavedNetworksPage = forSavedNetworksPage;
         mWifiManager = wifiManager;
@@ -658,6 +668,20 @@ public class WifiEntry {
         return "";
     }
 
+    /**
+     * Returns the string displayed for Tx link speed.
+     */
+    public String getTxSpeedString() {
+        return Utils.getSpeedString(mContext, mWifiInfo, /* isTx */ true);
+    }
+
+    /**
+     * Returns the string displayed for Rx link speed.
+     */
+    public String getRxSpeedString() {
+        return Utils.getSpeedString(mContext, mWifiInfo, /* isTx */ false);
+    }
+
     /** Returns whether subscription of the entry is expired */
     public boolean isExpired() {
         return false;
@@ -729,6 +753,13 @@ public class WifiEntry {
      * security or password before connecting. Or users will always get connection fail results.
      */
     public boolean shouldEditBeforeConnect() {
+        return false;
+    }
+
+    /**
+     * Whether there are admin restrictions preventing connection to this network.
+     */
+    public boolean hasAdminRestrictions() {
         return false;
     }
 
@@ -870,18 +901,21 @@ public class WifiEntry {
     /**
      * Updates this WifiEntry with the given primary WifiInfo/NetworkInfo if they match.
      * @param primaryWifiInfo Primary WifiInfo that has changed
-     * @param networkInfo NetworkInfo of the primary network
+     * @param networkInfo NetworkInfo of the primary network if available
      */
     synchronized void onPrimaryWifiInfoChanged(
-            @NonNull WifiInfo primaryWifiInfo, @NonNull NetworkInfo networkInfo) {
-        if (!connectionInfoMatches(primaryWifiInfo)) {
+            @Nullable WifiInfo primaryWifiInfo, @Nullable NetworkInfo networkInfo) {
+        if (primaryWifiInfo == null || !connectionInfoMatches(primaryWifiInfo)) {
             if (mNetworkInfo != null) {
                 mNetworkInfo = null;
                 notifyOnUpdated();
             }
             return;
         }
-        mNetworkInfo = networkInfo;
+        mWifiInfo = primaryWifiInfo;
+        if (networkInfo != null) {
+            mNetworkInfo = networkInfo;
+        }
         notifyOnUpdated();
     }
 
@@ -1088,18 +1122,9 @@ public class WifiEntry {
         @Override
         public void onSuccess() {
             synchronized (WifiEntry.this) {
+                // Wait for L3 connection before returning the success result.
                 mCalledConnect = true;
             }
-            // If we aren't connected to the network after 10 seconds, trigger the failure callback
-            mCallbackHandler.postDelayed(() -> {
-                final ConnectCallback connectCallback = mConnectCallback;
-                if (connectCallback != null && mCalledConnect
-                        && getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-                    connectCallback.onConnectResult(
-                            ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
-                    mCalledConnect = false;
-                }
-            }, 10_000 /* delayMillis */);
         }
 
         @Override
@@ -1107,8 +1132,7 @@ public class WifiEntry {
             mCallbackHandler.post(() -> {
                 final ConnectCallback connectCallback = mConnectCallback;
                 if (connectCallback != null) {
-                    connectCallback.onConnectResult(
-                            ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
+                    connectCallback.onConnectResult(ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
                 }
             });
         }
@@ -1149,34 +1173,61 @@ public class WifiEntry {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append(getKey())
-                .append(",title:")
-                .append(getTitle())
-                .append(",summary:")
-                .append(getSummary())
-                .append(",isSaved:")
-                .append(isSaved())
-                .append(",isSubscription:")
-                .append(isSubscription())
-                .append(",isSuggestion:")
-                .append(isSuggestion())
-                .append(",level:")
-                .append(getLevel())
-                .append(shouldShowXLevelIcon() ? "X" : "")
-                .append(",security:")
-                .append(getSecurityTypes())
-                .append(",connected:")
-                .append(getConnectedState() == CONNECTED_STATE_CONNECTED ? "true" : "false")
-                .append(",connectedInfo:")
-                .append(getConnectedInfo())
-                .append(",hasInternet:")
-                .append(hasInternetAccess())
-                .append(",isDefault:")
-                .append(mIsDefaultNetwork)
-                .append(",isPrimary:")
-                .append(isPrimaryNetwork())
-                .toString();
+        StringJoiner sj = new StringJoiner("][", "[", "]");
+        sj.add(this.getClass().getSimpleName());
+        sj.add(getTitle());
+        sj.add(getSummary());
+        sj.add("Level:" + getLevel() + (shouldShowXLevelIcon() ? "!" : ""));
+        String security = getSecurityString(true);
+        if (!TextUtils.isEmpty(security)) {
+            sj.add(security);
+        }
+        int connectedState = getConnectedState();
+        if (connectedState == CONNECTED_STATE_CONNECTED) {
+            sj.add("Connected");
+        } else if (connectedState == CONNECTED_STATE_CONNECTING) {
+            sj.add("Connecting...");
+        }
+        if (hasInternetAccess()) {
+            sj.add("Internet");
+        }
+        if (isDefaultNetwork()) {
+            sj.add("Default");
+        }
+        if (isPrimaryNetwork()) {
+            sj.add("Primary");
+        }
+        if (isLowQuality()) {
+            sj.add("LowQuality");
+        }
+        if (isSaved()) {
+            sj.add("Saved");
+        }
+        if (isSubscription()) {
+            sj.add("Subscription");
+        }
+        if (isSuggestion()) {
+            sj.add("Suggestion");
+        }
+        if (isMetered()) {
+            sj.add("Metered");
+        }
+        if ((isSaved() || isSuggestion() || isSubscription()) && !isAutoJoinEnabled()) {
+            sj.add("AutoJoinDisabled");
+        }
+        if (isExpired()) {
+            sj.add("Expired");
+        }
+        if (canSignIn()) {
+            sj.add("SignIn");
+        }
+        if (shouldEditBeforeConnect()) {
+            sj.add("EditBeforeConnect");
+        }
+        if (hasAdminRestrictions()) {
+            sj.add("AdminRestricted");
+        }
+        return sj.toString();
     }
 
     /**

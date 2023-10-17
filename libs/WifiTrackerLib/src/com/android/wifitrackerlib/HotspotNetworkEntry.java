@@ -16,6 +16,7 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.os.Build.VERSION_CODES;
 
 import android.annotation.TargetApi;
@@ -28,6 +29,7 @@ import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
 import android.os.Handler;
 import android.text.BidiFormatter;
+import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
@@ -42,6 +44,7 @@ import org.json.JSONObject;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Objects;
 
 /**
@@ -58,8 +61,6 @@ public class HotspotNetworkEntry extends WifiEntry {
 
     @Nullable private HotspotNetwork mHotspotNetworkData;
     @NonNull private HotspotNetworkEntryKey mKey;
-
-    private boolean mServerInitiatedConnection = false;
 
     /**
      * If editing this IntDef also edit the definition in:
@@ -123,7 +124,7 @@ public class HotspotNetworkEntry extends WifiEntry {
             @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull HotspotNetwork hotspotNetworkData) {
-        super(callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
+        super(injector, callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
         mInjector = injector;
         mContext = context;
         mSharedConnectivityManager = sharedConnectivityManager;
@@ -140,7 +141,7 @@ public class HotspotNetworkEntry extends WifiEntry {
             @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull HotspotNetworkEntryKey key) {
-        super(callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
+        super(injector, callbackHandler, wifiManager, false /*forSavedNetworksPage*/);
         mInjector = injector;
         mContext = context;
         mSharedConnectivityManager = sharedConnectivityManager;
@@ -175,11 +176,21 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mKey.isVirtualEntry()) {
             return false;
         }
-        return Objects.equals(mKey.getBssid(), wifiInfo.getBSSID());
+        return Objects.equals(mKey.getScanResultKey(),
+                new StandardWifiEntry.ScanResultKey(WifiInfo.sanitizeSsid(wifiInfo.getSSID()),
+                        Collections.singletonList(wifiInfo.getCurrentSecurityType())));
     }
 
     @Override
-    public String getTitle() {
+    public int getLevel() {
+        if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
+            return WIFI_LEVEL_MAX;
+        }
+        return super.getLevel();
+    }
+
+    @Override
+    public synchronized String getTitle() {
         if (mHotspotNetworkData == null) {
             return "";
         }
@@ -187,11 +198,11 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
-    public String getSummary(boolean concise) {
+    public synchronized String getSummary(boolean concise) {
         if (mHotspotNetworkData == null) {
             return "";
         }
-        if (getConnectedState() != CONNECTED_STATE_CONNECTED && mServerInitiatedConnection) {
+        if (mCalledConnect) {
             return mContext.getString(R.string.wifitrackerlib_hotspot_network_connecting);
         }
         return mContext.getString(R.string.wifitrackerlib_hotspot_network_summary,
@@ -205,7 +216,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      *
      * @return Display string.
      */
-    public String getAlternateSummary() {
+    public synchronized String getAlternateSummary() {
         if (mHotspotNetworkData == null) {
             return "";
         }
@@ -215,13 +226,73 @@ public class HotspotNetworkEntry extends WifiEntry {
                         mHotspotNetworkData.getNetworkProviderInfo().getDeviceName()));
     }
 
+    @Override
+    public synchronized String getSsid() {
+        StandardWifiEntry.ScanResultKey scanResultKey = mKey.getScanResultKey();
+        if (scanResultKey == null) {
+            return null;
+        }
+        return scanResultKey.getSsid();
+    }
+
+    @Override
+    @Nullable
+    public synchronized String getMacAddress() {
+        if (mWifiInfo == null) {
+            return null;
+        }
+        final String wifiInfoMac = mWifiInfo.getMacAddress();
+        if (!TextUtils.isEmpty(wifiInfoMac)
+                && !TextUtils.equals(wifiInfoMac, DEFAULT_MAC_ADDRESS)) {
+            return wifiInfoMac;
+        }
+        if (getPrivacy() != PRIVACY_RANDOMIZED_MAC) {
+            final String[] factoryMacs = mWifiManager.getFactoryMacAddresses();
+            if (factoryMacs.length > 0) {
+                return factoryMacs[0];
+            }
+        }
+        return null;
+    }
+
+    @Override
+    @Privacy
+    public int getPrivacy() {
+        return PRIVACY_RANDOMIZED_MAC;
+    }
+
+    @Override
+    public synchronized String getSecurityString(boolean concise) {
+        if (mHotspotNetworkData == null) {
+            return "";
+        }
+        return Utils.getSecurityString(mContext,
+                new ArrayList<>(mHotspotNetworkData.getHotspotSecurityTypes()), concise);
+    }
+
+    @Override
+    public synchronized String getStandardString() {
+        if (mWifiInfo == null) {
+            return "";
+        }
+        return Utils.getStandardString(mContext, mWifiInfo.getWifiStandard());
+    }
+
+    @Override
+    public synchronized String getBandString() {
+        if (mWifiInfo == null) {
+            return "";
+        }
+        return Utils.wifiInfoToBandString(mContext, mWifiInfo);
+    }
+
     /**
      * Connection strength between the host device and the internet.
      *
      * @return Displayed connection strength in the range 0 to 4.
      */
     @IntRange(from = 0, to = 4)
-    public int getUpstreamConnectionStrength() {
+    public synchronized int getUpstreamConnectionStrength() {
         if (mHotspotNetworkData == null) {
             return 0;
         }
@@ -234,7 +305,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * @return NetworkType enum.
      */
     @NetworkType
-    public int getNetworkType() {
+    public synchronized int getNetworkType() {
         if (mHotspotNetworkData == null) {
             return HotspotNetwork.NETWORK_TYPE_UNKNOWN;
         }
@@ -247,7 +318,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * @return DeviceType enum.
      */
     @DeviceType
-    public int getDeviceType() {
+    public synchronized int getDeviceType() {
         if (mHotspotNetworkData == null) {
             return NetworkProviderInfo.DEVICE_TYPE_UNKNOWN;
         }
@@ -258,7 +329,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * The battery percentage of the host device.
      */
     @IntRange(from = 0, to = 100)
-    public int getBatteryPercentage() {
+    public synchronized int getBatteryPercentage() {
         if (mHotspotNetworkData == null) {
             return 0;
         }
@@ -268,7 +339,7 @@ public class HotspotNetworkEntry extends WifiEntry {
     /**
      * If the host device is currently charging its battery.
      */
-    public boolean isBatteryCharging() {
+    public synchronized boolean isBatteryCharging() {
         if (mHotspotNetworkData == null) {
             return false;
         }
@@ -276,12 +347,12 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
-    public boolean canConnect() {
+    public synchronized boolean canConnect() {
         return getConnectedState() == CONNECTED_STATE_DISCONNECTED;
     }
 
     @Override
-    public void connect(@Nullable ConnectCallback callback) {
+    public synchronized void connect(@Nullable ConnectCallback callback) {
         mConnectCallback = callback;
         if (mSharedConnectivityManager == null) {
             if (callback != null) {
@@ -294,12 +365,12 @@ public class HotspotNetworkEntry extends WifiEntry {
     }
 
     @Override
-    public boolean canDisconnect() {
+    public synchronized boolean canDisconnect() {
         return getConnectedState() != CONNECTED_STATE_DISCONNECTED;
     }
 
     @Override
-    public void disconnect(@Nullable DisconnectCallback callback) {
+    public synchronized void disconnect(@Nullable DisconnectCallback callback) {
         mDisconnectCallback = callback;
         if (mSharedConnectivityManager == null) {
             if (callback != null) {
@@ -324,7 +395,7 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mConnectCallback == null) return;
         switch (status) {
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT:
-                mServerInitiatedConnection = true;
+                mCalledConnect = true;
                 notifyOnUpdated();
                 break;
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN_ERROR:
@@ -337,7 +408,7 @@ public class HotspotNetworkEntry extends WifiEntry {
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED:
                 mCallbackHandler.post(() -> mConnectCallback.onConnectResult(
                         ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN));
-                mServerInitiatedConnection = false;
+                mCalledConnect = false;
                 notifyOnUpdated();
                 break;
             default:
@@ -348,13 +419,10 @@ public class HotspotNetworkEntry extends WifiEntry {
     static class HotspotNetworkEntryKey {
         private static final String KEY_IS_VIRTUAL_ENTRY_KEY = "IS_VIRTUAL_ENTRY_KEY";
         private static final String KEY_DEVICE_ID_KEY = "DEVICE_ID_KEY";
-        private static final String KEY_BSSID_KEY = "BSSID_KEY";
         private static final String KEY_SCAN_RESULT_KEY = "SCAN_RESULT_KEY";
 
         private boolean mIsVirtualEntry;
         private long mDeviceId;
-        @Nullable
-        private String mBssid;
         @Nullable
         private StandardWifiEntry.ScanResultKey mScanResultKey;
 
@@ -365,15 +433,12 @@ public class HotspotNetworkEntry extends WifiEntry {
          */
         HotspotNetworkEntryKey(@NonNull HotspotNetwork hotspotNetworkData) {
             mDeviceId = hotspotNetworkData.getDeviceId();
-            if (hotspotNetworkData.getHotspotSsid() == null
-                    || (hotspotNetworkData.getHotspotBssid() == null)
-                    || (hotspotNetworkData.getHotspotSecurityTypes() == null)) {
+            if (hotspotNetworkData.getHotspotSsid() == null || (
+                    hotspotNetworkData.getHotspotSecurityTypes() == null)) {
                 mIsVirtualEntry = true;
-                mBssid = null;
                 mScanResultKey = null;
             } else {
                 mIsVirtualEntry = false;
-                mBssid = hotspotNetworkData.getHotspotBssid();
                 mScanResultKey = new StandardWifiEntry.ScanResultKey(
                         hotspotNetworkData.getHotspotSsid(),
                         new ArrayList<>(hotspotNetworkData.getHotspotSecurityTypes()));
@@ -398,9 +463,6 @@ public class HotspotNetworkEntry extends WifiEntry {
                 if (keyJson.has(KEY_DEVICE_ID_KEY)) {
                     mDeviceId = keyJson.getLong(KEY_DEVICE_ID_KEY);
                 }
-                if (keyJson.has(KEY_BSSID_KEY)) {
-                    mBssid = keyJson.getString(KEY_BSSID_KEY);
-                }
                 if (keyJson.has(KEY_SCAN_RESULT_KEY)) {
                     mScanResultKey = new StandardWifiEntry.ScanResultKey(keyJson.getString(
                             KEY_SCAN_RESULT_KEY));
@@ -419,9 +481,6 @@ public class HotspotNetworkEntry extends WifiEntry {
             try {
                 keyJson.put(KEY_IS_VIRTUAL_ENTRY_KEY, mIsVirtualEntry);
                 keyJson.put(KEY_DEVICE_ID_KEY, mDeviceId);
-                if (mBssid != null) {
-                    keyJson.put(KEY_BSSID_KEY, mBssid);
-                }
                 if (mScanResultKey != null) {
                     keyJson.put(KEY_SCAN_RESULT_KEY, mScanResultKey.toString());
                 }
@@ -438,14 +497,6 @@ public class HotspotNetworkEntry extends WifiEntry {
 
         public long getDeviceId() {
             return mDeviceId;
-        }
-
-        /**
-         * Returns the BSSID of this HotspotNetworkEntryKey to match against wifiInfo
-         */
-        @Nullable
-        String getBssid() {
-            return mBssid;
         }
 
         /**

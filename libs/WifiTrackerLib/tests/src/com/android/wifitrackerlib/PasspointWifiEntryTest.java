@@ -77,6 +77,7 @@ public class PasspointWifiEntryTest {
         when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
         when(mMockWifiInfo.getRssi()).thenReturn(WifiInfo.INVALID_RSSI);
         when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
+        when(mMockInjector.getContext()).thenReturn(mMockContext);
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getString(R.string.wifitrackerlib_summary_separator)).thenReturn("/");
 
@@ -92,7 +93,7 @@ public class PasspointWifiEntryTest {
         when(mMockContext.getString(R.string.wifitrackerlib_wifi_passpoint_expired))
                 .thenReturn(expired);
 
-        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector, mMockContext,
+        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector,
                 mTestHandler, passpointConfiguration, mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -105,7 +106,7 @@ public class PasspointWifiEntryTest {
         String expired = "Expired";
         when(mMockContext.getString(R.string.wifitrackerlib_wifi_passpoint_expired))
                 .thenReturn(expired);
-        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector, mMockContext,
+        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector,
                 mTestHandler, passpointConfiguration, mMockWifiManager,
                 false /* forSavedNetworksPage */);
         PasspointWifiEntry spyEntry = spy(passpointWifiEntry);
@@ -125,7 +126,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testGetMeteredChoice_afterSetMeteredChoice_getCorrectValue() {
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -149,7 +150,7 @@ public class PasspointWifiEntryTest {
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
@@ -173,7 +174,7 @@ public class PasspointWifiEntryTest {
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
@@ -188,7 +189,7 @@ public class PasspointWifiEntryTest {
         when(mMockWifiInfo.getCurrentSecurityType())
                 .thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -215,7 +216,7 @@ public class PasspointWifiEntryTest {
         when(mMockContext.getString(R.string.wifitrackerlib_wifi_security_passpoint))
                 .thenReturn(passpointSecurity);
 
-        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector, mMockContext,
+        PasspointWifiEntry passpointWifiEntry = new PasspointWifiEntry(mMockInjector,
                 mTestHandler, passpointConfiguration, mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -227,7 +228,7 @@ public class PasspointWifiEntryTest {
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
 
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -270,7 +271,7 @@ public class PasspointWifiEntryTest {
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
         when(mMockWifiInfo.getMacAddress()).thenReturn(wifiInfoMac);
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -281,7 +282,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testIsAutoJoinEnabled_nullConfigs_returnsFalse() {
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -292,7 +293,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testCanSignIn_captivePortalCapability_returnsTrue() {
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -307,7 +308,7 @@ public class PasspointWifiEntryTest {
 
     @Test
     public void testUpdateNetworkCapabilities_userConnect_autoOpenCaptivePortalOnce() {
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -348,7 +349,7 @@ public class PasspointWifiEntryTest {
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
-        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mMockContext, mTestHandler,
+        PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
