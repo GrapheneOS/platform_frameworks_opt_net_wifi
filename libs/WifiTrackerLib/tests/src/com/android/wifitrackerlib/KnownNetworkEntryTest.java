@@ -62,7 +62,6 @@ public class KnownNetworkEntryTest {
                     .Builder("My Phone", "Pixel 7")
                     .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
                     .setBatteryPercentage(100)
-                    .setBatteryCharging(true)
                     .setConnectionStrength(3)
                     .build())
             .build();
