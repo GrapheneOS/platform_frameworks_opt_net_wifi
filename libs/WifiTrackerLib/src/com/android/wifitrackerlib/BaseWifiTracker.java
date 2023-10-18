@@ -200,7 +200,8 @@ public class BaseWifiTracker {
                         for (Network underlyingNetwork : underlyingNetworks) {
                             NetworkCapabilities underlyingNetworkCapabilities =
                                     mConnectivityManager.getNetworkCapabilities(underlyingNetwork);
-                            if (underlyingNetworkCapabilities.hasTransport(TRANSPORT_WIFI)) {
+                            if (underlyingNetworkCapabilities != null
+                                    && underlyingNetworkCapabilities.hasTransport(TRANSPORT_WIFI)) {
                                 handleDefaultNetworkCapabilitiesChanged(
                                         underlyingNetwork, underlyingNetworkCapabilities);
                                 return;
