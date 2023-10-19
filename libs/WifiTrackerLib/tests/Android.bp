@@ -23,6 +23,7 @@ java_defaults {
     static_libs: [
         "androidx.test.rules",
         "frameworks-base-testutils",
+        "flag-junit",
         "mockito-target-extended-minus-junit4",
         "truth",
         "Robolectric_all-target",
