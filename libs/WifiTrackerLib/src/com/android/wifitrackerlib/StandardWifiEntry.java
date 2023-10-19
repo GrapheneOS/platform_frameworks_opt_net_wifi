@@ -198,6 +198,12 @@ public class StandardWifiEntry extends WifiEntry {
                 connectedStateDescription = getConnectingDescription(mContext, mNetworkInfo);
                 break;
             case CONNECTED_STATE_CONNECTED:
+                if (mNetworkCapabilities == null) {
+                    Log.e(TAG, "Tried to get CONNECTED description, but mNetworkCapabilities was"
+                            + " unexpectedly null!");
+                    connectedStateDescription = null;
+                    break;
+                }
                 connectedStateDescription = getConnectedDescription(mContext,
                         mTargetWifiConfig,
                         mNetworkCapabilities,

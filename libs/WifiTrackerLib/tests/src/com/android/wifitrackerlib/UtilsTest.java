@@ -743,20 +743,30 @@ public class UtilsTest {
         ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport = mock(
                 ConnectivityDiagnosticsManager.ConnectivityReport.class);
 
-        // Not default. Do not show "Connected"
+        // Checking for internet access...
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                wifiConfig,
+                networkCapabilities,
+                true,
+                false,
+                null)).isEqualTo(STRING_CHECKING_FOR_INTERNET_ACCESS);
+        // Checking for internet access... without WifiConfiguration (i.e. Passpoint)
         assertThat(Utils.getConnectedDescription(
                 mMockContext,
                 null,
-                null,
+                networkCapabilities,
                 false,
                 false,
-                null)).isEmpty();
+                null)).isEqualTo(STRING_CHECKING_FOR_INTERNET_ACCESS);
 
-        // Default but no info, return "Connected"
+        // Connected
+        when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(true);
         assertThat(Utils.getConnectedDescription(
                 mMockContext,
                 null,
-                null,
+                networkCapabilities,
                 true,
                 false,
                 null)).isEqualTo(STRING_WIFI_STATUS_CONNECTED);
@@ -765,15 +775,17 @@ public class UtilsTest {
         assertThat(Utils.getConnectedDescription(
                 mMockContext,
                 null,
-                null,
+                networkCapabilities,
                 false,
                 true,
                 null)).isEqualTo(STRING_CONNECTED_LOW_QUALITY);
 
-        // No internet access
+        // Connected / No internet access
+        when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(false);
         assertThat(Utils.getConnectedDescription(
                 mMockContext,
-                null,
+                wifiConfig,
                 networkCapabilities,
                 true,
                 false,
@@ -799,16 +811,6 @@ public class UtilsTest {
                 true,
                 false,
                 connectivityReport)).isEqualTo(STRING_PRIVATE_DNS_BROKEN);
-
-        // Checking for internet access...
-        when(wifiConfig.isNoInternetAccessExpected()).thenReturn(false);
-        assertThat(Utils.getConnectedDescription(
-                mMockContext,
-                wifiConfig,
-                networkCapabilities,
-                true,
-                false,
-                null)).isEqualTo(STRING_CHECKING_FOR_INTERNET_ACCESS);
 
         // Limited connection
         when(networkCapabilities.hasCapability(
@@ -851,18 +853,9 @@ public class UtilsTest {
                 connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
                 + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
 
-        // Connected via app + Low quality + No internet access
-        assertThat(Utils.getConnectedDescription(
-                mMockContext,
-                suggestionConfig,
-                networkCapabilities,
-                true,
-                true,
-                connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
-                + STRING_SUMMARY_SEPARATOR + STRING_CONNECTED_LOW_QUALITY
-                + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
-
-        // Available via app + Low quality + No internet access
+        // Available via app + Low quality
+        when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(true);
         assertThat(Utils.getConnectedDescription(
                 mMockContext,
                 suggestionConfig,
@@ -870,8 +863,35 @@ public class UtilsTest {
                 false,
                 true,
                 connectivityReport)).isEqualTo(STRING_AVAILABLE_VIA_APP + "appLabel"
-                + STRING_SUMMARY_SEPARATOR + STRING_CONNECTED_LOW_QUALITY
-                + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
+                + STRING_SUMMARY_SEPARATOR + STRING_CONNECTED_LOW_QUALITY);
+
+        // Available via app + Sign in to network
+        when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                .thenReturn(false);
+        when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL))
+                .thenReturn(true);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                suggestionConfig,
+                networkCapabilities,
+                true,
+                false,
+                connectivityReport)).isEqualTo(STRING_AVAILABLE_VIA_APP + "appLabel"
+                + STRING_SUMMARY_SEPARATOR + STRING_NETWORK_AVAILABLE_SIGN_IN);
+
+        // Connected via app + Limited connection...
+        when(networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)).thenReturn(true);
+        when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL))
+                .thenReturn(false);
+        assertThat(Utils.getConnectedDescription(
+                mMockContext,
+                suggestionConfig,
+                networkCapabilities,
+                true,
+                false,
+                connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
+                + STRING_SUMMARY_SEPARATOR + STRING_LIMITED_CONNECTION);
     }
 
     @Test
