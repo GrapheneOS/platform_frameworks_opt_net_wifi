@@ -132,7 +132,6 @@ public class NetworkDetailsTrackerTest {
                                 .Builder("Phone", "Pixel")
                                 .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
                                 .setBatteryPercentage(100)
-                                .setBatteryCharging(true)
                                 .setConnectionStrength(3).build())
                         .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
                         .setNetworkName("Google Fi")

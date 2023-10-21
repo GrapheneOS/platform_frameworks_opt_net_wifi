@@ -19,6 +19,8 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.os.Build.VERSION_CODES;
 
+import static com.android.wifi.flags.Flags.networkProviderBatteryChargingStatus;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
@@ -340,7 +342,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * If the host device is currently charging its battery.
      */
     public synchronized boolean isBatteryCharging() {
-        if (mHotspotNetworkData == null) {
+        if (mHotspotNetworkData == null || networkProviderBatteryChargingStatus()) {
             return false;
         }
         return mHotspotNetworkData.getNetworkProviderInfo().isBatteryCharging();
