@@ -57,6 +57,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -358,7 +359,7 @@ public class WifiEntry {
      * Returns whether this network has validated internet access or not.
      * Note: This does not necessarily mean the network is the default route.
      */
-    public boolean hasInternetAccess() {
+    public synchronized boolean hasInternetAccess() {
         return mNetworkCapabilities != null
                 && mNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
     }
@@ -368,13 +369,13 @@ public class WifiEntry {
      * currently being used to provide internet connection).
      */
     public boolean isDefaultNetwork() {
-        return mNetwork != null && mNetwork.equals(mDefaultNetwork);
+        return Objects.equals(mNetwork, mDefaultNetwork);
     }
 
     /**
      * Returns whether this network is the primary Wi-Fi network or not.
      */
-    public boolean isPrimaryNetwork() {
+    public synchronized boolean isPrimaryNetwork() {
         if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
             // In case we have mNetworkInfo but the state is disconnected.
             return false;
@@ -386,7 +387,7 @@ public class WifiEntry {
     /**
      * Returns whether this network is considered low quality.
      */
-    public boolean isLowQuality() {
+    public synchronized boolean isLowQuality() {
         if (!isPrimaryNetwork()) {
             return false;
         }
