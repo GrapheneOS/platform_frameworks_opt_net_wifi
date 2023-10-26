@@ -246,82 +246,85 @@ public class Utils {
 
     static String getConnectedDescription(@NonNull Context context,
             @Nullable WifiConfiguration wifiConfiguration,
-            @Nullable NetworkCapabilities networkCapabilities,
+            @NonNull NetworkCapabilities networkCapabilities,
             boolean isDefaultNetwork,
             boolean isLowQuality,
             @Nullable ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
         final StringJoiner sj = new StringJoiner(context.getString(
                 R.string.wifitrackerlib_summary_separator));
 
-        boolean shouldShowConnected = isDefaultNetwork;
+        boolean isValidated = networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        boolean isCaptivePortal = networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL);
+        boolean isPartialConnectivity = networkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY);
+        boolean isNoInternetExpected = wifiConfiguration != null
+                && wifiConfiguration.isNoInternetAccessExpected();
+        boolean isPrivateDnsBroken = !isValidated && networkCapabilities.isPrivateDnsBroken();
+        boolean isCheckingForInternetAccess = !isValidated && !isPartialConnectivity
+                && connectivityReport == null && !isNoInternetExpected;
+        boolean isOemNetwork = NonSdkApiWrapper.isOemCapabilities(networkCapabilities);
+        String suggestionOrSpecifierLabel = null;
         if (wifiConfiguration != null
                 && (wifiConfiguration.fromWifiNetworkSuggestion
                 || wifiConfiguration.fromWifiNetworkSpecifier)) {
-            // For suggestion or specifier networks to show "Connected via ..."
-            final String suggestionOrSpecifierLabel =
-                    getSuggestionOrSpecifierLabel(context, wifiConfiguration);
-            if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
-                if (isDefaultNetwork || (networkCapabilities != null
-                        && NonSdkApiWrapper.isOemCapabilities(networkCapabilities))) {
-                    sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
-                            suggestionOrSpecifierLabel));
-                } else {
-                    // Pretend that non-default, non-OEM networks are unconnected.
-                    sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
-                            suggestionOrSpecifierLabel));
-                }
-                shouldShowConnected = false;
+            suggestionOrSpecifierLabel = getSuggestionOrSpecifierLabel(context, wifiConfiguration);
+        }
+        final boolean shouldShowConnected;
+        if (isValidated) {
+            shouldShowConnected = isDefaultNetwork;
+        } else {
+            // Show "Connected" even if we aren't validated specifically for the
+            // "Connected / No internet access" case, and for OEM-specified networks which aren't
+            // expected to be fully validated.
+            shouldShowConnected = !isCheckingForInternetAccess && !isCaptivePortal
+                    && !isPrivateDnsBroken && !isNoInternetExpected || isOemNetwork;
+        }
+
+        if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
+            if (shouldShowConnected || (isDefaultNetwork && isPartialConnectivity)) {
+                // "Connected via app"
+                sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
+                        suggestionOrSpecifierLabel));
+            } else {
+                // "Available via app"
+                sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
+                        suggestionOrSpecifierLabel));
             }
+        } else if (shouldShowConnected) {
+            // "Connected"
+            sj.add(context.getResources().getStringArray(
+                    R.array.wifitrackerlib_wifi_status)[DetailedState.CONNECTED.ordinal()]);
         }
 
         if (isLowQuality) {
+            // "Low quality"
             sj.add(context.getString(R.string.wifi_connected_low_quality));
-            shouldShowConnected = false;
         }
 
-        // For displaying network capability info, such as captive portal or no internet
-        if (networkCapabilities != null) {
-            if (networkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) {
-                // "Sign in to network"
-                sj.add(context.getString(context.getResources()
-                        .getIdentifier("network_available_sign_in", "string", "android")));
-                shouldShowConnected = false;
-            } else if (networkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_PARTIAL_CONNECTIVITY)) {
-                // "Limited connection..."
+        if (isCaptivePortal) {
+            // "Sign in to network"
+            sj.add(context.getString(context.getResources().getIdentifier(
+                    "network_available_sign_in", "string", "android")));
+        } else if (isPartialConnectivity) {
+            // "Limited connection..."
+            sj.add(context.getString(R.string.wifitrackerlib_wifi_limited_connection));
+        } else if (isCheckingForInternetAccess) {
+            // "Checking for internet access..."
+            sj.add(context.getString(R.string.wifitrackerlib_checking_for_internet_access));
+        } else if (isPrivateDnsBroken) {
+            // "Private DNS server cannot be accessed"
+            sj.add(context.getString(R.string.wifitrackerlib_private_dns_broken));
+        } else if (!isValidated) {
+            if (isNoInternetExpected) {
+                // "Connected to device. Can't provide internet."
                 sj.add(context.getString(
-                        R.string.wifitrackerlib_wifi_limited_connection));
-                shouldShowConnected = false;
-            } else if (!networkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
-                boolean noInternetExpected = wifiConfiguration != null
-                        && wifiConfiguration.isNoInternetAccessExpected();
-                if (connectivityReport == null && !noInternetExpected) {
-                    // "Checking for internet access..."
-                    sj.add(context.getString(R.string.wifitrackerlib_checking_for_internet_access));
-                    shouldShowConnected = false;
-                } else if (networkCapabilities.isPrivateDnsBroken()) {
-                    // "Private DNS server cannot be accessed"
-                    sj.add(context.getString(R.string.wifitrackerlib_private_dns_broken));
-                    shouldShowConnected = false;
-                } else if (noInternetExpected) {
-                    // "Connected to device. Can't provide internet."
-                    sj.add(context.getString(
-                            R.string.wifitrackerlib_wifi_connected_cannot_provide_internet));
-                    shouldShowConnected = false;
-                } else {
-                    // "No internet access"
-                    sj.add(context.getString(R.string.wifitrackerlib_wifi_no_internet));
-                }
+                        R.string.wifitrackerlib_wifi_connected_cannot_provide_internet));
+            } else {
+                // "No internet access"
+                sj.add(context.getString(R.string.wifitrackerlib_wifi_no_internet));
             }
-        }
-
-        // Show "Connected" first if we haven't hidden it due to other strings.
-        if (shouldShowConnected) {
-            return new StringJoiner(context.getString(R.string.wifitrackerlib_summary_separator))
-                    .add(context.getResources().getStringArray(R.array.wifitrackerlib_wifi_status)
-                            [DetailedState.CONNECTED.ordinal()]).merge(sj).toString();
         }
 
         return sj.toString();
