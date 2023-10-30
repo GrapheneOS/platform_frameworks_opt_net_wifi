@@ -45,7 +45,7 @@
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"品質欠佳"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"你的機構禁止使用"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"來自「<xliff:g id="MODEL_NAME">%2$s</xliff:g>」的「<xliff:g id="NETWORK_NAME">%1$s</xliff:g>」"</string>
-    <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"來自「<xliff:g id="DEVICE_NAME">%2$s</xliff:g>」的「<xliff:g id="NETWORK_NAME">%1$s</xliff:g>」"</string>
+    <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> (來自<xliff:g id="DEVICE_NAME">%2$s</xliff:g>)"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"正在連線…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"網絡來源：<xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
