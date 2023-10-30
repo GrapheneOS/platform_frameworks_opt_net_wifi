@@ -1251,4 +1251,11 @@ public class WifiEntry {
          */
         void onExecute();
     }
+
+    /**
+     * Whether this WifiEntry is using a verbose summary.
+     */
+    public boolean isVerboseSummaryEnabled() {
+        return mInjector.isVerboseSummaryEnabled();
+    }
 }
