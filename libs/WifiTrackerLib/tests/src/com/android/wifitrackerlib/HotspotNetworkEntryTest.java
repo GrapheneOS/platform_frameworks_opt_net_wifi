@@ -632,4 +632,24 @@ public class HotspotNetworkEntryTest {
         verify(mMockDisconnectCallback)
                 .onDisconnectResult(WifiEntry.DisconnectCallback.DISCONNECT_STATUS_FAILURE_UNKNOWN);
     }
+
+    @Test
+    public void testOnConnectionStatusChanged_withoutConnect_updatesString() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+
+        entry.setListener(mMockListener);
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo("Connecting…");
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN_ERROR);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
+    }
 }

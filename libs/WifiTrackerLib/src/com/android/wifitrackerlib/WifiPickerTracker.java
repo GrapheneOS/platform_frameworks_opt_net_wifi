@@ -512,6 +512,11 @@ public class WifiPickerTracker extends BaseWifiTracker {
             mHotspotNetworkDataCache.addAll(mSharedConnectivityManager.getHotspotNetworks());
             updateKnownNetworkEntryScans(mScanResultUpdater.getScanResults());
             updateHotspotNetworkEntries();
+            HotspotNetworkConnectionStatus status =
+                    mSharedConnectivityManager.getHotspotNetworkConnectionStatus();
+            if (status != null) {
+                handleHotspotNetworkConnectionStatusChanged(status);
+            }
             updateWifiEntries();
         }
     }

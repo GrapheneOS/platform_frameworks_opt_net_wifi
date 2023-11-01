@@ -401,7 +401,6 @@ public class HotspotNetworkEntry extends WifiEntry {
      * @param status HotspotNetworkConnectionStatus#ConnectionStatus enum.
      */
     public void onConnectionStatusChanged(@ConnectionStatus int status) {
-        if (mConnectCallback == null) return;
         switch (status) {
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT:
                 mCalledConnect = true;
@@ -415,8 +414,13 @@ public class HotspotNetworkEntry extends WifiEntry {
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT_FAILED:
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT_TIMEOUT:
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED:
-                mCallbackHandler.post(() -> mConnectCallback.onConnectResult(
-                        ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN));
+                mCallbackHandler.post(() -> {
+                    final ConnectCallback connectCallback = mConnectCallback;
+                    if (connectCallback != null) {
+                        connectCallback.onConnectResult(
+                                ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
+                    }
+                });
                 mCalledConnect = false;
                 notifyOnUpdated();
                 break;
