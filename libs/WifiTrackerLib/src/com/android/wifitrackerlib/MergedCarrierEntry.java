@@ -19,7 +19,7 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.net.wifi.WifiInfo.sanitizeSsid;
 
-import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
+import static com.android.wifitrackerlib.Utils.getVerboseSummary;
 
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -62,10 +62,10 @@ public class MergedCarrierEntry extends WifiEntry {
     public String getSummary(boolean concise) {
         StringJoiner sj = new StringJoiner(mContext.getString(
                 R.string.wifitrackerlib_summary_separator));
-        if (!concise) {
-            final String verboseLoggingDescription = getVerboseLoggingDescription(this);
-            if (!TextUtils.isEmpty(verboseLoggingDescription)) {
-                sj.add(verboseLoggingDescription);
+        if (!concise && isVerboseSummaryEnabled()) {
+            final String verboseSummary = getVerboseSummary(this);
+            if (!TextUtils.isEmpty(verboseSummary)) {
+                sj.add(verboseSummary);
             }
         }
         return sj.toString();

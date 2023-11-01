@@ -30,7 +30,7 @@ import static com.android.wifitrackerlib.Utils.getConnectedDescription;
 import static com.android.wifitrackerlib.Utils.getConnectingDescription;
 import static com.android.wifitrackerlib.Utils.getDisconnectedDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
-import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
+import static com.android.wifitrackerlib.Utils.getVerboseSummary;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -213,10 +213,10 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             sj.add(meteredDescription);
         }
 
-        if (!concise) {
-            String verboseLoggingDescription = getVerboseLoggingDescription(this);
-            if (!TextUtils.isEmpty(verboseLoggingDescription)) {
-                sj.add(verboseLoggingDescription);
+        if (!concise && isVerboseSummaryEnabled()) {
+            String verboseSummary = getVerboseSummary(this);
+            if (!TextUtils.isEmpty(verboseSummary)) {
+                sj.add(verboseSummary);
             }
         }
 

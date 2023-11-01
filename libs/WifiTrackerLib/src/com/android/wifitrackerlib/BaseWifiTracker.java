@@ -42,7 +42,6 @@ import android.net.wifi.sharedconnectivity.app.KnownNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityClientCallback;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivitySettingsState;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.telephony.SubscriptionManager;
@@ -92,10 +91,8 @@ import java.util.concurrent.Executor;
 public class BaseWifiTracker {
     private final String mTag;
 
-    private static boolean sVerboseLogging;
-
-    public static boolean isVerboseLoggingEnabled() {
-        return BaseWifiTracker.sVerboseLogging;
+    public boolean isVerboseLoggingEnabled() {
+        return mInjector.isVerboseLoggingEnabled();
     }
 
     private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
@@ -369,13 +366,6 @@ public class BaseWifiTracker {
         mScanResultUpdater = new ScanResultUpdater(clock,
                 maxScanAgeMillis + scanIntervalMillis);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
-        if (mContext.getResources().getBoolean(
-                R.bool.wifitrackerlib_enable_verbose_logging_for_userdebug)
-                && Build.TYPE.equals("userdebug")) {
-            sVerboseLogging = true;
-        } else {
-            sVerboseLogging = mWifiManager.isVerboseLoggingEnabled();
-        }
     }
 
     /**
@@ -385,7 +375,7 @@ public class BaseWifiTracker {
         mIsScanningDisabled = true;
         // This method indicates SystemUI usage, which shouldn't output verbose logs since it's
         // always up.
-        sVerboseLogging = false;
+        mInjector.disableVerboseLogging();
     }
 
     /**
