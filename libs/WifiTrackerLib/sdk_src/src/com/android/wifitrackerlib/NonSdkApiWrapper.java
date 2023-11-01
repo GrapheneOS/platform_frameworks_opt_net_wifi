@@ -101,4 +101,12 @@ class NonSdkApiWrapper {
         // Return null since SUW does not have QUERY_ADMIN_POLICY permission.
         return null;
     }
+
+    /**
+     * Whether the hotspot network provider battery charging status flag is enabled.
+     */
+    static boolean isNetworkProviderBatteryChargingStatusEnabled() {
+        // Google3 can't access trunk stable flags, so default to false.
+        return false;
+    }
 }
