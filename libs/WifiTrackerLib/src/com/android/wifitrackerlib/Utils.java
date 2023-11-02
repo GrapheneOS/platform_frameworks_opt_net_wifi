@@ -525,8 +525,8 @@ public class Utils {
         }
     }
 
-    static String getVerboseLoggingDescription(@NonNull WifiEntry wifiEntry) {
-        if (!BaseWifiTracker.isVerboseLoggingEnabled() || wifiEntry == null) {
+    static String getVerboseSummary(@NonNull WifiEntry wifiEntry) {
+        if (wifiEntry == null) {
             return "";
         }
 
