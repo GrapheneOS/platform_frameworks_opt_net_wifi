@@ -83,7 +83,7 @@ public class HotspotNetworkEntryTest {
     private static final HotspotNetwork TEST_HOTSPOT_NETWORK_DATA = new HotspotNetwork.Builder()
             .setDeviceId(1)
             .setNetworkProviderInfo(new NetworkProviderInfo
-                    .Builder("My Phone", "Pixel 7")
+                    .Builder("My Pixel", "Pixel 7")
                     .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
                     .setBatteryPercentage(100)
                     .setConnectionStrength(3)
@@ -118,6 +118,13 @@ public class HotspotNetworkEntryTest {
                     Object[] args = invocation.getArguments();
                     return args[1] + " from " + args[2];
                 });
+        when(mMockContext.getString(R.string.wifitrackerlib_hotspot_network_summary_new))
+                .thenReturn(
+                        "{DEVICE_TYPE, select, PHONE {{NETWORK_NAME} from your phone} TABLET "
+                                + "{{NETWORK_NAME} from your tablet} COMPUTER {{NETWORK_NAME} "
+                                + "from your computer} WATCH {{NETWORK_NAME} from your watch} "
+                                + "VEHICLE {{NETWORK_NAME} from your vehicle} other "
+                                + "{{NETWORK_NAME} from your device}}");
         when(mMockContext.getString(eq(R.string.wifitrackerlib_hotspot_network_alternate),
                 anyString(), anyString()))
                 .thenAnswer(invocation -> {
@@ -200,16 +207,126 @@ public class HotspotNetworkEntryTest {
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
 
-        assertThat(entry.getTitle()).isEqualTo("My Phone");
+        assertThat(entry.getTitle()).isEqualTo("My Pixel");
     }
 
     @Test
-    public void testGetSummary_usesHotspotNetworkData() {
+    public void testGetSummary_phone_usesHotspotNetworkData() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
 
-        assertThat(entry.getSummary()).isEqualTo("Google Fi from Pixel 7");
+        assertThat(entry.getSummary()).isEqualTo("Google Fi from your phone");
+    }
+
+    @Test
+    public void testGetSummary_tablet_usesHotspotNetworkData() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_TABLET)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler, mMockWifiManager,
+                mMockSharedConnectivityManager, testNetwork);
+
+        assertThat(entry.getSummary()).isEqualTo("Google Fi from your tablet");
+    }
+
+    @Test
+    public void testGetSummary_computer_usesHotspotNetworkData() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_LAPTOP)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler, mMockWifiManager,
+                mMockSharedConnectivityManager, testNetwork);
+
+        assertThat(entry.getSummary()).isEqualTo("Google Fi from your computer");
+    }
+
+    @Test
+    public void testGetSummary_watch_usesHotspotNetworkData() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_WATCH)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler, mMockWifiManager,
+                mMockSharedConnectivityManager, testNetwork);
+
+        assertThat(entry.getSummary()).isEqualTo("Google Fi from your watch");
+    }
+
+    @Test
+    public void testGetSummary_vehicle_usesHotspotNetworkData() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_AUTO)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler, mMockWifiManager,
+                mMockSharedConnectivityManager, testNetwork);
+
+        assertThat(entry.getSummary()).isEqualTo("Google Fi from your vehicle");
+    }
+
+    @Test
+    public void testGetSummary_unknown_usesHotspotNetworkData() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_UNKNOWN)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler, mMockWifiManager,
+                mMockSharedConnectivityManager, testNetwork);
+
+        assertThat(entry.getSummary()).isEqualTo("Google Fi from your device");
     }
 
     @Test
@@ -218,7 +335,7 @@ public class HotspotNetworkEntryTest {
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
 
-        assertThat(entry.getAlternateSummary()).isEqualTo("Google Fi from My Phone");
+        assertThat(entry.getAlternateSummary()).isEqualTo("Google Fi from My Pixel");
     }
 
     @Test

@@ -121,6 +121,16 @@
     <!-- Summary for a hotspot network (used on "Internet" page) [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_hotspot_network_summary"><xliff:g id="network name" example="Google Fi">%1$s</xliff:g> from <xliff:g id="model name" example="Pixel 7">%2$s</xliff:g></string>
 
+    <!-- New format summary for a hotspot network (used on "Internet" page) [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_hotspot_network_summary_new">{DEVICE_TYPE, select,
+        PHONE {{NETWORK_NAME} from your phone}
+        TABLET {{NETWORK_NAME} from your tablet}
+        COMPUTER {{NETWORK_NAME} from your computer}
+        WATCH {{NETWORK_NAME} from your watch}
+        VEHICLE {{NETWORK_NAME} from your vehicle}
+        other {{NETWORK_NAME} from your device}
+    }</string>
+
     <!-- Alternate summary for a hotspot network (used on "Network & internet" page) [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_hotspot_network_alternate"><xliff:g id="network name" example="Google Fi">%1$s</xliff:g> from <xliff:g id="device name" example="Matt's Phone">%2$s</xliff:g></string>
 
