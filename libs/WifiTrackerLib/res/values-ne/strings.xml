@@ -45,6 +45,8 @@
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"न्यून गुणस्तर"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"तपाईंको सङ्गठनले अनुमति दिएको छैन"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> को <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_new (1165705867298669621) -->
+    <skip />
     <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="DEVICE_NAME">%2$s</xliff:g> को <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"कनेक्ट गरिँदै छ…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> बाट उपलब्ध"</string>
