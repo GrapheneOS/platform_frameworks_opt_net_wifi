@@ -342,7 +342,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * If the host device is currently charging its battery.
      */
     public synchronized boolean isBatteryCharging() {
-        if (mHotspotNetworkData == null || networkProviderBatteryChargingStatus()) {
+        if (mHotspotNetworkData == null || !networkProviderBatteryChargingStatus()) {
             return false;
         }
         return mHotspotNetworkData.getNetworkProviderInfo().isBatteryCharging();
