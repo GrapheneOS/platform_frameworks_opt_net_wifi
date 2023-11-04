@@ -23,6 +23,7 @@ import static com.android.wifi.flags.Flags.networkProviderBatteryChargingStatus;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.icu.text.MessageFormat;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
@@ -47,6 +48,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -207,10 +210,13 @@ public class HotspotNetworkEntry extends WifiEntry {
         if (mCalledConnect) {
             return mContext.getString(R.string.wifitrackerlib_hotspot_network_connecting);
         }
-        return mContext.getString(R.string.wifitrackerlib_hotspot_network_summary,
-                BidiFormatter.getInstance().unicodeWrap(mHotspotNetworkData.getNetworkName()),
-                BidiFormatter.getInstance().unicodeWrap(
-                        mHotspotNetworkData.getNetworkProviderInfo().getModelName()));
+        MessageFormat msg = new MessageFormat(
+                mContext.getString(R.string.wifitrackerlib_hotspot_network_summary_new));
+        Map<String, Object> args = new HashMap<>();
+        args.put("DEVICE_TYPE",
+                getDeviceTypeId(mHotspotNetworkData.getNetworkProviderInfo().getDeviceType()));
+        args.put("NETWORK_NAME", mHotspotNetworkData.getNetworkName());
+        return msg.format(args);
     }
 
     /**
@@ -342,7 +348,7 @@ public class HotspotNetworkEntry extends WifiEntry {
      * If the host device is currently charging its battery.
      */
     public synchronized boolean isBatteryCharging() {
-        if (mHotspotNetworkData == null || networkProviderBatteryChargingStatus()) {
+        if (mHotspotNetworkData == null || !networkProviderBatteryChargingStatus()) {
             return false;
         }
         return mHotspotNetworkData.getNetworkProviderInfo().isBatteryCharging();
@@ -507,6 +513,23 @@ public class HotspotNetworkEntry extends WifiEntry {
         @Nullable
         StandardWifiEntry.ScanResultKey getScanResultKey() {
             return mScanResultKey;
+        }
+    }
+
+    private static String getDeviceTypeId(@DeviceType int deviceType) {
+        switch (deviceType) {
+            case NetworkProviderInfo.DEVICE_TYPE_PHONE:
+                return "PHONE";
+            case NetworkProviderInfo.DEVICE_TYPE_TABLET:
+                return "TABLET";
+            case NetworkProviderInfo.DEVICE_TYPE_LAPTOP:
+                return "COMPUTER";
+            case NetworkProviderInfo.DEVICE_TYPE_WATCH:
+                return "WATCH";
+            case NetworkProviderInfo.DEVICE_TYPE_AUTO:
+                return "VEHICLE";
+            default:
+                return "UNKNOWN";
         }
     }
 }
