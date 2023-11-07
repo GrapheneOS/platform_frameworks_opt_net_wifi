@@ -16,6 +16,8 @@
 
 package com.android.wifitrackerlib;
 
+import static com.android.wifi.flags.Flags.networkProviderBatteryChargingStatus;
+
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.WifiSsidPolicy;
 import android.content.Context;
@@ -133,5 +135,12 @@ class NonSdkApiWrapper {
             return devicePolicyManager.getWifiSsidPolicy();
         }
         return null;
+    }
+
+    /**
+     * Whether the hotspot network provider battery charging status flag is enabled.
+     */
+    static boolean isNetworkProviderBatteryChargingStatusEnabled() {
+        return networkProviderBatteryChargingStatus();
     }
 }

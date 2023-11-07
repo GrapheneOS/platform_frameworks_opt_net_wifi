@@ -20,6 +20,8 @@ import static android.net.wifi.ScanResult.WIFI_STANDARD_11N;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.MIN_FREQ_24GHZ;
@@ -48,17 +50,15 @@ import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
 import android.os.Handler;
 import android.os.test.TestLooper;
-import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
-
-import com.android.wifi.flags.Flags;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
 
 public class HotspotNetworkEntryTest {
     @Rule
@@ -485,7 +485,6 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_NETWORK_PROVIDER_BATTERY_CHARGING_STATUS)
     public void testIsBatteryCharging_usesHotspotNetworkData() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
@@ -505,7 +504,14 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        assertThat(entry.isBatteryCharging()).isTrue();
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(true).when(() ->
+                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            assertThat(entry.isBatteryCharging()).isTrue();
+        } finally {
+            session.finishMocking();
+        }
     }
 
     @Test
