@@ -830,6 +830,7 @@ public class BaseWifiTracker {
                         Log.v(mTag, "Issuing scan request from WifiScanner");
                     }
                     wifiScanner.startScan(scanSettings, mFirstScanListener);
+                    notifyOnScanRequested();
                     return;
                 } else {
                     Log.e(mTag, "Failed to retrieve WifiScanner!");
@@ -864,6 +865,7 @@ public class BaseWifiTracker {
             // Remove any pending scanLoops in case possiblyStartScanning was called more than once.
             removeCallbacksAndMessages(null);
             mWifiManager.startScan();
+            notifyOnScanRequested();
             postDelayed(this::scanLoop, mScanIntervalMillis);
         }
     }
@@ -886,6 +888,16 @@ public class BaseWifiTracker {
     }
 
     /**
+     * Posts onScanRequested callback on the main thread.
+     */
+    @WorkerThread
+    private void notifyOnScanRequested() {
+        if (mListener != null) {
+            mMainHandler.post(mListener::onScanRequested);
+        }
+    }
+
+    /**
      * Base callback handling Wi-Fi state changes
      *
      * Subclasses should extend this for their own needs.
@@ -896,5 +908,10 @@ public class BaseWifiTracker {
          */
         @MainThread
         void onWifiStateChanged();
+
+        @MainThread
+        default void onScanRequested() {
+            // Do nothing.
+        }
     }
 }
