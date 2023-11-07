@@ -29,6 +29,7 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 
 import static java.util.Comparator.comparingInt;
+import static java.util.stream.Collectors.toList;
 
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
@@ -1180,7 +1181,7 @@ public class Utils {
         }
         List<MloLink> activeMloLinks = wifiInfo.getAssociatedMloLinks().stream()
                 .filter((link) -> link.getState() == MloLink.MLO_LINK_STATE_ACTIVE)
-                .toList();
+                .collect(toList());
         if (activeMloLinks.size() <= 1) {
             return context.getString(R.string.wifitrackerlib_link_speed_mbps,
                     wifiInfoSpeedMbps);

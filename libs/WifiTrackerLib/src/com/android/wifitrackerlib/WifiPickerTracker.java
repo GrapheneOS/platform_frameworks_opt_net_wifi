@@ -492,7 +492,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     protected void handleKnownNetworkConnectionStatusChanged(
             @NonNull KnownNetworkConnectionStatus status) {
         final ScanResultKey key = new ScanResultKey(status.getKnownNetwork().getSsid(),
-                status.getKnownNetwork().getSecurityTypes().stream().toList());
+                new ArrayList<>(status.getKnownNetwork().getSecurityTypes()));
         mKnownNetworkEntryCache.stream().filter(
                 entry -> entry.getStandardWifiEntryKey().getScanResultKey().equals(key)).forEach(
                         entry -> entry.onConnectionStatusChanged(status.getStatus()));
