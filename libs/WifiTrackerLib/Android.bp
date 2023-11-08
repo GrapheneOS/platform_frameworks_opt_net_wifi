@@ -10,7 +10,6 @@ java_defaults {
         "androidx.annotation_annotation",
         "androidx.core_core",
         "androidx.lifecycle_lifecycle-runtime",
-        "wifi_aconfig_flags_lib",
         "WifiTrackerLibRes",
         "SettingsLibHelpUtils",
     ],
@@ -21,6 +20,9 @@ java_defaults {
 android_library {
     name: "WifiTrackerLib",
     defaults: ["WifiTrackerLibDefaults"],
+    static_libs: [
+        "wifi_aconfig_flags_lib",
+    ],
     srcs: ["src/**/*.java"],
 }
 
