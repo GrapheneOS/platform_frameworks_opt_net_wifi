@@ -251,6 +251,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     @Nullable
+    @SuppressLint("HardwareIds")
     public synchronized String getMacAddress() {
         if (mWifiInfo != null) {
             final String wifiInfoMac = mWifiInfo.getMacAddress();

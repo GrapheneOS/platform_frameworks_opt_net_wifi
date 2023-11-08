@@ -32,6 +32,7 @@ import static com.android.wifitrackerlib.Utils.getDisconnectedDescription;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getVerboseSummary;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -249,6 +250,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     }
 
     @Override
+    @SuppressLint("HardwareIds")
     public synchronized String getMacAddress() {
         if (mWifiInfo != null) {
             final String wifiInfoMac = mWifiInfo.getMacAddress();

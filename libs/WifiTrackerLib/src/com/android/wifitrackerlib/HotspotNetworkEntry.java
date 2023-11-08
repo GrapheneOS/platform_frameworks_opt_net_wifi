@@ -19,6 +19,7 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.WifiInfo.DEFAULT_MAC_ADDRESS;
 import static android.os.Build.VERSION_CODES;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.icu.text.MessageFormat;
@@ -243,6 +244,7 @@ public class HotspotNetworkEntry extends WifiEntry {
 
     @Override
     @Nullable
+    @SuppressLint("HardwareIds")
     public synchronized String getMacAddress() {
         if (mWifiInfo == null) {
             return null;
