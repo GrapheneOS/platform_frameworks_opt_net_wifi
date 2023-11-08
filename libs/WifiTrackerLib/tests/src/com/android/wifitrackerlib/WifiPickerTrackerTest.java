@@ -918,6 +918,10 @@ public class WifiPickerTrackerTest {
         // Lose the default network
         mDefaultNetworkCallbackCaptor.getValue().onLost(mock(Network.class));
         assertThat(wifiPickerTracker.getConnectedWifiEntry().isDefaultNetwork()).isFalse();
+
+        // Disconnect
+        mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
+        assertThat(wifiPickerTracker.getWifiEntries().get(0).isDefaultNetwork()).isFalse();
     }
 
     /**
