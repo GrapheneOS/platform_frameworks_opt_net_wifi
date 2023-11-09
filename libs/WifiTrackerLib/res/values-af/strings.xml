@@ -45,8 +45,7 @@
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Lae gehalte"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Word nie deur jou organisasie toegelaat nie"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> van <xliff:g id="MODEL_NAME">%2$s</xliff:g> af"</string>
-    <!-- no translation found for wifitrackerlib_hotspot_network_summary_new (1165705867298669621) -->
-    <skip />
+    <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} van jou foon af}TABLET{{NETWORK_NAME} van jou tablet af}COMPUTER{{NETWORK_NAME} van jou rekenaar af}WATCH{{NETWORK_NAME} van jou horlosie af}VEHICLE{{NETWORK_NAME} van jou voertuig af}other{{NETWORK_NAME} van jou toestel af}}"</string>
     <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> van <xliff:g id="DEVICE_NAME">%2$s</xliff:g> af"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"Koppel tans …"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"Beskikbaar vanaf <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>

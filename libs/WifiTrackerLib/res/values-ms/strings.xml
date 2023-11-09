@@ -45,8 +45,7 @@
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Kualiti rendah"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Tidak dibenarkan oleh organisasi anda"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> daripada <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
-    <!-- no translation found for wifitrackerlib_hotspot_network_summary_new (1165705867298669621) -->
-    <skip />
+    <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} daripada telefon anda}TABLET{{NETWORK_NAME} daripada tablet anda}COMPUTER{{NETWORK_NAME} daripada komputer anda}WATCH{{NETWORK_NAME} daripada jam tangan anda}VEHICLE{{NETWORK_NAME} daripada kenderaan anda}other{{NETWORK_NAME} daripada peranti anda}}"</string>
     <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> daripada <xliff:g id="DEVICE_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"Menyambung…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"Tersedia daripada <xliff:g id="DEVICE_NAME">%1$s</xliff:g>"</string>
