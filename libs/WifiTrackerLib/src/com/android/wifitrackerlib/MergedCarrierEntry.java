@@ -21,6 +21,7 @@ import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static com.android.wifitrackerlib.Utils.getVerboseSummary;
 
+import android.annotation.SuppressLint;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -80,6 +81,7 @@ public class MergedCarrierEntry extends WifiEntry {
     }
 
     @Override
+    @SuppressLint("HardwareIds")
     public synchronized String getMacAddress() {
         if (mWifiInfo != null) {
             final String wifiInfoMac = mWifiInfo.getMacAddress();
