@@ -45,8 +45,7 @@
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"తక్కువ క్వాలిటీ"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"మీ సంస్థచే అనుమతించబడదు"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> నుండి <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
-    <!-- no translation found for wifitrackerlib_hotspot_network_summary_new (1165705867298669621) -->
-    <skip />
+    <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{మీ ఫోన్ నుండి {NETWORK_NAME}}TABLET{మీ టాబ్లెట్ నుండి {NETWORK_NAME}}COMPUTER{మీ కంప్యూటర్ నుండి {NETWORK_NAME}}WATCH{మీ వాచ్ నుండి {NETWORK_NAME}}VEHICLE{మీ వాహనం నుండి {NETWORK_NAME}}other{మీ పరికరం నుండి {NETWORK_NAME}}}"</string>
     <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="DEVICE_NAME">%2$s</xliff:g> నుండి <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"కనెక్ట్ అవుతోంది…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> నుండి అందుబాటులో ఉంది"</string>
