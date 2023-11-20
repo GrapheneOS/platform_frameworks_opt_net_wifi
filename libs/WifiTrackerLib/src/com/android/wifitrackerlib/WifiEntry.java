@@ -494,6 +494,14 @@ public class WifiEntry {
     }
 
     /**
+     * Returns whether this entry needs to be configured with a new WifiConfiguration before
+     * connection.
+     */
+    public boolean needsWifiConfiguration() {
+        return false;
+    }
+
+    /**
      * Returns the WifiConfiguration of an entry or null if unavailable. This should be used when
      * information on the WifiConfiguration needs to be modified and saved via
      * {@link WifiManager#save(WifiConfiguration, WifiManager.ActionListener)}.

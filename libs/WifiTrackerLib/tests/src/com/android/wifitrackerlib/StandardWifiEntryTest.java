@@ -345,7 +345,7 @@ public class StandardWifiEntryTest {
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP),
                 null, Arrays.asList(scan), mMockWifiManager,
                 false /* forSavedNetworksPage */);
-
+        assertThat(entry.needsWifiConfiguration()).isTrue();
         assertThat(entry.isSaved()).isFalse();
 
         final WifiConfiguration config = new WifiConfiguration();
@@ -354,6 +354,7 @@ public class StandardWifiEntryTest {
         config.networkId = 1;
         entry.updateConfig(Collections.singletonList(config));
 
+        assertThat(entry.needsWifiConfiguration()).isFalse();
         assertThat(entry.isSaved()).isTrue();
     }
 
@@ -368,11 +369,12 @@ public class StandardWifiEntryTest {
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP),
                 Collections.singletonList(config), null, mMockWifiManager,
                 false /* forSavedNetworksPage */);
-
+        assertThat(entry.needsWifiConfiguration()).isFalse();
         assertThat(entry.isSaved()).isTrue();
 
         entry.updateConfig(null);
 
+        assertThat(entry.needsWifiConfiguration()).isTrue();
         assertThat(entry.isSaved()).isFalse();
     }
 
@@ -533,6 +535,8 @@ public class StandardWifiEntryTest {
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN),
                 null, Arrays.asList(buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI)),
                 mMockWifiManager, false /* forSavedNetworksPage */);
+        assertThat(entry.needsWifiConfiguration()).isFalse();
+        assertThat(entry.isSaved()).isFalse();
 
         entry.connect(null /* ConnectCallback */);
 

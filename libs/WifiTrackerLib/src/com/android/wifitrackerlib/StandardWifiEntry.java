@@ -288,6 +288,14 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
+    public boolean needsWifiConfiguration() {
+        List<Integer> securityTypes = getSecurityTypes();
+        return !isSaved() && !isSuggestion()
+                && !securityTypes.contains(SECURITY_TYPE_OPEN)
+                && !securityTypes.contains(SECURITY_TYPE_OWE);
+    }
+
+    @Override
     @Nullable
     public synchronized WifiConfiguration getWifiConfiguration() {
         if (!isSaved()) {
