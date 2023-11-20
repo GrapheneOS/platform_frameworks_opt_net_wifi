@@ -225,6 +225,11 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
     }
 
     @Override
+    public boolean shouldShowSsid() {
+        return true;
+    }
+
+    @Override
     public synchronized String getSsid() {
         if (mWifiInfo != null) {
             return sanitizeSsid(mWifiInfo.getSSID());
