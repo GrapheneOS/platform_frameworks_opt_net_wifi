@@ -402,6 +402,14 @@ public class WifiEntry {
     }
 
     /**
+     * Returns whether this network should display its SSID separately from the title
+     * (e.g. the Network Details page), for networks whose display titles differ from the SSID.
+     */
+    public boolean shouldShowSsid() {
+        return false;
+    }
+
+    /**
      * Returns the SSID of the entry, if applicable. Null otherwise.
      */
     @Nullable
