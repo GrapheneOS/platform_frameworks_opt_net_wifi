@@ -507,9 +507,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
     protected void handleServiceConnected() {
         if (mInjector.isSharedConnectivityFeatureEnabled()) {
             mKnownNetworkDataCache.clear();
-            mKnownNetworkDataCache.addAll(mSharedConnectivityManager.getKnownNetworks());
+            List<KnownNetwork> knownNetworks = mSharedConnectivityManager.getKnownNetworks();
+            if (knownNetworks != null) {
+                mKnownNetworkDataCache.addAll(knownNetworks);
+            }
             mHotspotNetworkDataCache.clear();
-            mHotspotNetworkDataCache.addAll(mSharedConnectivityManager.getHotspotNetworks());
+            List<HotspotNetwork> hotspotNetworks = mSharedConnectivityManager.getHotspotNetworks();
+            if (hotspotNetworks != null) {
+                mHotspotNetworkDataCache.addAll(hotspotNetworks);
+            }
             updateKnownNetworkEntryScans(mScanResultUpdater.getScanResults());
             updateHotspotNetworkEntries();
             HotspotNetworkConnectionStatus status =
