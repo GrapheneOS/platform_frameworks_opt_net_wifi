@@ -39,6 +39,7 @@ import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
+import androidx.core.os.BuildCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,6 +59,8 @@ import java.util.Objects;
 public class HotspotNetworkEntry extends WifiEntry {
     static final String TAG = "HotspotNetworkEntry";
     public static final String KEY_PREFIX = "HotspotNetworkEntry:";
+
+    public static final String EXTRA_KEY_IS_BATTERY_CHARGING = "is_battery_charging";
 
     @NonNull private final WifiTrackerInjector mInjector;
     @NonNull private final Context mContext;
@@ -351,11 +354,17 @@ public class HotspotNetworkEntry extends WifiEntry {
      * If the host device is currently charging its battery.
      */
     public synchronized boolean isBatteryCharging() {
-        if (mHotspotNetworkData == null
-                || !NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled()) {
+        if (mHotspotNetworkData == null) {
             return false;
         }
-        return mHotspotNetworkData.getNetworkProviderInfo().isBatteryCharging();
+        if (BuildCompat.isAtLeastV()
+                && NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled()
+                && mHotspotNetworkData.getNetworkProviderInfo().isBatteryCharging()) {
+            return true;
+        }
+        // With API flag on we still support either the API or the bundle for compatibility.
+        return mHotspotNetworkData.getNetworkProviderInfo().getExtras().getBoolean(
+                EXTRA_KEY_IS_BATTERY_CHARGING, false);
     }
 
     @Override

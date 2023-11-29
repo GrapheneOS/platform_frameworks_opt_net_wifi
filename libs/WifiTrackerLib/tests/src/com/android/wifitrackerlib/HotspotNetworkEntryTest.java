@@ -48,6 +48,7 @@ import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
 import android.net.wifi.sharedconnectivity.app.HotspotNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.test.TestLooper;
 import android.platform.test.flag.junit.CheckFlagsRule;
@@ -485,7 +486,7 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testIsBatteryCharging_usesHotspotNetworkData() {
+    public void testIsBatteryCharging_apiFlagOn_usesHotspotNetworkDataApi() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager,
@@ -509,6 +510,162 @@ public class HotspotNetworkEntryTest {
             doReturn(true).when(() ->
                     NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
             assertThat(entry.isBatteryCharging()).isTrue();
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    @Test
+    public void testIsBatteryCharging_apiFlagOn_usesHotspotNetworkDataExtras() {
+        final Bundle extras = new Bundle();
+        extras.putBoolean(HotspotNetworkEntry.EXTRA_KEY_IS_BATTERY_CHARGING, true);
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager,
+                new HotspotNetwork.Builder()
+                        .setDeviceId(1)
+                        .setNetworkProviderInfo(new NetworkProviderInfo
+                                .Builder("My Phone", "Pixel 7")
+                                .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                                .setBatteryPercentage(100)
+                                .setConnectionStrength(3)
+                                .setBatteryCharging(false)
+                                .setExtras(extras)
+                                .build())
+                        .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                        .setNetworkName("Google Fi")
+                        .setHotspotSsid("Instant Hotspot abcde")
+                        .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                        .build());
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(true).when(() ->
+                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            assertThat(entry.isBatteryCharging()).isTrue();
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    @Test
+    public void testIsBatteryCharging_apiFlagOff_usesHotspotNetworkDataExtras() {
+        final Bundle extras = new Bundle();
+        extras.putBoolean(HotspotNetworkEntry.EXTRA_KEY_IS_BATTERY_CHARGING, true);
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager,
+                new HotspotNetwork.Builder()
+                        .setDeviceId(1)
+                        .setNetworkProviderInfo(new NetworkProviderInfo
+                                .Builder("My Phone", "Pixel 7")
+                                .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                                .setBatteryPercentage(100)
+                                .setConnectionStrength(3)
+                                .setExtras(extras)
+                                .build())
+                        .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                        .setNetworkName("Google Fi")
+                        .setHotspotSsid("Instant Hotspot abcde")
+                        .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                        .build());
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(false).when(() ->
+                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            assertThat(entry.isBatteryCharging()).isTrue();
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    @Test
+    public void testIsBatteryCharging_apiFlagOn_extraFalse() {
+        final Bundle extras = new Bundle();
+        extras.putBoolean(HotspotNetworkEntry.EXTRA_KEY_IS_BATTERY_CHARGING, false);
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager,
+                new HotspotNetwork.Builder()
+                        .setDeviceId(1)
+                        .setNetworkProviderInfo(new NetworkProviderInfo
+                                .Builder("My Phone", "Pixel 7")
+                                .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                                .setBatteryPercentage(100)
+                                .setConnectionStrength(3)
+                                .setExtras(extras)
+                                .build())
+                        .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                        .setNetworkName("Google Fi")
+                        .setHotspotSsid("Instant Hotspot abcde")
+                        .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                        .build());
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(true).when(() ->
+                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            assertThat(entry.isBatteryCharging()).isFalse();
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    @Test
+    public void testIsBatteryCharging_apiFlagOn_apiFalse() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager,
+                new HotspotNetwork.Builder()
+                        .setDeviceId(1)
+                        .setNetworkProviderInfo(new NetworkProviderInfo
+                                .Builder("My Phone", "Pixel 7")
+                                .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                                .setBatteryPercentage(100)
+                                .setConnectionStrength(3)
+                                .setBatteryCharging(false)
+                                .build())
+                        .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                        .setNetworkName("Google Fi")
+                        .setHotspotSsid("Instant Hotspot abcde")
+                        .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                        .build());
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(true).when(() ->
+                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            assertThat(entry.isBatteryCharging()).isFalse();
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    @Test
+    public void testIsBatteryCharging_apiFlagOn_noneSet() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager,
+                new HotspotNetwork.Builder()
+                        .setDeviceId(1)
+                        .setNetworkProviderInfo(new NetworkProviderInfo
+                                .Builder("My Phone", "Pixel 7")
+                                .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                                .setBatteryPercentage(100)
+                                .setConnectionStrength(3)
+                                .build())
+                        .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                        .setNetworkName("Google Fi")
+                        .setHotspotSsid("Instant Hotspot abcde")
+                        .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                        .build());
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(true).when(() ->
+                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            assertThat(entry.isBatteryCharging()).isFalse();
         } finally {
             session.finishMocking();
         }
