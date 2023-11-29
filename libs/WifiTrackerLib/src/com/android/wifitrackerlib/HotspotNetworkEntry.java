@@ -98,6 +98,8 @@ public class HotspotNetworkEntry extends WifiEntry {
     })
     public @interface DeviceType {} // TODO(b/271868642): Add IfThisThanThat lint
 
+    public static final int CONNECTION_STATUS_CONNECTED = 10;
+
     /**
      * If editing this IntDef also edit the definition in:
      * {@link android.net.wifi.sharedconnectivity.app.HotspotNetworkConnectionStatus}
@@ -116,6 +118,7 @@ public class HotspotNetworkEntry extends WifiEntry {
             HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT_FAILED,
             HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT_TIMEOUT,
             HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED,
+            CONNECTION_STATUS_CONNECTED,
     })
     public @interface ConnectionStatus {} // TODO(b/271868642): Add IfThisThanThat lint
 
@@ -419,6 +422,17 @@ public class HotspotNetworkEntry extends WifiEntry {
                     if (connectCallback != null) {
                         connectCallback.onConnectResult(
                                 ConnectCallback.CONNECT_STATUS_FAILURE_UNKNOWN);
+                    }
+                });
+                mCalledConnect = false;
+                notifyOnUpdated();
+                break;
+            case CONNECTION_STATUS_CONNECTED:
+                mCallbackHandler.post(() -> {
+                    final ConnectCallback connectCallback = mConnectCallback;
+                    if (connectCallback != null) {
+                        connectCallback.onConnectResult(
+                                ConnectCallback.CONNECT_STATUS_SUCCESS);
                     }
                 });
                 mCalledConnect = false;
