@@ -131,6 +131,25 @@
         other {{NETWORK_NAME} from your device}
     }</string>
 
+    <!-- Summary for a hotspot network with generic error [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_hotspot_network_summary_error_generic">Can\'t connect. Try connecting again.</string>
+
+    <!-- Summary for a hotspot network with settings related error [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_hotspot_network_summary_error_settings">{DEVICE_TYPE, select,
+        PHONE {Can\'t connect. Check phone settings and try again.}
+        TABLET {Can\'t connect. Check tablet settings and try again.}
+        COMPUTER {Can\'t connect. Check computer settings and try again.}
+        WATCH {Can\'t connect. Check watch settings and try again.}
+        VEHICLE {Can\'t connect. Check vehicle settings and try again.}
+        other {Can\'t connect. Check device settings and try again.}
+    }</string>
+
+    <!-- Summary for a hotspot network with carrier entitlement block error [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_hotspot_network_summary_error_carrier_block"><xliff:g id="network name" example="Google Fi">%1$s</xliff:g> doesn\'t allow this connection</string>
+
+    <!-- Summary for a hotspot network with carrier entitlement incomplete error [CHAR LIMIT=NONE] -->
+    <string name="wifitrackerlib_hotspot_network_summary_error_carrier_incomplete">Can\'t connect. Contact <xliff:g id="network name" example="Google Fi">%1$s</xliff:g> for help.</string>
+
     <!-- Alternate summary for a hotspot network (used on "Network & internet" page) [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_hotspot_network_alternate"><xliff:g id="network name" example="Google Fi">%1$s</xliff:g> from <xliff:g id="device name" example="Matt's Phone">%2$s</xliff:g></string>
 

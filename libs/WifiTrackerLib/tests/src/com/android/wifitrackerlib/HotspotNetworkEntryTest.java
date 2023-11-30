@@ -126,9 +126,31 @@ public class HotspotNetworkEntryTest {
                                 + "from your computer} WATCH {{NETWORK_NAME} from your watch} "
                                 + "VEHICLE {{NETWORK_NAME} from your vehicle} other "
                                 + "{{NETWORK_NAME} from your device}}");
+        when(mMockContext.getString(R.string.wifitrackerlib_hotspot_network_summary_error_generic))
+                .thenReturn("Can't connect. Try connecting again.");
+        when(mMockContext.getString(R.string.wifitrackerlib_hotspot_network_summary_error_settings))
+                .thenReturn(
+                        "{DEVICE_TYPE, select, PHONE {Can't connect. Check phone settings and try"
+                                + " again.} TABLET {Can't connect. Check tablet settings and try "
+                                + "again.} COMPUTER {Can't connect. Check computer settings and "
+                                + "try again.} WATCH {Can't connect. Check watch settings and try"
+                                + " again.} VEHICLE {Can't connect. Check vehicle settings and "
+                                + "try again.} other {Can't connect. Check device settings and "
+                                + "try again.}}");
+        when(mMockContext.getString(
+                eq(R.string.wifitrackerlib_hotspot_network_summary_error_carrier_block),
+                anyString())).thenAnswer(invocation -> {
+                    Object[] args = invocation.getArguments();
+                    return args[1] + " doesn't allow this connection";
+                });
+        when(mMockContext.getString(
+                eq(R.string.wifitrackerlib_hotspot_network_summary_error_carrier_incomplete),
+                anyString())).thenAnswer(invocation -> {
+                    Object[] args = invocation.getArguments();
+                    return "Can't connect. Contact " + args[1] + " for help.";
+                });
         when(mMockContext.getString(eq(R.string.wifitrackerlib_hotspot_network_alternate),
-                anyString(), anyString()))
-                .thenAnswer(invocation -> {
+                anyString(), anyString())).thenAnswer(invocation -> {
                     Object[] args = invocation.getArguments();
                     return args[1] + " from " + args[2];
                 });
@@ -844,5 +866,239 @@ public class HotspotNetworkEntryTest {
 
         verify(mMockConnectCallback)
                 .onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureGeneric_displaysErrorInSummary() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN_ERROR);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo("Can't connect. Try connecting again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureSettings_phone_displaysErrorInSummary() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo(
+                "Can't connect. Check phone settings and try again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureSettings_tablet_displaysErrorInSummary() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_TABLET)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, testNetwork);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo(
+                "Can't connect. Check tablet settings and try again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureSettings_computer_displaysErrorInSummary() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_LAPTOP)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, testNetwork);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo(
+                "Can't connect. Check computer settings and try again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureSettings_watch_displaysErrorInSummary() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_WATCH)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, testNetwork);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo(
+                "Can't connect. Check watch settings and try again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureSettings_vehicle_displaysErrorInSummary() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_AUTO)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, testNetwork);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo(
+                "Can't connect. Check vehicle settings and try again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureSettings_unknown_displaysErrorInSummary() {
+        HotspotNetwork testNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Pixel", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_UNKNOWN)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, testNetwork);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_CONNECT_TO_HOTSPOT_FAILED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo(
+                "Can't connect. Check device settings and try again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureCarrierBlock_displaysErrorInSummary() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_TETHERING_UNSUPPORTED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo("Google Fi doesn't allow this connection");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusFailureCarrierIncomplete_displaysErrorInSummary() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_TETHERING_TIMEOUT);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isEqualTo("Can't connect. Contact Google Fi for help.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusConnecting_resetsErrorString() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+        entry.connect(mMockConnectCallback);
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN_ERROR);
+        mTestLooper.dispatchAll();
+        assertThat(entry.getSummary()).isEqualTo("Can't connect. Try connecting again.");
+
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isNotEqualTo("Can't connect. Try connecting again.");
+    }
+
+    @Test
+    public void testGetSummary_connectionStatusConnected_resetsErrorString() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+        entry.connect(mMockConnectCallback);
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN_ERROR);
+        mTestLooper.dispatchAll();
+        assertThat(entry.getSummary()).isEqualTo("Can't connect. Try connecting again.");
+
+        entry.onConnectionStatusChanged(HotspotNetworkEntry.CONNECTION_STATUS_CONNECTED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isNotEqualTo("Can't connect. Try connecting again.");
     }
 }
