@@ -652,4 +652,40 @@ public class HotspotNetworkEntryTest {
 
         assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
     }
+
+    @Test
+    public void testOnConnectionStatusChanged_connectedStatus_updatesString() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
+        mTestLooper.dispatchAll();
+        assertThat(entry.getSummary()).isEqualTo("Connecting…");
+
+        entry.onConnectionStatusChanged(HotspotNetworkEntry.CONNECTION_STATUS_CONNECTED);
+        mTestLooper.dispatchAll();
+
+        assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
+    }
+
+    @Test
+    public void testOnConnectionStatusChanged_connectedStatus_callsCallback() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+        entry.connect(mMockConnectCallback);
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
+        mTestLooper.dispatchAll();
+        verify(mMockConnectCallback, never()).onConnectResult(anyInt());
+
+        entry.onConnectionStatusChanged(HotspotNetworkEntry.CONNECTION_STATUS_CONNECTED);
+        mTestLooper.dispatchAll();
+
+        verify(mMockConnectCallback)
+                .onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
+    }
 }

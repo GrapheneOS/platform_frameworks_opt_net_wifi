@@ -71,6 +71,7 @@ import android.net.wifi.sharedconnectivity.app.KnownNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityClientCallback;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.test.TestLooper;
 import android.telephony.SubscriptionManager;
@@ -2930,5 +2931,47 @@ public class WifiPickerTrackerTest {
                 .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(3);
         assertThat(((HotspotNetworkEntry) wifiPickerTracker.getWifiEntries().get(2))
                 .getHotspotNetworkEntryKey().getDeviceId()).isEqualTo(1);
+    }
+
+    @Test
+    public void testHotspotNetworks_onHotspotNetworkConnectionStatusChanged_connectedExtra() {
+        final HotspotNetwork testHotspotNetwork =
+            new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(
+                    new NetworkProviderInfo.Builder("My Phone", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .build();
+        when(mMockSharedConnectivityManager.getHotspotNetworks())
+            .thenReturn(Collections.singletonList(testHotspotNetwork));
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockSharedConnectivityManager)
+            .registerCallback(any(), mSharedConnectivityCallbackCaptor.capture());
+        mSharedConnectivityCallbackCaptor.getValue().onServiceConnected();
+        mTestLooper.dispatchAll();
+
+        final WifiEntry.ConnectCallback connectCallback = mock(WifiEntry.ConnectCallback.class);
+        wifiPickerTracker.getWifiEntries().get(0).connect(connectCallback);
+
+        Bundle extras = new Bundle();
+        extras.putBoolean("connection_status_connected", true);
+        mSharedConnectivityCallbackCaptor
+            .getValue()
+            .onHotspotNetworkConnectionStatusChanged(
+                new HotspotNetworkConnectionStatus.Builder()
+                    .setStatus(HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN)
+                    .setExtras(extras)
+                    .setHotspotNetwork(testHotspotNetwork)
+                    .build());
+        mTestLooper.dispatchAll();
+
+        verify(connectCallback).onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
     }
 }
