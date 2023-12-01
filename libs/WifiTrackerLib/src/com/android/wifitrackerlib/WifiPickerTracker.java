@@ -95,6 +95,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
     private static final String TAG = "WifiPickerTracker";
 
+    private static final String EXTRA_KEY_CONNECTION_STATUS_CONNECTED =
+            "connection_status_connected";
+
     private final WifiPickerTrackerCallback mListener;
 
     // Lock object for data returned by the public API
@@ -479,15 +482,25 @@ public class WifiPickerTracker extends BaseWifiTracker {
             updateWifiEntries();
         }
     }
-    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
-    @WorkerThread
-    protected void handleHotspotNetworkConnectionStatusChanged(
-            @NonNull HotspotNetworkConnectionStatus status) {
-        mHotspotNetworkEntryCache.stream().filter(
-                entry -> entry.getHotspotNetworkEntryKey().getDeviceId()
-                        == status.getHotspotNetwork().getDeviceId()).forEach(
-                                entry -> entry.onConnectionStatusChanged(status.getStatus()));
-    }
+
+  @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
+  @WorkerThread
+  protected void handleHotspotNetworkConnectionStatusChanged(
+      @NonNull HotspotNetworkConnectionStatus status) {
+    mHotspotNetworkEntryCache.stream()
+        .filter(
+            entry ->
+                entry.getHotspotNetworkEntryKey().getDeviceId()
+                    == status.getHotspotNetwork().getDeviceId())
+        .forEach(
+            entry -> {
+              if (status.getExtras().getBoolean(EXTRA_KEY_CONNECTION_STATUS_CONNECTED, false)) {
+                entry.onConnectionStatusChanged(HotspotNetworkEntry.CONNECTION_STATUS_CONNECTED);
+              } else {
+                entry.onConnectionStatusChanged(status.getStatus());
+              }
+            });
+  }
 
     @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
     @WorkerThread

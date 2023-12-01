@@ -344,9 +344,6 @@ public class BaseWifiTracker {
                 BaseWifiTracker.this.onDestroy();
             }
         };
-        if (lifecycle != null) {
-            lifecycle.addObserver(mLifecycleObserver);
-        }
         mContext = context;
         mWifiManager = wifiManager;
         mConnectivityManager = connectivityManager;
@@ -366,6 +363,10 @@ public class BaseWifiTracker {
         mScanResultUpdater = new ScanResultUpdater(clock,
                 maxScanAgeMillis + scanIntervalMillis);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
+
+        if (lifecycle != null) { // Need to add after mScanner is initialized.
+            lifecycle.addObserver(mLifecycleObserver);
+        }
     }
 
     /**
