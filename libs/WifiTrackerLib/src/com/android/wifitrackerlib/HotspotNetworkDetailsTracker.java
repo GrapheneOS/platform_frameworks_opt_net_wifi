@@ -112,9 +112,13 @@ public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
     @Override
     protected void handleServiceConnected() {
         if (mInjector.isSharedConnectivityFeatureEnabled() && mSharedConnectivityManager != null) {
-            mHotspotNetworkData = mSharedConnectivityManager.getHotspotNetworks().stream().filter(
-                    network -> network.getDeviceId() == mChosenEntry.getHotspotNetworkEntryKey()
-                            .getDeviceId()).findFirst().orElse(null);
+            List<HotspotNetwork> hotspotNetworks = mSharedConnectivityManager.getHotspotNetworks();
+            if (hotspotNetworks != null) {
+                mHotspotNetworkData = hotspotNetworks.stream().filter(
+                                network -> network.getDeviceId()
+                                        == mChosenEntry.getHotspotNetworkEntryKey().getDeviceId())
+                        .findFirst().orElse(null);
+            }
         }
         if (mHotspotNetworkData == null) {
             throw new IllegalArgumentException(
