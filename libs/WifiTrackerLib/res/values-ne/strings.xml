@@ -46,6 +46,14 @@
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"तपाईंको सङ्गठनले अनुमति दिएको छैन"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> को <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{तपाईंको फोनबाट: {NETWORK_NAME}}TABLET{तपाईंको ट्याब्लेटबाट: {NETWORK_NAME}}COMPUTER{तपाईंको कम्प्युटरबाट: {NETWORK_NAME}}WATCH{तपाईंको स्मार्ट वाचबाट: {NETWORK_NAME}}VEHICLE{तपाईंको गाडीबाट: {NETWORK_NAME}}other{तपाईंको डिभाइसबाट: {NETWORK_NAME}}}"</string>
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_generic (2339836723160908882) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_settings (6928234716406336668) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_carrier_block (359780026027619177) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_carrier_incomplete (3407132390461094984) -->
+    <skip />
     <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="DEVICE_NAME">%2$s</xliff:g> को <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"कनेक्ट गरिँदै छ…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> बाट उपलब्ध"</string>

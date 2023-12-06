@@ -46,6 +46,14 @@
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"உங்கள் நிறுவனத்தால் அனுமதிக்கப்படவில்லை"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> வழங்கும் <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{உங்கள் மொபைலில் இருந்து {NETWORK_NAME}}TABLET{உங்கள் டேப்லெட்டில் இருந்து {NETWORK_NAME}}COMPUTER{உங்கள் கம்ப்யூட்டரில் இருந்து {NETWORK_NAME}}WATCH{உங்கள் வாட்ச்சில் இருந்து {NETWORK_NAME}}VEHICLE{உங்கள் வாகனத்தில் இருந்து {NETWORK_NAME}}other{உங்கள் சாதனத்தில் இருந்து {NETWORK_NAME}}}"</string>
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_generic (2339836723160908882) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_settings (6928234716406336668) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_carrier_block (359780026027619177) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_carrier_incomplete (3407132390461094984) -->
+    <skip />
     <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="DEVICE_NAME">%2$s</xliff:g> வழங்கும் <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"இணைக்கிறது…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> சாதனத்தில் இருந்து கிடைக்கும்"</string>
