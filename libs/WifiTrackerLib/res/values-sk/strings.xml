@@ -19,7 +19,7 @@
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
     <string name="wifitrackerlib_checking_for_internet_access" msgid="4787495471423429472">"Kontroluje sa dostupnosť internetového pripojenia..."</string>
     <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Automatické pripojenie je vypnuté"</string>
-    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Uložila aplikácia <xliff:g id="NAME">%1$s</xliff:g>"</string>
+    <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Uložil používateľ <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet_no_reconnect" msgid="6618216332537706908">"Nedôjde k automatickému pripojeniu"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Bez prístupu k internetu"</string>
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"Problém s overením"</string>

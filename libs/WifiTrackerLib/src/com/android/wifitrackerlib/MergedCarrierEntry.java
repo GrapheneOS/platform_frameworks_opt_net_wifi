@@ -21,7 +21,6 @@ import static android.net.wifi.WifiInfo.sanitizeSsid;
 
 import static com.android.wifitrackerlib.Utils.getVerboseLoggingDescription;
 
-import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -42,16 +41,14 @@ public class MergedCarrierEntry extends WifiEntry {
 
     private final int mSubscriptionId;
     @NonNull private final String mKey;
-    @NonNull private final Context mContext;
     boolean mIsCellDefaultRoute;
 
-    MergedCarrierEntry(@NonNull Handler callbackHandler,
+    MergedCarrierEntry(@NonNull WifiTrackerInjector injector,
+            @NonNull Handler callbackHandler,
             @NonNull WifiManager wifiManager,
             boolean forSavedNetworksPage,
-            @NonNull Context context,
             int subscriptionId) throws IllegalArgumentException {
-        super(callbackHandler, wifiManager, forSavedNetworksPage);
-        mContext = context;
+        super(injector, callbackHandler, wifiManager, forSavedNetworksPage);
         mSubscriptionId = subscriptionId;
         mKey = KEY_PREFIX + subscriptionId;
     }
@@ -170,12 +167,22 @@ public class MergedCarrierEntry extends WifiEntry {
         }
     }
 
-    /* package */ int getSubscriptionId() {
+    /**
+     * Returns the current subscription ID this merged carrier network is for.
+     */
+    public int getSubscriptionId() {
         return mSubscriptionId;
     }
 
     /* package */ synchronized void updateIsCellDefaultRoute(boolean isCellDefaultRoute) {
         mIsCellDefaultRoute = isCellDefaultRoute;
         notifyOnUpdated();
+    }
+
+    @Override
+    public String toString() {
+        StringJoiner sj = new StringJoiner("][", "[", "]");
+        sj.add("SubId:" + mSubscriptionId);
+        return super.toString() + sj;
     }
 }

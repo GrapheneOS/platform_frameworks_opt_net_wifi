@@ -19,7 +19,6 @@ package com.android.wifitrackerlib;
 import static android.os.Build.VERSION_CODES;
 
 import android.annotation.TargetApi;
-import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -65,25 +64,25 @@ public class KnownNetworkEntry extends StandardWifiEntry{
     public @interface ConnectionStatus {} // TODO(b/271868642): Add IfThisThanThat lint
 
     KnownNetworkEntry(
-            @NonNull WifiTrackerInjector injector, @NonNull Context context,
+            @NonNull WifiTrackerInjector injector,
             @NonNull Handler callbackHandler, @NonNull StandardWifiEntryKey key,
             @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull KnownNetwork knownNetworkData) {
-        super(injector, context, callbackHandler, key, wifiManager,
+        super(injector, callbackHandler, key, wifiManager,
                 false /* forSavedNetworksPage */);
         mSharedConnectivityManager = sharedConnectivityManager;
         mKnownNetworkData = knownNetworkData;
     }
 
     KnownNetworkEntry(
-            @NonNull WifiTrackerInjector injector, @NonNull Context context,
+            @NonNull WifiTrackerInjector injector,
             @NonNull Handler callbackHandler, @NonNull StandardWifiEntryKey key,
             @Nullable List<WifiConfiguration> configs, @Nullable List<ScanResult> scanResults,
             @NonNull WifiManager wifiManager,
             @Nullable SharedConnectivityManager sharedConnectivityManager,
             @NonNull KnownNetwork knownNetworkData) throws IllegalArgumentException {
-        super(injector, context, callbackHandler, key, configs, scanResults, wifiManager,
+        super(injector, callbackHandler, key, configs, scanResults, wifiManager,
                 false /* forSavedNetworksPage */);
         mSharedConnectivityManager = sharedConnectivityManager;
         mKnownNetworkData = knownNetworkData;
