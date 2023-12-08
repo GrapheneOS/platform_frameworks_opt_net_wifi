@@ -46,6 +46,14 @@
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"നിങ്ങളുടെ ഓർഗനൈസേഷൻ അനുവദിക്കുന്നില്ല"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> എന്നതിൽ നിന്നുള്ള <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{നിങ്ങളുടെ ഫോണിൽ നിന്നുള്ള {NETWORK_NAME}}TABLET{നിങ്ങളുടെ ടാബ്‌ലെറ്റിൽ നിന്നുള്ള {NETWORK_NAME}}COMPUTER{നിങ്ങളുടെ കമ്പ്യൂട്ടറിൽ നിന്നുള്ള {NETWORK_NAME}}WATCH{നിങ്ങളുടെ വാച്ചിൽ നിന്നുള്ള {NETWORK_NAME}}VEHICLE{നിങ്ങളുടെ വാഹനത്തിൽ നിന്നുള്ള {NETWORK_NAME}}other{നിങ്ങളുടെ ഉപകരണത്തിൽ നിന്നുള്ള {NETWORK_NAME}}}"</string>
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_generic (2339836723160908882) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_settings (6928234716406336668) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_carrier_block (359780026027619177) -->
+    <skip />
+    <!-- no translation found for wifitrackerlib_hotspot_network_summary_error_carrier_incomplete (3407132390461094984) -->
+    <skip />
     <string name="wifitrackerlib_hotspot_network_alternate" msgid="4966814473758893807">"<xliff:g id="DEVICE_NAME">%2$s</xliff:g> എന്നതിൽ നിന്നുള്ള <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"കണക്റ്റ് ചെയ്യുന്നു…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> എന്നതിൽ നിന്ന് ലഭ്യമാണ്"</string>
