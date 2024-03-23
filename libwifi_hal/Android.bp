@@ -171,7 +171,7 @@ wifi_cc_defaults {
                 defaults: ["libwifi-hal-mediatek"],
             },
             nxp: {
-                whole_static_libs: ["//vendor/nxp/boreal/wifi:libwifi-hal-nxp"],
+                whole_static_libs: ["libwifi-hal-nxp"],
             },
             realtek: {
                 whole_static_libs: ["libwifi-hal-rtk"],

@@ -92,7 +92,7 @@
     <string name="wifitrackerlib_wifi_band_unknown" msgid="5576746583228374334">"Noaniq"</string>
     <string name="wifitrackerlib_wifi_band_24_ghz" msgid="5374362780653321244">"2,4 GGs"</string>
     <string name="wifitrackerlib_wifi_band_5_ghz" msgid="2179047349922091556">"5 GGs"</string>
-    <string name="wifitrackerlib_wifi_band_6_ghz" msgid="6532408050869498777">"6 GGs"</string>
+    <string name="wifitrackerlib_wifi_band_6_ghz" msgid="6532408050869498777">"6 GHz"</string>
     <string name="wifitrackerlib_multiband_separator" msgid="6838172120482590336">", "</string>
     <string name="wifitrackerlib_link_speed_mbps" msgid="5880214340478706112">"<xliff:g id="LINK_SPEED_MBPS">%1$d</xliff:g> Mbit/s"</string>
     <string name="wifitrackerlib_link_speed_on_band" msgid="2433114336144744962">"<xliff:g id="LINK_SPEED">%1$s</xliff:g> — <xliff:g id="BAND">%2$s</xliff:g>"</string>
