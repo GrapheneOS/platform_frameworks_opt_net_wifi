@@ -40,7 +40,7 @@
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Verbunden über <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Über <xliff:g id="NAME">%1$s</xliff:g> verfügbar"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"Eingeschränkte Verbindung"</string>
-    <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Auf den privaten DNS-Server kann nicht zugegriffen werden"</string>
+    <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Auf den Server des privaten DNS kann nicht zugegriffen werden"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Mit Gerät verbunden. Internetverbindung nicht möglich."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Niedrige Qualität"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Von deiner Organisation nicht zugelassen"</string>
