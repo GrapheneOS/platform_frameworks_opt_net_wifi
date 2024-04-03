@@ -28,6 +28,10 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 
+import static com.android.wifitrackerlib.WifiEntry.CertificateInfo.CERTIFICATE_VALIDATION_METHOD_USING_CERTIFICATE_PINNING;
+import static com.android.wifitrackerlib.WifiEntry.CertificateInfo.CERTIFICATE_VALIDATION_METHOD_USING_INSTALLED_ROOTCA;
+import static com.android.wifitrackerlib.WifiEntry.CertificateInfo.CERTIFICATE_VALIDATION_METHOD_USING_SYSTEM_CERTIFICATE;
+
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 
@@ -45,6 +49,7 @@ import android.net.wifi.MloLink;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
+import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiScanner;
 import android.os.Build;
@@ -1209,7 +1214,7 @@ public class Utils {
         if (transportInfo instanceof WifiInfo) {
             return (WifiInfo) transportInfo;
         }
-        return NonSdkApiWrapper.getVcnWifiInfo(capabilities);
+        return null;
     }
 
     /**
@@ -1284,5 +1289,42 @@ public class Utils {
         }
         // Unknown security types
         return concise ? "" : context.getString(R.string.wifitrackerlib_wifi_security_none);
+    }
+
+    /**
+     * Returns the CertificateInfo for a WifiEnterpriseConfig.
+     */
+    @Nullable
+    public static WifiEntry.CertificateInfo getCertificateInfo(
+            @NonNull WifiEnterpriseConfig config) {
+        if (Build.VERSION.SDK_INT < 33) {
+            return null;
+        }
+
+        // If the EAP method is not using certificate based connection, return null.
+        if (!config.isEapMethodServerCertUsed() || !config.hasCaCertificate()) {
+            return null;
+        }
+
+        WifiEntry.CertificateInfo info = new WifiEntry.CertificateInfo();
+        info.domain = config.getDomainSuffixMatch();
+        info.caCertificateAliases = config.getCaCertificateAliases();
+        if (info.caCertificateAliases != null) {
+            if (info.caCertificateAliases.length == 1
+                    && info.caCertificateAliases[0].startsWith("hash://server/sha256/")) {
+                info.validationMethod = CERTIFICATE_VALIDATION_METHOD_USING_CERTIFICATE_PINNING;
+                info.caCertificateAliases = null;
+            } else {
+                info.validationMethod = CERTIFICATE_VALIDATION_METHOD_USING_INSTALLED_ROOTCA;
+            }
+            return info;
+        }
+
+        if (config.getCaPath() != null) {
+            info.validationMethod = CERTIFICATE_VALIDATION_METHOD_USING_SYSTEM_CERTIFICATE;
+            return info;
+        }
+
+        return null;
     }
 }

@@ -16,16 +16,10 @@
 
 package com.android.wifitrackerlib;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.net.NetworkCapabilities;
-import android.net.vcn.VcnTransportInfo;
-import android.net.wifi.WifiInfo;
 import android.text.Annotation;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -71,25 +65,5 @@ public class NonSdkApiWrapperTest {
         assertEquals(output.toString(), expectedText.toString());
         assertEquals(outputSpannableString.getSpans(0, outputSpannableString.length(),
                 ClickableSpan.class).length, 0);
-    }
-
-    /**
-     * Verifies the functionality of {@link NonSdkApiWrapper#getVcnWifiInfo(NetworkCapabilities)}
-     */
-    @Test
-    public void testGetVcnWifiInfo() {
-        NetworkCapabilities networkCapabilities  = mock(NetworkCapabilities.class);
-
-        assertThat(NonSdkApiWrapper.getVcnWifiInfo(networkCapabilities)).isNull();
-
-        VcnTransportInfo vcnTransportInfo = mock(VcnTransportInfo.class);
-        when(networkCapabilities.getTransportInfo()).thenReturn(vcnTransportInfo);
-
-        assertThat(NonSdkApiWrapper.getVcnWifiInfo(networkCapabilities)).isNull();
-
-        WifiInfo wifiInfo = mock(WifiInfo.class);
-        when(vcnTransportInfo.getWifiInfo()).thenReturn(wifiInfo);
-
-        assertThat(NonSdkApiWrapper.getVcnWifiInfo(networkCapabilities)).isEqualTo(wifiInfo);
     }
 }

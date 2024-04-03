@@ -615,6 +615,16 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
+    @Nullable
+    public CertificateInfo getCertificateInfo() {
+        WifiConfiguration config = mTargetWifiConfig;
+        if (config == null || config.enterpriseConfig == null) {
+            return null;
+        }
+        return Utils.getCertificateInfo(config.enterpriseConfig);
+    }
+
+    @Override
     public synchronized String getBandString() {
         if (mWifiInfo != null) {
             return Utils.wifiInfoToBandString(mContext, mWifiInfo);

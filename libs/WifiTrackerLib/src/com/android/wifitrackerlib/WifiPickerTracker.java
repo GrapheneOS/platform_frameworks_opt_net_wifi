@@ -1219,7 +1219,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         }
     }
 
-    private void conditionallyCreateConnectedWifiEntry(@NonNull WifiInfo wifiInfo) {
+    private void conditionallyCreateConnectedWifiEntry(@Nullable WifiInfo wifiInfo) {
         conditionallyCreateConnectedStandardWifiEntry(wifiInfo);
         conditionallyCreateConnectedSuggestedWifiEntry(wifiInfo);
         conditionallyCreateConnectedPasspointWifiEntry(wifiInfo);
@@ -1231,7 +1231,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      * created if there is no existing entry, or the existing entry doesn't match WifiInfo.
      */
     @WorkerThread
-    private void conditionallyCreateConnectedNetworkRequestEntry(@NonNull WifiInfo wifiInfo) {
+    private void conditionallyCreateConnectedNetworkRequestEntry(@Nullable WifiInfo wifiInfo) {
         final List<WifiConfiguration> matchingConfigs = new ArrayList<>();
 
         if (wifiInfo != null) {
@@ -1263,7 +1263,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      * network yet, create and cache a new StandardWifiEntry for it.
      */
     @WorkerThread
-    private void conditionallyCreateConnectedStandardWifiEntry(@NonNull WifiInfo wifiInfo) {
+    private void conditionallyCreateConnectedStandardWifiEntry(@Nullable WifiInfo wifiInfo) {
         if (wifiInfo == null || wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
             return;
         }
@@ -1297,7 +1297,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      * yet, create and cache a new StandardWifiEntry for it.
      */
     @WorkerThread
-    private void conditionallyCreateConnectedSuggestedWifiEntry(@NonNull WifiInfo wifiInfo) {
+    private void conditionallyCreateConnectedSuggestedWifiEntry(@Nullable WifiInfo wifiInfo) {
         if (wifiInfo == null || wifiInfo.isPasspointAp() || wifiInfo.isOsuAp()) {
             return;
         }
@@ -1326,7 +1326,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      * yet, create and cache a new StandardWifiEntry for it.
      */
     @WorkerThread
-    private void conditionallyCreateConnectedPasspointWifiEntry(@NonNull WifiInfo wifiInfo) {
+    private void conditionallyCreateConnectedPasspointWifiEntry(@Nullable WifiInfo wifiInfo) {
         if (wifiInfo == null || !wifiInfo.isPasspointAp()) {
             return;
         }

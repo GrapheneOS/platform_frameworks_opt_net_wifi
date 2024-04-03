@@ -1044,4 +1044,51 @@ public class UtilsTest {
         assertThat(Utils.getSpeedString(mMockContext, wifiInfo, false))
                 .isEqualTo(expectedRxSpeed);
     }
+
+    @Test
+    public void testGetCertificateInfo() {
+        WifiEnterpriseConfig config = mock(WifiEnterpriseConfig.class);
+        String domain = "domain";
+        when(config.getDomainSuffixMatch()).thenReturn(domain);
+        WifiEntry.CertificateInfo info;
+
+        // Return null if not using a certificate
+        when(config.isEapMethodServerCertUsed()).thenReturn(true);
+        when(config.hasCaCertificate()).thenReturn(false);
+        assertThat(Utils.getCertificateInfo(config)).isNull();
+
+        when(config.isEapMethodServerCertUsed()).thenReturn(false);
+        when(config.hasCaCertificate()).thenReturn(true);
+        assertThat(Utils.getCertificateInfo(config)).isNull();
+
+        // Return null if no cert aliases and not using the system certificate
+        when(config.isEapMethodServerCertUsed()).thenReturn(true);
+        when(config.hasCaCertificate()).thenReturn(true);
+        assertThat(Utils.getCertificateInfo(config)).isNull();
+
+        // Using cert pinning
+        when(config.getCaCertificateAliases()).thenReturn(new String[]{"hash://server/sha256/"});
+        info = Utils.getCertificateInfo(config);
+        assertThat(info.validationMethod).isEqualTo(
+                WifiEntry.CertificateInfo.CERTIFICATE_VALIDATION_METHOD_USING_CERTIFICATE_PINNING);
+        assertThat(info.caCertificateAliases).isNull();
+        assertThat(info.domain).isEqualTo(domain);
+
+        // Using installed root CA
+        when(config.getCaCertificateAliases()).thenReturn(new String[]{"foo", "bar"});
+        info = Utils.getCertificateInfo(config);
+        assertThat(info.validationMethod).isEqualTo(
+                WifiEntry.CertificateInfo.CERTIFICATE_VALIDATION_METHOD_USING_INSTALLED_ROOTCA);
+        assertThat(info.caCertificateAliases).isEqualTo(new String[]{"foo", "bar"});
+        assertThat(info.domain).isEqualTo(domain);
+
+        // Using system cert
+        when(config.getCaCertificateAliases()).thenReturn(null);
+        when(config.getCaPath()).thenReturn("foo");
+        info = Utils.getCertificateInfo(config);
+        assertThat(info.validationMethod).isEqualTo(
+                WifiEntry.CertificateInfo.CERTIFICATE_VALIDATION_METHOD_USING_SYSTEM_CERTIFICATE);
+        assertThat(info.caCertificateAliases).isNull();
+        assertThat(info.domain).isEqualTo(domain);
+    }
 }
