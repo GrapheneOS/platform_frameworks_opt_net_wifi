@@ -147,6 +147,8 @@ public class PasspointWifiEntryTest {
                 .thenReturn(wifiStatusArray);
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
 
@@ -171,6 +173,8 @@ public class PasspointWifiEntryTest {
                 .thenReturn(wifiStatusArray);
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
 
@@ -186,6 +190,8 @@ public class PasspointWifiEntryTest {
     public void testGetSecurityTypes_connectedWifiNetwork_showsCurrentSecurityType() {
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
         when(mMockWifiInfo.getCurrentSecurityType())
                 .thenReturn(WifiInfo.SECURITY_TYPE_PASSPOINT_R1_R2);
 
@@ -227,6 +233,8 @@ public class PasspointWifiEntryTest {
     public void testShouldShowXLevelIcon_unvalidatedOrLowQuality_returnsTrue() {
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
 
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
@@ -263,14 +271,12 @@ public class PasspointWifiEntryTest {
     public void testGetMacAddress_wifiInfoAvailable_usesWifiInfoMacAddress() {
         final String factoryMac = "01:23:45:67:89:ab";
         final String wifiInfoMac = "11:23:45:67:89:ab";
-        final WifiConfiguration config = new WifiConfiguration();
-        config.SSID = "\"ssid\"";
-        config.macRandomizationSetting = WifiConfiguration.RANDOMIZATION_NONE;
-        config.FQDN = FQDN;
         when(mMockWifiManager.getFactoryMacAddresses()).thenReturn(new String[]{factoryMac});
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
         when(mMockWifiInfo.getMacAddress()).thenReturn(wifiInfoMac);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
@@ -299,6 +305,8 @@ public class PasspointWifiEntryTest {
 
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
         when(mMockNetworkCapabilities.hasCapability(
                 NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
@@ -319,6 +327,8 @@ public class PasspointWifiEntryTest {
             entry.connect(null /* callback */);
             when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
             when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+            when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                    getPasspointConfiguration().getUniqueId());
             when(mMockNetworkCapabilities.hasCapability(
                     NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
             entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
@@ -347,6 +357,8 @@ public class PasspointWifiEntryTest {
                 .thenReturn(wifiStatusArray);
         when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
         when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
         when(mMockNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
         PasspointWifiEntry entry = new PasspointWifiEntry(mMockInjector, mTestHandler,

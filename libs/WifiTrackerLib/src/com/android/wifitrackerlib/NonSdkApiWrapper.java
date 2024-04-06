@@ -16,6 +16,7 @@
 
 package com.android.wifitrackerlib;
 
+import static com.android.wifi.flags.Flags.androidVWifiApi;
 import static com.android.wifi.flags.Flags.networkProviderBatteryChargingStatus;
 
 import android.app.admin.DevicePolicyManager;
@@ -129,5 +130,13 @@ class NonSdkApiWrapper {
      */
     static boolean isNetworkProviderBatteryChargingStatusEnabled() {
         return networkProviderBatteryChargingStatus();
+    }
+
+    /**
+     * Whether Android Wifi V Apis flag is enabled.
+     */
+    static boolean isAndroidVWifiApiEnabled() {
+        // Google3 can't access trunk stable flags, so default to false.
+        return androidVWifiApi();
     }
 }

@@ -100,4 +100,12 @@ class NonSdkApiWrapper {
         // Google3 can't access trunk stable flags, so default to false.
         return false;
     }
+
+    /**
+     * Whether Android Wifi V Apis flag is enabled.
+     */
+    static boolean isAndroidVWifiApiEnabled() {
+        // Google3 can't access trunk stable flags, so default to false.
+        return false;
+    }
 }
