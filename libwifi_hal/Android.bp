@@ -137,7 +137,7 @@ cc_library_static {
     vendor: true,
     defaults: ["libwifi_hal_cflags_defaults"],
     srcs: ["wifi_hal_fallback.cpp"],
-    header_libs: ["libhardware_legacy_headers"]
+    header_libs: ["wifi_legacy_headers"]
 }
 
 wifi_cc_defaults {
@@ -216,8 +216,8 @@ cc_library_shared {
     ],
     local_include_dirs: ["include"],
     export_include_dirs: ["include"],
-    header_libs: ["libhardware_legacy_headers"],
-    export_header_lib_headers: ["libhardware_legacy_headers"],
+    header_libs: ["wifi_legacy_headers"],
+    export_header_lib_headers: ["wifi_legacy_headers"],
     shared_libs: [
         "libbase",
         "libcutils",
