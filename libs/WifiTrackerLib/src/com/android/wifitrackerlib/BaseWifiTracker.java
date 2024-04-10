@@ -99,6 +99,26 @@ public class BaseWifiTracker {
     private boolean mIsInitialized = false;
     private boolean mIsScanningDisabled = false;
 
+    class WifiTrackerLifecycleObserver implements LifecycleObserver {
+        @OnLifecycleEvent(Lifecycle.Event.ON_START)
+        @MainThread
+        public void onStart() {
+            BaseWifiTracker.this.onStart();
+        }
+
+        @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+        @MainThread
+        public void onStop() {
+            BaseWifiTracker.this.onStop();
+        }
+
+        @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        @MainThread
+        public void onDestroy() {
+            BaseWifiTracker.this.onDestroy();
+        }
+    };
+
     // Registered on the worker thread
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -132,7 +152,8 @@ public class BaseWifiTracker {
     };
     private final BaseWifiTracker.Scanner mScanner;
     private final BaseWifiTrackerCallback mListener;
-    private final @NonNull LifecycleObserver mLifecycleObserver;
+    private final @NonNull LifecycleObserver mLifecycleObserver =
+            new WifiTrackerLifecycleObserver();
 
     protected final WifiTrackerInjector mInjector;
     protected final Context mContext;
@@ -323,25 +344,6 @@ public class BaseWifiTracker {
             String tag) {
         mInjector = injector;
         mActivityManager = context.getSystemService(ActivityManager.class);
-        mLifecycleObserver = new LifecycleObserver() {
-            @OnLifecycleEvent(Lifecycle.Event.ON_START)
-            @MainThread
-            public void onStart() {
-                BaseWifiTracker.this.onStart();
-            }
-
-            @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
-            @MainThread
-            public void onStop() {
-                BaseWifiTracker.this.onStop();
-            }
-
-            @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-            @MainThread
-            public void onDestroy() {
-                BaseWifiTracker.this.onDestroy();
-            }
-        };
         mContext = context;
         mWifiManager = wifiManager;
         mConnectivityManager = connectivityManager;
@@ -362,8 +364,8 @@ public class BaseWifiTracker {
                 maxScanAgeMillis + scanIntervalMillis);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
 
-        if (lifecycle != null) { // Need to add after mScanner is initialized.
-            lifecycle.addObserver(mLifecycleObserver);
+        if (lifecycle != null) { // Need to add after constructor completes.
+            mMainHandler.post(() -> lifecycle.addObserver(mLifecycleObserver));
         }
     }
 

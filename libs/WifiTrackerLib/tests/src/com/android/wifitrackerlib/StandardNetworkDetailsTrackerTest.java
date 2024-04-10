@@ -31,7 +31,9 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,12 +52,14 @@ import android.os.Handler;
 import android.os.test.TestLooper;
 
 import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -79,13 +83,14 @@ public class StandardNetworkDetailsTrackerTest {
     @Mock private Clock mMockClock;
 
     private TestLooper mTestLooper;
+    private Handler mMainHandler;
+    private Handler mWorkerHandler;
 
     private final ArgumentCaptor<BroadcastReceiver> mBroadcastReceiverCaptor =
             ArgumentCaptor.forClass(BroadcastReceiver.class);
 
     private StandardNetworkDetailsTracker createTestStandardNetworkDetailsTracker(
             String key) {
-        final Handler testHandler = new Handler(mTestLooper.getLooper());
 
         return new StandardNetworkDetailsTracker(
                 mInjector,
@@ -93,8 +98,8 @@ public class StandardNetworkDetailsTrackerTest {
                 mMockContext,
                 mMockWifiManager,
                 mMockConnectivityManager,
-                testHandler,
-                testHandler,
+                mMainHandler,
+                mWorkerHandler,
                 mMockClock,
                 MAX_SCAN_AGE_MILLIS,
                 SCAN_INTERVAL_MILLIS,
@@ -106,6 +111,8 @@ public class StandardNetworkDetailsTrackerTest {
         MockitoAnnotations.initMocks(this);
 
         mTestLooper = new TestLooper();
+        mMainHandler = spy(new Handler(mTestLooper.getLooper()));
+        mWorkerHandler = spy(new Handler(mTestLooper.getLooper()));
 
         when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);
         when(mMockWifiManager.isWpa3SuiteBSupported()).thenReturn(true);
@@ -130,6 +137,32 @@ public class StandardNetworkDetailsTrackerTest {
      */
     @Test
     public void testGetWifiEntry_HasCorrectKey() throws Exception {
+        final StandardWifiEntryKey key =
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
+
+        final StandardNetworkDetailsTracker tracker =
+                createTestStandardNetworkDetailsTracker(key.toString());
+
+        assertThat(tracker.getWifiEntry().getKey()).isEqualTo(key.toString());
+    }
+
+    /**
+     * Tests that the key of the created WifiEntry matches the key passed into the constructor.
+     */
+    @Test
+    public void testConstructor_lifecycleCallbacksWhenRegistering_populatesChosenEntry()
+            throws Exception {
+        doAnswer(invocation -> {
+            BaseWifiTracker.WifiTrackerLifecycleObserver observer = invocation.getArgument(0);
+            observer.onStart();
+            return null;
+        }).when(mMockLifecycle).addObserver(any(LifecycleObserver.class));
+        when(mWorkerHandler.post(any(Runnable.class)))
+                .thenAnswer((Answer<Boolean>) invocation -> {
+                    Runnable runnable = invocation.getArgument(0);
+                    runnable.run();
+                    return true;
+                });
         final StandardWifiEntryKey key =
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_NONE);
 
