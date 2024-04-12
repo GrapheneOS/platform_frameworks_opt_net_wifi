@@ -35,7 +35,7 @@
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ನಂತರ ಪುನಃ ಪ್ರಯತ್ನಿಸಿ."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"ಸಂಪರ್ಕ ಕಡಿತಗೊಳಿಸಲಾಗಿದೆ"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"ಸೇವ್‌ ಮಾಡಲಾಗಿದೆ"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ಮೀಟರ್ ಮಾಡಲಾಗಿದೆ"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"ಮೀಟರ್ಡ್ ನೆಟ್‌ವರ್ಕ್"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"ಮೀಟರ್ ಮಾಡಲಾಗಿಲ್ಲ"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> ಆ್ಯಪ್ ಮೂಲಕ ಕನೆಕ್ಟ್ ಮಾಡಲಾಗಿದೆ"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> ಮೂಲಕ ಲಭ್ಯವಿದೆ"</string>

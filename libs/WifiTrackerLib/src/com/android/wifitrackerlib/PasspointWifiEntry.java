@@ -50,6 +50,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
+import androidx.core.os.BuildCompat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -565,7 +566,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             return false;
         }
 
-        if (NonSdkApiWrapper.isAndroidVWifiApiEnabled()) {
+        if (BuildCompat.isAtLeastV() && NonSdkApiWrapper.isAndroidVWifiApiEnabled()) {
             return TextUtils.equals(mUniqueId, wifiInfo.getPasspointUniqueId());
         }
 
