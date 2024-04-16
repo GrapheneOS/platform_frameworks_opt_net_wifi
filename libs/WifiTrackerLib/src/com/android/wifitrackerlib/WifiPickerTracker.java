@@ -59,7 +59,6 @@ import android.util.Pair;
 import android.util.SparseArray;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
@@ -100,14 +99,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
     private final WifiPickerTrackerCallback mListener;
 
-    // Lock object for data returned by the public API
-    private final Object mLock = new Object();
+    // The current primary connected entry.
+    @Nullable
+    private WifiEntry mConnectedWifiEntry;
     // List representing the return value of the getActiveWifiEntries() API
-    @GuardedBy("mLock")
-    @NonNull private final List<WifiEntry> mActiveWifiEntries = new ArrayList<>();
+    @NonNull
+    private List<WifiEntry> mActiveWifiEntries = new ArrayList<>();
     // List representing the return value of the getWifiEntries() API
-    @GuardedBy("mLock")
-    @NonNull private final List<WifiEntry> mWifiEntries = new ArrayList<>();
+    @NonNull
+    private List<WifiEntry> mWifiEntries = new ArrayList<>();
     // NetworkRequestEntry representing a network that was connected through the NetworkRequest API
     private NetworkRequestEntry mNetworkRequestEntry;
 
@@ -194,17 +194,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      */
     @AnyThread
     public @Nullable WifiEntry getConnectedWifiEntry() {
-        synchronized (mLock) {
-            if (mActiveWifiEntries.isEmpty()) {
-                return null;
-            }
-            // Primary entry is sorted to be first.
-            WifiEntry primaryWifiEntry = mActiveWifiEntries.get(0);
-            if (!primaryWifiEntry.isPrimaryNetwork()) {
-                return null;
-            }
-            return primaryWifiEntry;
-        }
+        return mConnectedWifiEntry;
     }
 
     /**
@@ -213,9 +203,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      */
     @AnyThread
     public @NonNull List<WifiEntry> getActiveWifiEntries() {
-        synchronized (mLock) {
-            return new ArrayList<>(mActiveWifiEntries);
-        }
+        return new ArrayList<>(mActiveWifiEntries);
     }
 
     /**
@@ -226,9 +214,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      */
     @AnyThread
     public @NonNull List<WifiEntry> getWifiEntries() {
-        synchronized (mLock) {
-            return new ArrayList<>(mWifiEntries);
-        }
+        return new ArrayList<>(mWifiEntries);
     }
 
     /**
@@ -553,134 +539,144 @@ public class WifiPickerTracker extends BaseWifiTracker {
         }
     }
 
+    @WorkerThread
     protected void updateWifiEntries(@WifiEntriesChangedReason int reason) {
-        synchronized (mLock) {
-            mActiveWifiEntries.clear();
-            mActiveWifiEntries.addAll(mStandardWifiEntryCache);
-            mActiveWifiEntries.addAll(mSuggestedWifiEntryCache);
-            mActiveWifiEntries.addAll(mPasspointWifiEntryCache.values());
-            if (mInjector.isSharedConnectivityFeatureEnabled()) {
-                mActiveWifiEntries.addAll(mHotspotNetworkEntryCache);
-            }
-            if (mNetworkRequestEntry != null) {
-                mActiveWifiEntries.add(mNetworkRequestEntry);
-            }
-            mActiveWifiEntries.removeIf(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED);
-            Set<ScanResultKey> activeHotspotNetworkKeys = new ArraySet<>();
-            for (WifiEntry entry : mActiveWifiEntries) {
-                if (entry instanceof HotspotNetworkEntry) {
-                    activeHotspotNetworkKeys.add(((HotspotNetworkEntry) entry)
-                            .getHotspotNetworkEntryKey().getScanResultKey());
-                }
-            }
-            mActiveWifiEntries.removeIf(entry -> entry instanceof StandardWifiEntry
-                    && activeHotspotNetworkKeys.contains(
-                    ((StandardWifiEntry) entry).getStandardWifiEntryKey().getScanResultKey()));
-            mActiveWifiEntries.sort(WifiEntry.WIFI_PICKER_COMPARATOR);
-            mWifiEntries.clear();
-            final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =
-                    mSuggestedWifiEntryCache.stream()
-                            .filter(entry -> {
-                                if (entry.isUserShareable()) return true;
-                                synchronized (mLock) {
-                                    return mActiveWifiEntries.contains(entry);
-                                }
-                            })
-                            .map(entry -> entry.getStandardWifiEntryKey().getScanResultKey())
-                            .collect(Collectors.toSet());
-            Set<String> passpointUtf8Ssids = new ArraySet<>();
-            for (PasspointWifiEntry passpointWifiEntry : mPasspointWifiEntryCache.values()) {
-                passpointUtf8Ssids.addAll(passpointWifiEntry.getAllUtf8Ssids());
-            }
-            Set<ScanResultKey> knownNetworkKeys = new ArraySet<>();
-            for (KnownNetworkEntry knownNetworkEntry : mKnownNetworkEntryCache) {
-                knownNetworkKeys.add(
-                        knownNetworkEntry.getStandardWifiEntryKey().getScanResultKey());
-            }
-            Set<ScanResultKey> hotspotNetworkKeys = new ArraySet<>();
-            for (HotspotNetworkEntry hotspotNetworkEntry : mHotspotNetworkEntryCache) {
-                if (!hotspotNetworkEntry.getHotspotNetworkEntryKey().isVirtualEntry()) {
-                    hotspotNetworkKeys.add(
-                            hotspotNetworkEntry.getHotspotNetworkEntryKey().getScanResultKey());
-                }
-            }
-            Set<ScanResultKey> savedEntryKeys = new ArraySet<>();
-            for (StandardWifiEntry entry : mStandardWifiEntryCache) {
-                entry.updateAdminRestrictions();
-                if (mActiveWifiEntries.contains(entry)) {
-                    continue;
-                }
-                if (!entry.isSaved()) {
-                    if (scanResultKeysWithVisibleSuggestions
-                            .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
-                        continue;
-                    }
-                    // Filter out any unsaved entries that are already provisioned with Passpoint
-                    if (passpointUtf8Ssids.contains(entry.getSsid())) {
-                        continue;
-                    }
-                    if (mInjector.isSharedConnectivityFeatureEnabled()) {
-                        // Filter out any unsaved entries that are matched with a KnownNetworkEntry
-                        if (knownNetworkKeys
-                                .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
-                            continue;
-                        }
-                    }
-                } else {
-                    // Create a set of saved entry keys
-                    savedEntryKeys.add(entry.getStandardWifiEntryKey().getScanResultKey());
-                }
-                if (mInjector.isSharedConnectivityFeatureEnabled()) {
-                    // Filter out any entries that are matched with a HotspotNetworkEntry
-                    if (hotspotNetworkKeys
-                            .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
-                        continue;
-                    }
-                }
-                mWifiEntries.add(entry);
-            }
-            mWifiEntries.addAll(mSuggestedWifiEntryCache.stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED
-                            && entry.isUserShareable()).collect(toList()));
-            mWifiEntries.addAll(mPasspointWifiEntryCache.values().stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
-            mWifiEntries.addAll(mOsuWifiEntryCache.values().stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED
-                            && !entry.isAlreadyProvisioned()).collect(toList()));
-            mWifiEntries.addAll(getContextualWifiEntries().stream().filter(entry ->
-                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
-            if (mInjector.isSharedConnectivityFeatureEnabled()) {
-                mWifiEntries.addAll(mKnownNetworkEntryCache.stream().filter(entry ->
-                        (entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED)
-                                && !(savedEntryKeys.contains(
-                                entry.getStandardWifiEntryKey().getScanResultKey()))).collect(
-                        toList()));
-                mWifiEntries.addAll(mHotspotNetworkEntryCache.stream().filter(entry ->
-                        entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(
-                        toList()));
-            }
-            Collections.sort(mWifiEntries, WifiEntry.WIFI_PICKER_COMPARATOR);
-            if (isVerboseLoggingEnabled()) {
-                Log.v(TAG, "onWifiEntriesChanged: reason=" + reason);
-                StringJoiner entryLog = new StringJoiner("\n");
-                int numEntries = mActiveWifiEntries.size() + mWifiEntries.size();
-                int index = 1;
-                for (WifiEntry entry : mActiveWifiEntries) {
-                    entryLog.add("Entry " + index + "/" + numEntries + ": " + entry);
-                    index++;
-                }
-                for (WifiEntry entry : mWifiEntries) {
-                    entryLog.add("Entry " + index + "/" + numEntries + ": " + entry);
-                    index++;
-                }
-                Log.v(TAG, entryLog.toString());
-                Log.v(TAG, "MergedCarrierEntry: " + mMergedCarrierEntry);
+        List<WifiEntry> activeWifiEntries = new ArrayList<>();
+        List<WifiEntry> wifiEntries = new ArrayList<>();
+        activeWifiEntries.addAll(mStandardWifiEntryCache);
+        activeWifiEntries.addAll(mSuggestedWifiEntryCache);
+        activeWifiEntries.addAll(mPasspointWifiEntryCache.values());
+        if (mInjector.isSharedConnectivityFeatureEnabled()) {
+            activeWifiEntries.addAll(mHotspotNetworkEntryCache);
+        }
+        if (mNetworkRequestEntry != null) {
+            activeWifiEntries.add(mNetworkRequestEntry);
+        }
+        activeWifiEntries.removeIf(entry ->
+                entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED);
+        Set<ScanResultKey> activeHotspotNetworkKeys = new ArraySet<>();
+        for (WifiEntry entry : activeWifiEntries) {
+            if (entry instanceof HotspotNetworkEntry) {
+                activeHotspotNetworkKeys.add(((HotspotNetworkEntry) entry)
+                        .getHotspotNetworkEntryKey().getScanResultKey());
             }
         }
+        activeWifiEntries.removeIf(entry -> entry instanceof StandardWifiEntry
+                && activeHotspotNetworkKeys.contains(
+                ((StandardWifiEntry) entry).getStandardWifiEntryKey().getScanResultKey()));
+        activeWifiEntries.sort(WifiEntry.WIFI_PICKER_COMPARATOR);
+        final Set<ScanResultKey> scanResultKeysWithVisibleSuggestions =
+                mSuggestedWifiEntryCache.stream()
+                        .filter(entry -> {
+                            if (entry.isUserShareable()) return true;
+                            return activeWifiEntries.contains(entry);
+                        })
+                        .map(entry -> entry.getStandardWifiEntryKey().getScanResultKey())
+                        .collect(Collectors.toSet());
+        Set<String> passpointUtf8Ssids = new ArraySet<>();
+        for (PasspointWifiEntry passpointWifiEntry : mPasspointWifiEntryCache.values()) {
+            passpointUtf8Ssids.addAll(passpointWifiEntry.getAllUtf8Ssids());
+        }
+        Set<ScanResultKey> knownNetworkKeys = new ArraySet<>();
+        for (KnownNetworkEntry knownNetworkEntry : mKnownNetworkEntryCache) {
+            knownNetworkKeys.add(
+                    knownNetworkEntry.getStandardWifiEntryKey().getScanResultKey());
+        }
+        Set<ScanResultKey> hotspotNetworkKeys = new ArraySet<>();
+        for (HotspotNetworkEntry hotspotNetworkEntry : mHotspotNetworkEntryCache) {
+            if (!hotspotNetworkEntry.getHotspotNetworkEntryKey().isVirtualEntry()) {
+                hotspotNetworkKeys.add(
+                        hotspotNetworkEntry.getHotspotNetworkEntryKey().getScanResultKey());
+            }
+        }
+        Set<ScanResultKey> savedEntryKeys = new ArraySet<>();
+        for (StandardWifiEntry entry : mStandardWifiEntryCache) {
+            entry.updateAdminRestrictions();
+            if (activeWifiEntries.contains(entry)) {
+                continue;
+            }
+            if (!entry.isSaved()) {
+                if (scanResultKeysWithVisibleSuggestions
+                        .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
+                    continue;
+                }
+                // Filter out any unsaved entries that are already provisioned with Passpoint
+                if (passpointUtf8Ssids.contains(entry.getSsid())) {
+                    continue;
+                }
+                if (mInjector.isSharedConnectivityFeatureEnabled()) {
+                    // Filter out any unsaved entries that are matched with a KnownNetworkEntry
+                    if (knownNetworkKeys
+                            .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
+                        continue;
+                    }
+                }
+            } else {
+                // Create a set of saved entry keys
+                savedEntryKeys.add(entry.getStandardWifiEntryKey().getScanResultKey());
+            }
+            if (mInjector.isSharedConnectivityFeatureEnabled()) {
+                // Filter out any entries that are matched with a HotspotNetworkEntry
+                if (hotspotNetworkKeys
+                        .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
+                    continue;
+                }
+            }
+            wifiEntries.add(entry);
+        }
+        wifiEntries.addAll(mSuggestedWifiEntryCache.stream().filter(entry ->
+                entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED
+                        && entry.isUserShareable()).collect(toList()));
+        wifiEntries.addAll(mPasspointWifiEntryCache.values().stream().filter(entry ->
+                entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
+        wifiEntries.addAll(mOsuWifiEntryCache.values().stream().filter(entry ->
+                entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED
+                        && !entry.isAlreadyProvisioned()).collect(toList()));
+        wifiEntries.addAll(getContextualWifiEntries().stream().filter(entry ->
+                entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(toList()));
+        if (mInjector.isSharedConnectivityFeatureEnabled()) {
+            wifiEntries.addAll(mKnownNetworkEntryCache.stream().filter(entry ->
+                    (entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED)
+                            && !(savedEntryKeys.contains(
+                            entry.getStandardWifiEntryKey().getScanResultKey()))).collect(
+                    toList()));
+            wifiEntries.addAll(mHotspotNetworkEntryCache.stream().filter(entry ->
+                    entry.getConnectedState() == CONNECTED_STATE_DISCONNECTED).collect(
+                    toList()));
+        }
+        Collections.sort(wifiEntries, WifiEntry.WIFI_PICKER_COMPARATOR);
+        if (isVerboseLoggingEnabled()) {
+            Log.v(TAG, "onWifiEntriesChanged: reason=" + reason);
+            StringJoiner entryLog = new StringJoiner("\n");
+            int numEntries = activeWifiEntries.size() + wifiEntries.size();
+            if (numEntries == 0) {
+                entryLog.add("No entries!");
+            }
+            int index = 1;
+            for (WifiEntry entry : activeWifiEntries) {
+                entryLog.add("Entry " + index + "/" + numEntries + ": " + entry);
+                index++;
+            }
+            for (WifiEntry entry : wifiEntries) {
+                entryLog.add("Entry " + index + "/" + numEntries + ": " + entry);
+                index++;
+            }
+            Log.v(TAG, entryLog.toString());
+            Log.v(TAG, "MergedCarrierEntry: " + mMergedCarrierEntry);
+        }
+        WifiEntry connectedWifiEntry = null;
+        if (!activeWifiEntries.isEmpty()) {
+            // Primary entry is sorted to be first.
+            WifiEntry primaryWifiEntry = activeWifiEntries.get(0);
+            if (primaryWifiEntry.isPrimaryNetwork()) {
+                connectedWifiEntry = primaryWifiEntry;
+            }
+        }
+        mConnectedWifiEntry = connectedWifiEntry;
+        mActiveWifiEntries = activeWifiEntries;
+        mWifiEntries = wifiEntries;
         notifyOnWifiEntriesChanged(reason);
     }
-
 
     /**
      * Update the list returned by getWifiEntries() with the current states of the entry caches.
