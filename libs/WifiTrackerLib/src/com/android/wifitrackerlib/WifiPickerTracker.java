@@ -429,6 +429,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (WifiEntry entry : getAllWifiEntries()) {
             entry.onDefaultNetworkCapabilitiesChanged(network, networkCapabilities);
         }
+        notifyOnWifiEntriesChanged(WIFI_ENTRIES_CHANGED_REASON_GENERAL);
     }
 
     @WorkerThread
@@ -437,6 +438,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         for (WifiEntry entry : getAllWifiEntries()) {
             entry.onDefaultNetworkLost();
         }
+        notifyOnWifiEntriesChanged(WIFI_ENTRIES_CHANGED_REASON_GENERAL);
     }
 
     @WorkerThread
