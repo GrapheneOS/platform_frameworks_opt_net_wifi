@@ -368,7 +368,24 @@ public class WifiEntry {
      * currently being used to provide internet connection).
      */
     public boolean isDefaultNetwork() {
-        return mNetwork != null && mNetwork.equals(mDefaultNetwork);
+        if (mNetwork != null && mNetwork.equals(mDefaultNetwork)) {
+            return true;
+        }
+
+        // Try to get a WifiInfo from the default network capabilities in case it's a
+        // VcnTransportInfo with an underlying WifiInfo.
+        if (mDefaultNetworkCapabilities == null) {
+            return false;
+        }
+        WifiInfo defaultWifiInfo = Utils.getWifiInfo(mDefaultNetworkCapabilities);
+        if (defaultWifiInfo != null) {
+            return connectionInfoMatches(defaultWifiInfo);
+        }
+
+        // Match based on the underlying networks if there are any (e.g. VPN).
+        List<Network> underlyingNetworks = BuildCompat.isAtLeastT()
+                ? mDefaultNetworkCapabilities.getUnderlyingNetworks() : null;
+        return underlyingNetworks != null && underlyingNetworks.contains(mNetwork);
     }
 
     /**
@@ -387,16 +404,8 @@ public class WifiEntry {
      * Returns whether this network is considered low quality.
      */
     public synchronized boolean isLowQuality() {
-        if (!isPrimaryNetwork()) {
-            return false;
-        }
-        if (mNetworkCapabilities == null) {
-            return false;
-        }
-        if (mDefaultNetworkCapabilities == null) {
-            return false;
-        }
-        return mNetworkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        return isPrimaryNetwork() && hasInternetAccess() && !isDefaultNetwork()
+                && mDefaultNetworkCapabilities != null
                 && mDefaultNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
                 && !mDefaultNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN);
     }
