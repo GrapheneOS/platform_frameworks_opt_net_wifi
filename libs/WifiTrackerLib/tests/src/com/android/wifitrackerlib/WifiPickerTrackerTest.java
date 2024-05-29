@@ -1046,6 +1046,14 @@ public class WifiPickerTrackerTest {
                         .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isNotEqualTo(lowQuality);
 
+        // Restricted Cell is default should not trigger low quality, since the default network is
+        // determined by PANS policy, and this is intentional.
+        mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(Mockito.mock(Network.class),
+                new NetworkCapabilities.Builder()
+                        .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR).build());
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getSummary()).isNotEqualTo(lowQuality);
+
         // Set Cell to the default but then lose the default network. Low quality should disappear
         // since cell default was lost.
         mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(Mockito.mock(Network.class),
