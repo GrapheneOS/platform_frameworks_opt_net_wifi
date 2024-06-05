@@ -18,7 +18,6 @@ package com.android.wifitrackerlib;
 
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.DISABLED_AUTHENTICATION_FAILURE;
 import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_ENABLED;
-import static android.net.wifi.WifiConfiguration.NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_EAP_WPA3_ENTERPRISE_192_BIT;
@@ -428,13 +427,6 @@ public class Utils {
         // Check for any failure messages to display
         NetworkSelectionStatus networkSelectionStatus =
                 wifiConfiguration.getNetworkSelectionStatus();
-        if (wifiConfiguration.hasNoInternetAccess()) {
-            if (networkSelectionStatus.getNetworkSelectionStatus()
-                    == NETWORK_SELECTION_PERMANENTLY_DISABLED) {
-                return context.getString(R.string.wifitrackerlib_wifi_no_internet_no_reconnect);
-            }
-            return context.getString(R.string.wifitrackerlib_wifi_no_internet);
-        }
         if (networkSelectionStatus.getNetworkSelectionStatus() != NETWORK_SELECTION_ENABLED) {
             switch (networkSelectionStatus.getNetworkSelectionDisableReason()) {
                 case NetworkSelectionStatus.DISABLED_CONSECUTIVE_FAILURES:
@@ -457,8 +449,9 @@ public class Utils {
                 case NetworkSelectionStatus.DISABLED_ASSOCIATION_REJECTION:
                     return context.getString(R.string.wifitrackerlib_wifi_disabled_generic);
                 case NetworkSelectionStatus.DISABLED_NO_INTERNET_PERMANENT:
-                case NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY:
                     return context.getString(R.string.wifitrackerlib_wifi_no_internet_no_reconnect);
+                case NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY:
+                    return context.getString(R.string.wifitrackerlib_wifi_no_internet);
                 case DISABLED_TRANSITION_DISABLE_INDICATION:
                     return context.getString(
                             R.string.wifitrackerlib_wifi_disabled_transition_disable_indication);

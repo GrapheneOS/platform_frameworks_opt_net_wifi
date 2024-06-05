@@ -662,6 +662,53 @@ public class UtilsTest {
     }
 
     @Test
+    public void testDisconnectedDescription_noInternet_returnsNoInternetString() {
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_disconnected))
+                .thenReturn("wifitrackerlib_wifi_disconnected");
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_no_internet))
+                .thenReturn("wifitrackerlib_wifi_no_internet");
+        when(mMockContext.getString(R.string.wifitrackerlib_wifi_no_internet_no_reconnect))
+                .thenReturn("wifitrackerlib_wifi_no_internet_no_reconnect");
+        String noAttributionPackage = "noAttributionPackage";
+        when(mMockInjector.getNoAttributionAnnotationPackages())
+                .thenReturn(Set.of(noAttributionPackage));
+
+        WifiConfiguration temporaryNoInternet = spy(new WifiConfiguration());
+        temporaryNoInternet.creatorName = noAttributionPackage;
+        NetworkSelectionStatus networkSelectionStatus =
+                spy(new NetworkSelectionStatus.Builder()
+                        .setNetworkSelectionStatus(
+                                NetworkSelectionStatus.NETWORK_SELECTION_TEMPORARY_DISABLED)
+                        .setNetworkSelectionDisableReason(
+                                NetworkSelectionStatus.DISABLED_NO_INTERNET_TEMPORARY)
+                        .build());
+        temporaryNoInternet.setNetworkSelectionStatus(networkSelectionStatus);
+        assertThat(Utils.getDisconnectedDescription(
+                mMockInjector, mMockContext, temporaryNoInternet, true, true))
+                .isEqualTo(new StringJoiner(STRING_SUMMARY_SEPARATOR)
+                        .add("wifitrackerlib_wifi_disconnected")
+                        .add("wifitrackerlib_wifi_no_internet")
+                        .toString());
+
+        WifiConfiguration permanentNoInternet = spy(new WifiConfiguration());
+        permanentNoInternet.creatorName = noAttributionPackage;
+        networkSelectionStatus =
+                spy(new NetworkSelectionStatus.Builder()
+                        .setNetworkSelectionStatus(
+                                NetworkSelectionStatus.NETWORK_SELECTION_PERMANENTLY_DISABLED)
+                        .setNetworkSelectionDisableReason(
+                                NetworkSelectionStatus.DISABLED_NO_INTERNET_PERMANENT)
+                        .build());
+        permanentNoInternet.setNetworkSelectionStatus(networkSelectionStatus);
+        assertThat(Utils.getDisconnectedDescription(
+                mMockInjector, mMockContext, permanentNoInternet, true, true))
+                .isEqualTo(new StringJoiner(STRING_SUMMARY_SEPARATOR)
+                        .add("wifitrackerlib_wifi_disconnected")
+                        .add("wifitrackerlib_wifi_no_internet_no_reconnect")
+                        .toString());
+    }
+
+    @Test
     public void testWifiInfoBandString_multipleMloLinks_returnsMultipleBands() {
         assumeTrue(BuildCompat.isAtLeastU());
 
