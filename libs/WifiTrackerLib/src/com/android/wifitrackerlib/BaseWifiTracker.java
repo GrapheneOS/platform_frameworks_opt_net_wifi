@@ -383,7 +383,9 @@ public class BaseWifiTracker {
         mWorkerHandler.post(() -> {
             IntentFilter filter = new IntentFilter();
             filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-            filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+            if (!mIsScanningDisabled) {
+                filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+            }
             filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
             filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
             if (isVerboseLoggingEnabled()) {
