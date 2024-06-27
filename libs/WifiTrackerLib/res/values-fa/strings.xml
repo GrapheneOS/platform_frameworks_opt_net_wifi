@@ -73,12 +73,12 @@
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"هیچ‌کدام"</string>
     <string name="wifitrackerlib_wifi_security_passpoint" msgid="3980446437188585906">"Passpoint"</string>
     <string name="wifitrackerlib_wifi_passpoint_expired" msgid="7974960573887452566">"منقضی‌شده"</string>
-    <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"برای ثبت‌نام ضربه بزنید"</string>
-    <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"برای تمدید اشتراک و متصل شدن، ضربه بزنید"</string>
+    <string name="wifitrackerlib_tap_to_sign_up" msgid="3897017015910817402">"برای ثبت‌نام تک‌ضرب بزنید"</string>
+    <string name="wifitrackerlib_tap_to_renew_subscription_and_connect" msgid="6048420776676138069">"برای تمدید اشتراک و متصل شدن، تک‌ضرب بزنید"</string>
     <string name="wifitrackerlib_osu_opening_provider" msgid="7128677439450712558">"درحال باز کردن <xliff:g id="PASSPOINTPROVIDER">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_osu_connect_failed" msgid="3872233609000700930">"متصل نشد"</string>
     <string name="wifitrackerlib_osu_completing_sign_up" msgid="4359503050543182480">"درحال تکمیل ثبت‌نام…"</string>
-    <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"ثبت‌نام تکمیل نشد. برای امتحان مجدد ضربه بزنید."</string>
+    <string name="wifitrackerlib_osu_sign_up_failed" msgid="3964140125523395898">"ثبت‌نام تکمیل نشد. برای امتحان مجدد تک‌ضرب بزنید."</string>
     <string name="wifitrackerlib_osu_sign_up_complete" msgid="3279606633343124580">"ثبت‌نام تکمیل شد. درحال اتصال…"</string>
     <string name="wifitrackerlib_imsi_protection_warning" msgid="7202210931586169466">"این شبکه شناسه سیم‌کارتی دریافت می‌کند که می‌توان از آن برای ردیابی مکان دستگاه استفاده کرد. "<annotation id="url">"بیشتر بدانید"</annotation></string>
     <string name="wifitrackerlib_wifi_wont_autoconnect_for_now" msgid="4923161724964349851">"‏فعلاً Wi-Fi به‌طور خودکار متصل نمی‌شود"</string>
