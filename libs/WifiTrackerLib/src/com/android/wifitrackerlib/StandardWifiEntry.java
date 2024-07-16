@@ -207,6 +207,7 @@ public class StandardWifiEntry extends WifiEntry {
                 connectedStateDescription = getConnectedDescription(mContext,
                         mTargetWifiConfig,
                         mNetworkCapabilities,
+                        mWifiInfo,
                         isDefaultNetwork(),
                         isLowQuality(),
                         mConnectivityReport);

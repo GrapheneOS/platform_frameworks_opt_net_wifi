@@ -252,6 +252,7 @@ public class Utils {
     static String getConnectedDescription(@NonNull Context context,
             @Nullable WifiConfiguration wifiConfiguration,
             @NonNull NetworkCapabilities networkCapabilities,
+            @Nullable WifiInfo wifiInfo,
             boolean isDefaultNetwork,
             boolean isLowQuality,
             @Nullable ConnectivityDiagnosticsManager.ConnectivityReport connectivityReport) {
@@ -301,6 +302,14 @@ public class Utils {
             // "Connected"
             sj.add(context.getResources().getStringArray(
                     R.array.wifitrackerlib_wifi_status)[DetailedState.CONNECTED.ordinal()]);
+        }
+
+        if (shouldShowConnected) {
+            if (wifiInfo != null && wifiInfo.getCurrentSecurityType() == SECURITY_TYPE_WEP) {
+                // "WEP (less secure)"
+                sj.add(context.getString(R.string.wifi_connected_less_secure,
+                        getSecurityString(context, Arrays.asList(SECURITY_TYPE_WEP), false)));
+            }
         }
 
         if (isLowQuality) {

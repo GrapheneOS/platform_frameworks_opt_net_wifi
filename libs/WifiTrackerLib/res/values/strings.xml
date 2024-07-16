@@ -115,6 +115,9 @@
     <!-- Summary for Connected wifi network with a low quality connection [CHAR LIMIT=NONE] -->
     <string name="wifi_connected_low_quality">Low quality</string>
 
+    <!-- Summary for Connected wifi network with a less secure connection [CHAR LIMIT=NONE] -->
+    <string name="wifi_connected_less_secure"><xliff:g id="security type" example="WEP">%1$s</xliff:g> (less secure)</string>
+
     <!-- Summary for admin restricted networks [CHAR LIMIT=NONE] -->
     <string name="wifitrackerlib_admin_restricted_network">Not allowed by your organization</string>
 
