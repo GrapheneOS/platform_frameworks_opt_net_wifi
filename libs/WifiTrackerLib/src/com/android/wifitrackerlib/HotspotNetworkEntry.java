@@ -450,6 +450,13 @@ public class HotspotNetworkEntry extends WifiEntry {
     public void onConnectionStatusChanged(@ConnectionStatus int status) {
         mLastStatus = status;
         switch (status) {
+            case HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN:
+                if (NonSdkApiWrapper.isHotspotNetworkUnknownStatusResetsConnectingStateEnabled()) {
+                    mCalledConnect = false;
+                    mConnectionError = false;
+                    notifyOnUpdated();
+                }
+                break;
             case HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT:
                 mCalledConnect = true;
                 mConnectionError = false;

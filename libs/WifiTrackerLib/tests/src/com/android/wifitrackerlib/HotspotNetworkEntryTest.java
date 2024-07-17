@@ -1101,4 +1101,30 @@ public class HotspotNetworkEntryTest {
 
         assertThat(entry.getSummary()).isNotEqualTo("Can't connect. Try connecting again.");
     }
+
+    @Test
+    public void testGetSummary_connectionCanceled_resetsConnectingString() {
+        final HotspotNetworkEntry entry = new HotspotNetworkEntry(
+                mMockInjector, mMockContext, mTestHandler,
+                mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
+        entry.setListener(mMockListener);
+        entry.connect(mMockConnectCallback);
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            doReturn(true).when(() ->
+                    NonSdkApiWrapper.isHotspotNetworkUnknownStatusResetsConnectingStateEnabled());
+            entry.onConnectionStatusChanged(
+                    HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
+            mTestLooper.dispatchAll();
+            assertThat(entry.getSummary()).isEqualTo("Connecting…");
+
+            entry.onConnectionStatusChanged(
+                    HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN);
+            mTestLooper.dispatchAll();
+
+            assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
+        } finally {
+            session.finishMocking();
+        }
+    }
 }
