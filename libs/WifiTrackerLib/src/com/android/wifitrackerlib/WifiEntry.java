@@ -367,7 +367,7 @@ public class WifiEntry {
      * Returns whether this network is the default network or not (i.e. this network is the one
      * currently being used to provide internet connection).
      */
-    public boolean isDefaultNetwork() {
+    public synchronized boolean isDefaultNetwork() {
         if (mNetwork != null && mNetwork.equals(mDefaultNetwork)) {
             return true;
         }
