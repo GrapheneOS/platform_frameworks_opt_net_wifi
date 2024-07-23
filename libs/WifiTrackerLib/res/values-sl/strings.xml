@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Do zasebnega strežnika DNS ni mogoče dostopati"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Povezava z napravo je vzpostavljena. Dostop do interneta ni na voljo."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Nizka kakovost"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (manj varno)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Organizacija tega ne dovoljuje."</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"Omrežje <xliff:g id="NETWORK_NAME">%1$s</xliff:g> (<xliff:g id="MODEL_NAME">%2$s</xliff:g>)"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} iz vašega telefona}TABLET{{NETWORK_NAME} iz vašega tabličnega računalnika}COMPUTER{{NETWORK_NAME} iz vašega računalnika}WATCH{{NETWORK_NAME} iz vaše ure}VEHICLE{{NETWORK_NAME} iz vašega vozila}other{{NETWORK_NAME} iz vaše naprave}}"</string>

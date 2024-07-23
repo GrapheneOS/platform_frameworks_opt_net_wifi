@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ప్రైవేట్ DNS సర్వర్‌ను యాక్సెస్ చేయడం సాధ్యపడదు"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"పరికరానికి కనెక్ట్ అయింది. ఇంటర్నెట్‌ను అందిచడం సాధ్యం కాదు."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"తక్కువ క్వాలిటీ"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (తక్కువ సురక్షితమైనది)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"మీ సంస్థచే అనుమతించబడదు"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> నుండి <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{మీ ఫోన్ నుండి {NETWORK_NAME}}TABLET{మీ టాబ్లెట్ నుండి {NETWORK_NAME}}COMPUTER{మీ కంప్యూటర్ నుండి {NETWORK_NAME}}WATCH{మీ వాచ్ నుండి {NETWORK_NAME}}VEHICLE{మీ వెహికల్‌ నుండి {NETWORK_NAME}}other{మీ పరికరం నుండి {NETWORK_NAME}}}"</string>

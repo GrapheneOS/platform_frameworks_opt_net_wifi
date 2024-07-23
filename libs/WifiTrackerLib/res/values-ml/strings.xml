@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"സ്വകാര്യ DNS സെർവർ ആക്‌സസ് ചെയ്യാനാവുന്നില്ല"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ഉപകരണത്തിലേക്ക് കണക്റ്റ് ചെയ്‌തു. ഇന്റർനെറ്റ് നൽകാനാകില്ല."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"കുറഞ്ഞ നിലവാരം"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (സുരക്ഷ കുറഞ്ഞത്)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"നിങ്ങളുടെ ഓർഗനൈസേഷൻ അനുവദിക്കുന്നില്ല"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> എന്നതിൽ നിന്നുള്ള <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{നിങ്ങളുടെ ഫോണിൽ നിന്നുള്ള {NETWORK_NAME}}TABLET{നിങ്ങളുടെ ടാബ്‌ലെറ്റിൽ നിന്നുള്ള {NETWORK_NAME}}COMPUTER{നിങ്ങളുടെ കമ്പ്യൂട്ടറിൽ നിന്നുള്ള {NETWORK_NAME}}WATCH{നിങ്ങളുടെ വാച്ചിൽ നിന്നുള്ള {NETWORK_NAME}}VEHICLE{നിങ്ങളുടെ വാഹനത്തിൽ നിന്നുള്ള {NETWORK_NAME}}other{നിങ്ങളുടെ ഉപകരണത്തിൽ നിന്നുള്ള {NETWORK_NAME}}}"</string>

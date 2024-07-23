@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ບໍ່ສາມາດເຂົ້າເຖິງເຊີບເວີ DNS ສ່ວນຕົວໄດ້"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ເຊື່ອມຕໍ່ຫາອຸປະກອນແລ້ວ. ບໍ່ສາມາດໃຫ້ບໍລິການອິນເຕີເນັດໄດ້."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ຄຸນນະພາບຕໍ່າ"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (ປອດໄພໜ້ອຍກວ່າ)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"ອົງການຂອງທ່ານບໍ່ອະນຸຍາດ"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> ຈາກ <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} ຈາກໂທລະສັບຂອງທ່ານ}TABLET{{NETWORK_NAME} ຈາກແທັບເລັດຂອງທ່ານ}COMPUTER{{NETWORK_NAME} ຈາກຄອມພິວເຕີຂອງທ່ານ}WATCH{{NETWORK_NAME} ຈາກໂມງຂອງທ່ານ}VEHICLE{{NETWORK_NAME} ຈາກລົດຂອງທ່ານ}other{{NETWORK_NAME} ຈາກອຸປະກອນຂອງທ່ານ}}"</string>

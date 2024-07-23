@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Özəl DNS serverinə giriş mümkün deyil"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Cihaza qoşulub. İnternet təmin etmək olmur."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Aşağı keyfiyyət"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (daha az güvənli)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Təşkilatınız icazə vermir"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> tərəfindən <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{Telefonunuzdan: {NETWORK_NAME}}TABLET{Planşetinizdən: {NETWORK_NAME}}COMPUTER{Komputerinizdən: {NETWORK_NAME}}WATCH{Saatınızdan: {NETWORK_NAME}}VEHICLE{Avtomobilinizdən: {NETWORK_NAME}}other{Cihazınızdan: {NETWORK_NAME}}}"</string>

@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"निजी DNS सर्भरमाथि पहुँच राख्न सकिँदैन"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"डिभाइसमा कनेक्ट गरियो। इन्टरनेट उपलब्ध छैन।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"न्यून गुणस्तर"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (कम सुरक्षित)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"तपाईंको सङ्गठनले अनुमति दिएको छैन"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> को <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{तपाईंको फोनबाट: {NETWORK_NAME}}TABLET{तपाईंको ट्याब्लेटबाट: {NETWORK_NAME}}COMPUTER{तपाईंको कम्प्युटरबाट: {NETWORK_NAME}}WATCH{तपाईंको स्मार्ट वाचबाट: {NETWORK_NAME}}VEHICLE{तपाईंको गाडीबाट: {NETWORK_NAME}}other{तपाईंको डिभाइसबाट: {NETWORK_NAME}}}"</string>

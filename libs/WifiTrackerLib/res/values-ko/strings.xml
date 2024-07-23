@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"비공개 DNS 서버에 액세스할 수 없음"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"기기에 연결되었습니다. 인터넷을 이용할 수 없습니다."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"품질 낮음"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g>(보안 수준 낮음)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"조직에서 허용하지 않음"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g>의 <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{휴대전화의 {NETWORK_NAME}}TABLET{태블릿의 {NETWORK_NAME}}COMPUTER{컴퓨터의 {NETWORK_NAME}}WATCH{시계의 {NETWORK_NAME}}VEHICLE{차량의 {NETWORK_NAME}}other{기기의 {NETWORK_NAME}}}"</string>

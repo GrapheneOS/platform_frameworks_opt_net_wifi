@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Մասնավոր DNS սերվերն անհասանելի է"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Միացված է սարքին։ Հնարավոր չէ տրամադրել ինտերնետ կապ։"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Ցածր որակ"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (պակաս անվտանգ)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Թույլատրված չէ ձեր կազմակերպության կողմից"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g>՝ <xliff:g id="MODEL_NAME">%2$s</xliff:g>-ից"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} ձեր հեռախոսից}TABLET{{NETWORK_NAME} ձեր պլանշետից}COMPUTER{{NETWORK_NAME} ձեր համակարգչից}WATCH{{NETWORK_NAME} ձեր ժամացույցից}VEHICLE{{NETWORK_NAME} ձեր մեքենայից}other{{NETWORK_NAME} ձեր սարքից}}"</string>

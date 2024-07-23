@@ -43,9 +43,10 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"No se ha podido acceder al servidor DNS privado"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Conectado al dispositivo. Sin acceso a Internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Calidad baja"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (menos segura)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"No permitido por tu organización"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> de <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
-    <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} desde tu teléfono}TABLET{{NETWORK_NAME} desde tu tablet}COMPUTER{{NETWORK_NAME} desde tu ordenador}WATCH{{NETWORK_NAME} desde tu smartwatch}VEHICLE{{NETWORK_NAME} desde tu vehículo}other{{NETWORK_NAME} desde tu dispositivo}}"</string>
+    <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} desde tu teléfono}TABLET{{NETWORK_NAME} desde tu teléfono}COMPUTER{{NETWORK_NAME} desde tu teléfono}WATCH{{NETWORK_NAME} desde tu smartwatch}VEHICLE{{NETWORK_NAME} desde tu smartwatch}other{{NETWORK_NAME} desde tu smartwatch}}"</string>
     <string name="wifitrackerlib_hotspot_network_summary_error_generic" msgid="2339836723160908882">"No se puede conectar. Prueba a conectarte de nuevo."</string>
     <string name="wifitrackerlib_hotspot_network_summary_error_settings" msgid="6928234716406336668">"{DEVICE_TYPE,select, PHONE{No se puede conectar. Comprueba los ajustes del teléfono y vuelve a intentarlo.}TABLET{No se puede conectar. Comprueba los ajustes de la tablet y vuelve a intentarlo.}COMPUTER{No se puede conectar. Comprueba los ajustes del ordenador y vuelve a intentarlo.}WATCH{No se puede conectar. Comprueba los ajustes del reloj y vuelve a intentarlo.}VEHICLE{No se puede conectar. Comprueba los ajustes del vehículo y vuelve a intentarlo.}other{No se puede conectar. Comprueba los ajustes del dispositivo y vuelve a intentarlo.}}"</string>
     <string name="wifitrackerlib_hotspot_network_summary_error_carrier_block" msgid="359780026027619177">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> no permite esta conexión"</string>
@@ -94,6 +95,6 @@
     <string name="wifitrackerlib_wifi_band_5_ghz" msgid="2179047349922091556">"5 GHz"</string>
     <string name="wifitrackerlib_wifi_band_6_ghz" msgid="6532408050869498777">"6 GHz"</string>
     <string name="wifitrackerlib_multiband_separator" msgid="6838172120482590336">", "</string>
-    <string name="wifitrackerlib_link_speed_mbps" msgid="5880214340478706112">"<xliff:g id="LINK_SPEED_MBPS">%1$d</xliff:g> Mb/s"</string>
+    <string name="wifitrackerlib_link_speed_mbps" msgid="5880214340478706112">"<xliff:g id="LINK_SPEED_MBPS">%1$d</xliff:g> Mbps"</string>
     <string name="wifitrackerlib_link_speed_on_band" msgid="2433114336144744962">"<xliff:g id="LINK_SPEED">%1$s</xliff:g> de <xliff:g id="BAND">%2$s</xliff:g>"</string>
 </resources>

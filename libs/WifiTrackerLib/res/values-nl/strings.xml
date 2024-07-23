@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Geen toegang tot privé-DNS-server"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Verbonden met apparaat. Kan geen internet bieden."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Lage kwaliteit"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (minder goed beveiligd)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Niet toegestaan door je organisatie"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> van <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} op je telefoon}TABLET{{NETWORK_NAME} op je tablet}COMPUTER{{NETWORK_NAME} op je computer}WATCH{{NETWORK_NAME} op je smartwatch}VEHICLE{{NETWORK_NAME} via je voertuig}other{{NETWORK_NAME} op je apparaat}}"</string>

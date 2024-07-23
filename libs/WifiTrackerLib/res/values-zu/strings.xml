@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Iseva eyimfihlo ye-DNS ayikwazi ukufinyelelwa"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Ixhunywe kudivayisi. Ayikwazi ukunikeza i-inthanethi."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Ikhwalithi ephansi"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (okuvikeleke kancane)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Ayivunyelwe yinhlangano yakho"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"I-<xliff:g id="NETWORK_NAME">%1$s</xliff:g> evela ku-<xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{I-{NETWORK_NAME} ukusuka kufoni yakho}TABLET{I-{NETWORK_NAME} ukusuka kuthebhulethi yakho}COMPUTER{I-{NETWORK_NAME} ukusuka kukhompyutha yakho}WATCH{I-{NETWORK_NAME} ukusuka kuwashi lakho}VEHICLE{I-{NETWORK_NAME} ukusuka emotweni yakho}other{I-{NETWORK_NAME} ukusuka kudivayisi yakho}}"</string>

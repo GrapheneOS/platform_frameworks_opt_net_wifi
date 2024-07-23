@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Pelayan DNS peribadi tidak boleh diakses"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Disambungkan pada peranti. Tidak dapat menyediakan Internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Kualiti rendah"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (kurang selamat)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Tidak dibenarkan oleh organisasi anda"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> daripada <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} daripada telefon anda}TABLET{{NETWORK_NAME} daripada tablet anda}COMPUTER{{NETWORK_NAME} daripada komputer anda}WATCH{{NETWORK_NAME} daripada jam tangan anda}VEHICLE{{NETWORK_NAME} daripada kenderaan anda}other{{NETWORK_NAME} daripada peranti anda}}"</string>

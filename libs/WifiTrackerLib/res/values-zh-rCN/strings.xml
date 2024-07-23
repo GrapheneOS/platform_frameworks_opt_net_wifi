@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"无法访问专用 DNS 服务器"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"已连接到设备，但无法提供互联网连接。"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"质量不佳"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g>（安全性较低）"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"您的组织不允许使用"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"来自 <xliff:g id="MODEL_NAME">%2$s</xliff:g> 的“<xliff:g id="NETWORK_NAME">%1$s</xliff:g>”"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME}（来自您的手机）}TABLET{{NETWORK_NAME}（来自您的平板电脑）}COMPUTER{{NETWORK_NAME}（来自您的计算机）}WATCH{{NETWORK_NAME}（来自您的手表）}VEHICLE{{NETWORK_NAME}（来自您的汽车）}other{{NETWORK_NAME}（来自您的设备）}}"</string>

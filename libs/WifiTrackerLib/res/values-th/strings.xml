@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"เข้าถึงเซิร์ฟเวอร์ DNS ส่วนตัวไม่ได้"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"เชื่อมต่ออุปกรณ์แล้ว แต่ไม่มีอินเทอร์เน็ต"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"คุณภาพต่ำ"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (ปลอดภัยน้อยกว่า)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"องค์กรของคุณไม่อนุญาต"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> จาก <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} จากโทรศัพท์ของคุณ}TABLET{{NETWORK_NAME} จากแท็บเล็ตของคุณ}COMPUTER{{NETWORK_NAME} จากคอมพิวเตอร์ของคุณ}WATCH{{NETWORK_NAME} จากนาฬิกาของคุณ}VEHICLE{{NETWORK_NAME} จากรถของคุณ}other{{NETWORK_NAME} จากอุปกรณ์ของคุณ}}"</string>

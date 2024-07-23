@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"No es pot accedir al servidor DNS privat"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Connectat al dispositiu. Sense accés a Internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Qualitat baixa"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (menys segur)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"No permesa per la teva organització"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> de <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} des del telèfon}TABLET{{NETWORK_NAME} des de la tauleta}COMPUTER{{NETWORK_NAME} des de l\'ordinador}WATCH{{NETWORK_NAME} des del rellotge}VEHICLE{{NETWORK_NAME} des del vehicle}other{{NETWORK_NAME} des del dispositiu}}"</string>

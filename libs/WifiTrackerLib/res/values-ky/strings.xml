@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Жеке DNS сервери жеткиликсиз"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Түзмөккө туташып турат. Интернет жок."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Начар сапат"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (коопсуздук деңгээли төмөнүрөөк)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Уюмуңуз тыюу салган"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g>–<xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{Телефонуңуздагы {NETWORK_NAME} тармагы}TABLET{Планшетиңиздеги {NETWORK_NAME} тармагы}COMPUTER{Компьютериңиздеги {NETWORK_NAME} тармагы}WATCH{Саатыңыздагы {NETWORK_NAME} тармагы}VEHICLE{Унааңыздагы {NETWORK_NAME} тармагы}other{Түзмөгүңүздөгү {NETWORK_NAME} тармагы}}"</string>

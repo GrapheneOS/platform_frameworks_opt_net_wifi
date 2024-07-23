@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Немає доступу до приватного DNS-сервера"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Підключено до пристрою. Інтернет-з\'єднання відсутнє."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Низька якість"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (менш захищене з’єднання)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Заборонено у вашій організації"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> з пристрою <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} з вашого телефона}TABLET{{NETWORK_NAME} з вашого планшета}COMPUTER{{NETWORK_NAME} з вашого комп’ютера}WATCH{{NETWORK_NAME} з вашого годинника}VEHICLE{{NETWORK_NAME} з вашого автомобіля}other{{NETWORK_NAME} з вашого пристрою}}"</string>

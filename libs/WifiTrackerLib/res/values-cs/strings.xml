@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Nelze získat přístup k soukromému serveru DNS"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Připojeno k zařízení. Internet není k dispozici."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Nízká kvalita"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (méně zabezpečené)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Není povoleno vaší organizací"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> ze zařízení <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} z vašeho telefonu}TABLET{{NETWORK_NAME} z vašeho tabletu}COMPUTER{{NETWORK_NAME} z vašeho počítače}WATCH{{NETWORK_NAME} z vašich hodinek}VEHICLE{{NETWORK_NAME} z vašeho auta}other{{NETWORK_NAME} z vašeho zařízení}}"</string>

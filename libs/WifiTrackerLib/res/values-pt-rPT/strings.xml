@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Não é possível aceder ao servidor DNS privado."</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Ligado ao dispositivo. Não é possível disponibilizar Internet."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Baixa qualidade"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (menos seguro)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Não é permitido pela sua organização"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> de <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} a partir do telemóvel}TABLET{{NETWORK_NAME} a partir do tablet}COMPUTER{{NETWORK_NAME} a partir do computador}WATCH{{NETWORK_NAME} a partir do relógio}VEHICLE{{NETWORK_NAME} a partir do veículo}other{{NETWORK_NAME} a partir do dispositivo}}"</string>

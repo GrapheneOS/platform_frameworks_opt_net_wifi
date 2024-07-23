@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Xususiy DNS server ishlamayapti"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Qurilmaga ulandi. Internetga ulanmagan."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Sifati past"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (kamroq xavfsiz)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Tashkilotingiz ruxsat bermagan"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> <xliff:g id="NETWORK_NAME">%1$s</xliff:g> yubordi"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{Telefoningizdan: {NETWORK_NAME}}TABLET{Planshetingizdan: {NETWORK_NAME}}COMPUTER{Kompyuteringizdan: {NETWORK_NAME}}WATCH{Soatingizdan: {NETWORK_NAME}}VEHICLE{Avtomobilingizdan: {NETWORK_NAME}}other{Qurilmangizdan: {NETWORK_NAME}}}"</string>

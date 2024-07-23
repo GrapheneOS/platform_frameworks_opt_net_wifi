@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Den private DNS-tjeneren kan ikke nås"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Koblet til enheten. Kan ikke gi internettilgang."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Lav kvalitet"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (mindre sikker)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Ikke tillatt av organisasjonen din"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> fra <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} fra telefonen}TABLET{{NETWORK_NAME} fra nettbrettet}COMPUTER{{NETWORK_NAME} fra datamaskinen}WATCH{{NETWORK_NAME} fra klokken}VEHICLE{{NETWORK_NAME} fra kjøretøyet}other{{NETWORK_NAME} fra enheten}}"</string>

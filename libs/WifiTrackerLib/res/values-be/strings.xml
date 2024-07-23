@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"Не ўдалося атрымаць доступ да прыватнага DNS-сервера"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Падключана да прылады. Не ўдалося падключыцца да інтэрнэту."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Нізкая якасць"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (менш бяспечна)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Забаронена ў вашай арганізацыі"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> ад <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} (з вашага тэлефона)}TABLET{{NETWORK_NAME} (з вашага планшэта)}COMPUTER{{NETWORK_NAME} (з вашага камп\'ютара)}WATCH{{NETWORK_NAME} (з вашага гадзінніка)}VEHICLE{{NETWORK_NAME} (з вашага аўтамабіля)}other{{NETWORK_NAME} (з вашай прылады)}}"</string>

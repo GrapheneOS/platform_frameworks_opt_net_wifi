@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ব্যক্তিগত ডিএনএস সার্ভার অ্যাক্সেস করা যাবে না"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ডিভাইসের সাথে কানেক্ট করা। ইন্টারনেট পরিষেবা প্রদান করা যাচ্ছে না।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"খারাপ কোয়ালিটি"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (কম সুরক্ষিত)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"আপনার প্রতিষ্ঠানের অননুমোদিত নেটওয়ার্ক"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g> থেকে <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} আপনার ফোন থেকে}TABLET{{NETWORK_NAME} আপনার ট্যাবলেট থেকে}COMPUTER{{NETWORK_NAME} আপনার কম্পিউটার থেকে}WATCH{{NETWORK_NAME} আপনার ঘড়ি থেকে}VEHICLE{{NETWORK_NAME} আপনার গাড়ি থেকে}other{{NETWORK_NAME} আপনার ডিভাইস থেকে}}"</string>

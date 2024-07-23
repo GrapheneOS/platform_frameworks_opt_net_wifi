@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"A privát DNS-kiszolgálóhoz nem lehet hozzáférni"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"Csatlakoztatva az eszközhöz. Nincs internethozzáférés."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"Gyenge minőségű"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (kevésbé biztonságos)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"Szervezete nem engedélyezte"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="NETWORK_NAME">%1$s</xliff:g> – <xliff:g id="MODEL_NAME">%2$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{{NETWORK_NAME} a telefonjáról}TABLET{{NETWORK_NAME} a táblagépéről}COMPUTER{{NETWORK_NAME} a számítógépéről}WATCH{{NETWORK_NAME} az órájáról}VEHICLE{{NETWORK_NAME} a járművéről}other{{NETWORK_NAME} az eszközéről}}"</string>

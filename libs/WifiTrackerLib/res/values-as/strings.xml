@@ -43,6 +43,7 @@
     <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ব্যক্তিগত DNS ছাৰ্ভাৰ এক্সেছ কৰিব নোৱাৰি"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ডিভাইচৰ সৈতে সংযোগ কৰা হৈছে। ইণ্টাৰনেট সংযোগ প্ৰদান কৰিব নোৱাৰি।"</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"নিম্ন মানৰ"</string>
+    <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (কম সুৰক্ষিত)"</string>
     <string name="wifitrackerlib_admin_restricted_network" msgid="5439914801076897515">"আপোনাৰ প্ৰতিষ্ঠানে অনুমতি নিদিয়ে"</string>
     <string name="wifitrackerlib_hotspot_network_summary" msgid="7661086683527884190">"<xliff:g id="MODEL_NAME">%2$s</xliff:g>ৰ পৰা <xliff:g id="NETWORK_NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_hotspot_network_summary_new" msgid="1165705867298669621">"{DEVICE_TYPE,select, PHONE{আপোনাৰ ফ’নৰ পৰা {NETWORK_NAME}}TABLET{আপোনাৰ টেবলেটৰ পৰা {NETWORK_NAME}}COMPUTER{আপোনাৰ কম্পিউটাৰৰ পৰা {NETWORK_NAME}}WATCH{আপোনাৰ ঘড়ীৰ পৰা {NETWORK_NAME}}VEHICLE{আপোনাৰ বাহনৰ পৰা {NETWORK_NAME}}other{আপোনাৰ ডিভাইচৰ পৰা {NETWORK_NAME}}}"</string>
