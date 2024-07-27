@@ -3064,4 +3064,122 @@ public class WifiPickerTrackerTest {
 
         verify(connectCallback).onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
     }
+
+    @Test
+    public void testHotspotNetworks_connectingToHotspot_detailsPageFlagFalse_entryInActive() {
+        final HotspotNetwork testHotspotNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        when(mMockSharedConnectivityManager.getHotspotNetworks()).thenReturn(
+                Collections.singletonList(testHotspotNetwork));
+        when(mMockSharedConnectivityManager.getHotspotNetworkConnectionStatus()).thenReturn(
+                new HotspotNetworkConnectionStatus.Builder()
+                        .setStatus(HotspotNetworkConnectionStatus
+                                .CONNECTION_STATUS_ENABLING_HOTSPOT)
+                        .setHotspotNetwork(testHotspotNetwork)
+                        .build());
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
+        when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(
+                buildScanResult("Instant Hotspot abcde", "0a:0b:0c:0d:0e:0f", START_MILLIS,
+                        "[PSK/SAE]")));
+        NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
+        when(mockNetworkInfo.getDetailedState())
+                .thenReturn(NetworkInfo.DetailedState.CONNECTING);
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        try {
+            doReturn(false).when(() ->
+                    NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
+            wifiPickerTracker.onStart();
+            mTestLooper.dispatchAll();
+            verify(mMockContext).registerReceiver(
+                    mBroadcastReceiverCaptor.capture(), any(), any(), any());
+            verify(mMockSharedConnectivityManager).registerCallback(any(),
+                    mSharedConnectivityCallbackCaptor.capture());
+            mSharedConnectivityCallbackCaptor.getValue().onServiceConnected();
+            Intent networkStateChanged = new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+            networkStateChanged.putExtra(WifiManager.EXTRA_NETWORK_INFO, mockNetworkInfo);
+            mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, networkStateChanged);
+            mTestLooper.dispatchAll();
+        } finally {
+            session.finishMocking();
+        }
+
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof HotspotNetworkEntry).toList()).isEmpty();
+        assertThat(wifiPickerTracker.getActiveWifiEntries().stream().filter(
+                entry -> entry instanceof HotspotNetworkEntry).toList()).hasSize(1);
+    }
+
+    @Test
+    public void testHotspotNetworks_connectingToHotspot_detailsPageFlagTrue_entryInAvailable() {
+        final HotspotNetwork testHotspotNetwork = new HotspotNetwork.Builder()
+                .setDeviceId(1)
+                .setNetworkProviderInfo(new NetworkProviderInfo
+                        .Builder("My Phone", "Pixel 7")
+                        .setDeviceType(NetworkProviderInfo.DEVICE_TYPE_PHONE)
+                        .setBatteryPercentage(100)
+                        .setConnectionStrength(3)
+                        .build())
+                .setHostNetworkType(HotspotNetwork.NETWORK_TYPE_CELLULAR)
+                .setNetworkName("Google Fi")
+                .setHotspotSsid("Instant Hotspot abcde")
+                .addHotspotSecurityType(SECURITY_TYPE_PSK)
+                .build();
+        when(mMockSharedConnectivityManager.getHotspotNetworks()).thenReturn(
+                Collections.singletonList(testHotspotNetwork));
+        when(mMockSharedConnectivityManager.getHotspotNetworkConnectionStatus()).thenReturn(
+                new HotspotNetworkConnectionStatus.Builder()
+                        .setStatus(HotspotNetworkConnectionStatus
+                                .CONNECTION_STATUS_ENABLING_HOTSPOT)
+                        .setHotspotNetwork(testHotspotNetwork)
+                        .build());
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
+        when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
+        when(mMockWifiManager.getScanResults()).thenReturn(Collections.singletonList(
+                buildScanResult("Instant Hotspot abcde", "0a:0b:0c:0d:0e:0f", START_MILLIS,
+                        "[PSK/SAE]")));
+        NetworkInfo mockNetworkInfo = mock(NetworkInfo.class);
+        when(mockNetworkInfo.getDetailedState())
+                .thenReturn(NetworkInfo.DetailedState.CONNECTING);
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        try {
+            doReturn(true).when(() ->
+                    NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
+            wifiPickerTracker.onStart();
+            mTestLooper.dispatchAll();
+            verify(mMockContext).registerReceiver(
+                    mBroadcastReceiverCaptor.capture(), any(), any(), any());
+            verify(mMockSharedConnectivityManager).registerCallback(any(),
+                    mSharedConnectivityCallbackCaptor.capture());
+            mSharedConnectivityCallbackCaptor.getValue().onServiceConnected();
+            Intent networkStateChanged = new Intent(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+            networkStateChanged.putExtra(WifiManager.EXTRA_NETWORK_INFO, mockNetworkInfo);
+            mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, networkStateChanged);
+            mTestLooper.dispatchAll();
+        } finally {
+            session.finishMocking();
+        }
+
+        assertThat(wifiPickerTracker.getWifiEntries().stream().filter(
+                entry -> entry instanceof HotspotNetworkEntry).toList()).hasSize(1);
+        assertThat(wifiPickerTracker.getActiveWifiEntries().stream().filter(
+                entry -> entry instanceof HotspotNetworkEntry).toList()).isEmpty();
+    }
 }

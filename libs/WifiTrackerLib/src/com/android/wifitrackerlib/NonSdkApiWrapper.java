@@ -16,6 +16,7 @@
 
 package com.android.wifitrackerlib;
 
+import static android.net.wifi.flags.Flags.hotspotNetworkConnectingStateForDetailsPage;
 import static android.net.wifi.flags.Flags.hotspotNetworkUnknownStatusResetsConnectingState;
 import static com.android.wifi.flags.Flags.androidVWifiApi;
 import static com.android.wifi.flags.Flags.networkProviderBatteryChargingStatus;
@@ -159,5 +160,12 @@ class NonSdkApiWrapper {
      */
     static boolean isHotspotNetworkUnknownStatusResetsConnectingStateEnabled() {
         return hotspotNetworkUnknownStatusResetsConnectingState();
+    }
+
+    /**
+     * Whether the hotspot network entry connecting state for details page flag is enabled.
+     */
+    static boolean isHotspotNetworkConnectingStateForDetailsPageEnabled() {
+        return hotspotNetworkConnectingStateForDetailsPage();
     }
 }

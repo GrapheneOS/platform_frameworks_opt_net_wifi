@@ -26,6 +26,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiManager;
 import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
+import android.net.wifi.sharedconnectivity.app.HotspotNetworkConnectionStatus;
 import android.os.Build;
 import android.os.Handler;
 import android.telephony.SubscriptionManager;
@@ -46,6 +47,9 @@ import java.util.List;
 @TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
     private static final String TAG = "HotspotNetworkDetailsTracker";
+
+    private static final String EXTRA_KEY_CONNECTION_STATUS_CONNECTED =
+            "connection_status_connected";
 
     private final HotspotNetworkEntry mChosenEntry;
 
@@ -140,6 +144,25 @@ public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
                     "Cannot find data for given HotspotNetworkEntry key!");
         }
         mChosenEntry.updateHotspotNetworkData(mHotspotNetworkData);
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleHotspotNetworkConnectionStatusChanged(
+            @NonNull HotspotNetworkConnectionStatus status) {
+        if (!mInjector.isSharedConnectivityFeatureEnabled()
+                || !NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled()) {
+            return;
+        }
+        if (status.getHotspotNetwork().getDeviceId()
+                != mChosenEntry.getHotspotNetworkEntryKey().getDeviceId()) {
+            return;
+        }
+        if (status.getExtras().getBoolean(EXTRA_KEY_CONNECTION_STATUS_CONNECTED, false)) {
+            mChosenEntry.onConnectionStatusChanged(HotspotNetworkEntry.CONNECTION_STATUS_CONNECTED);
+        } else {
+            mChosenEntry.onConnectionStatusChanged(status.getStatus());
+        }
     }
 
     @WorkerThread

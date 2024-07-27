@@ -125,4 +125,12 @@ class NonSdkApiWrapper {
         // Google3 can't access trunk stable flags, so default to false.
         return false;
     }
+
+    /**
+     * Whether the hotspot network entry connecting state for details page flag is enabled.
+     */
+    static boolean isHotspotNetworkConnectingStateForDetailsPageEnabled() {
+        // Google3 can't access trunk stable flags, so default to false.
+        return false;
+    }
 }
