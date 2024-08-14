@@ -106,6 +106,7 @@ public class WifiPickerTrackerTest {
     private static final long START_MILLIS = 123_456_789;
 
     private static final long MAX_SCAN_AGE_MILLIS = 15_000;
+    private static final long MAX_SCAN_AGE_FOR_FAILED_SCAN_MS = 5 * 60 * 1000;
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
     @Mock private WifiTrackerInjector mInjector;
@@ -428,8 +429,7 @@ public class WifiPickerTrackerTest {
         final List<WifiEntry> previousEntries = wifiPickerTracker.getWifiEntries();
 
         // Advance the clock to time out old entries and simulate failed scan
-        when(mMockClock.millis())
-                .thenReturn(START_MILLIS + MAX_SCAN_AGE_MILLIS + SCAN_INTERVAL_MILLIS);
+        when(mMockClock.millis()).thenReturn(START_MILLIS + MAX_SCAN_AGE_FOR_FAILED_SCAN_MS);
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
                 new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
                         .putExtra(WifiManager.EXTRA_RESULTS_UPDATED, false));
