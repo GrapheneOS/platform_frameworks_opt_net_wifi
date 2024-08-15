@@ -57,15 +57,6 @@ class NonSdkApiWrapper {
     }
 
     /**
-     * Tries to get WifiInfo from network capabilities if it is VCN-over-Wifi.
-     */
-    static WifiInfo getWifiInfoIfVcn(@NonNull NetworkCapabilities networkCapabilities) {
-        // This is only useful for treating CELLULAR over WIFI as a carrier merged network in
-        // provider model Settings. Since SUW doesn't use the provider model, this is not used.
-        return null;
-    }
-
-    /**
      * Returns whether or not the device is in retail demo mode.
      */
     static boolean isDemoMode(@NonNull Context context) {

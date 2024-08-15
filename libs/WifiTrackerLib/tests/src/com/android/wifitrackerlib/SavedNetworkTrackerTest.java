@@ -151,6 +151,7 @@ public class SavedNetworkTrackerTest {
         when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
                 .thenReturn(mMockLinkProperties);
         when(mInjector.getContext()).thenReturn(mMockContext);
+        when(mInjector.getConnectivityManager()).thenReturn(mMockConnectivityManager);
         when(mMockContext.getResources()).thenReturn(mResources);
         when(mMockContext.getSystemService(ConnectivityDiagnosticsManager.class))
                 .thenReturn(mMockConnectivityDiagnosticsManager);

@@ -18,6 +18,7 @@ package com.android.wifitrackerlib;
 
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
+import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.UserManager;
@@ -25,6 +26,7 @@ import android.provider.DeviceConfig;
 import android.util.ArraySet;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Set;
 
@@ -37,6 +39,8 @@ public class WifiTrackerInjector {
     @NonNull private final Context mContext;
     private final boolean mIsDemoMode;
     private final WifiManager mWifiManager;
+    @Nullable
+    private final ConnectivityManager mConnectivityManager;
     private final UserManager mUserManager;
     private final DevicePolicyManager mDevicePolicyManager;
     @NonNull private final Set<String> mNoAttributionAnnotationPackages;
@@ -47,6 +51,7 @@ public class WifiTrackerInjector {
     WifiTrackerInjector(@NonNull Context context) {
         mContext = context;
         mWifiManager = context.getSystemService(WifiManager.class);
+        mConnectivityManager = context.getSystemService(ConnectivityManager.class);
         mIsDemoMode = NonSdkApiWrapper.isDemoMode(context);
         mUserManager = context.getSystemService(UserManager.class);
         mDevicePolicyManager = context.getSystemService(DevicePolicyManager.class);
@@ -109,5 +114,10 @@ public class WifiTrackerInjector {
      */
     public void disableVerboseLogging() {
         mVerboseLoggingDisabledOverride = true;
+    }
+
+    @Nullable
+    public ConnectivityManager getConnectivityManager() {
+        return mConnectivityManager;
     }
 }

@@ -197,6 +197,7 @@ public class WifiPickerTrackerTest {
                         return TransportInfo.super.makeCopy(redactions);
                     }
                 });
+        when(mMockVcnNetworkCapabilities.getUnderlyingNetworks()).thenReturn(List.of(mMockNetwork));
         // A real NetworkCapabilities is needed here in order to create a copy (with location info)
         // using the NetworkCapabilities constructor in handleOnStart.
         NetworkCapabilities realNetCaps = new NetworkCapabilities.Builder()
@@ -226,6 +227,7 @@ public class WifiPickerTrackerTest {
                         "Connected", "Suspended", "Disconnecting", "Unsuccessful", "Blocked",
                         "Temporarily avoiding poor connection"});
         when(mInjector.isSharedConnectivityFeatureEnabled()).thenReturn(true);
+        when(mInjector.getConnectivityManager()).thenReturn(mMockConnectivityManager);
     }
 
     /**
@@ -2256,11 +2258,9 @@ public class WifiPickerTrackerTest {
             // Connect to VCN-over-Wifi network
             when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
             when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
-            doReturn(mMockWifiInfo).when(() ->
-                    NonSdkApiWrapper.getWifiInfoIfVcn(mMockVcnNetworkCapabilities));
             doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
             mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
-                    mMockNetwork, mMockVcnNetworkCapabilities);
+                    mMockNetwork, mMockNetworkCapabilities);
             MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
             assertThat(mergedCarrierEntry.getConnectedState())
                     .isEqualTo(CONNECTED_STATE_CONNECTED);
@@ -2269,6 +2269,60 @@ public class WifiPickerTrackerTest {
             mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(mMockNetwork,
                     mMockVcnNetworkCapabilities);
             // Now VCN-over-Wifi is default, so isDefaultNetwork returns true
+            assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
+        } finally {
+            session.finishMocking();
+        }
+    }
+
+    /**
+     * Tests that the MergedCarrierEntry is the default network when it is connected and
+     * VPN-over-VCN-over-Wifi is the default network.
+     */
+    @Test
+    public void testGetMergedCarrierEntry_vpnOverVcnWifiIsDefault_entryIsDefaultNetwork() {
+        final int subId = 1;
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+        final Intent intent = new Intent(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        intent.putExtra("subscription", subId);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
+                mDefaultNetworkCallbackCaptor.capture(), any());
+
+        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        try {
+            // Connect to VPN-over-VCN-over-Wifi network
+            when(mMockWifiInfo.isCarrierMerged()).thenReturn(true);
+            when(mMockWifiInfo.getSubscriptionId()).thenReturn(subId);
+            doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
+            mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
+                    mMockNetwork, mMockNetworkCapabilities);
+            MergedCarrierEntry mergedCarrierEntry = wifiPickerTracker.getMergedCarrierEntry();
+            assertThat(mergedCarrierEntry.getConnectedState())
+                    .isEqualTo(CONNECTED_STATE_CONNECTED);
+            // Wifi isn't default yet, so isDefaultNetwork returns false
+            assertThat(mergedCarrierEntry.isDefaultNetwork()).isFalse();
+
+
+            Network vpnNetwork = mock(Network.class);
+            Network vcnNetwork = mock(Network.class);
+            NetworkCapabilities vpnOverVcnOverWifiNetworkCapabilities =
+                    mock(NetworkCapabilities.class);
+            when(vpnOverVcnOverWifiNetworkCapabilities.getUnderlyingNetworks())
+                    .thenReturn(List.of(vcnNetwork));
+            when(mMockConnectivityManager.getNetworkCapabilities(vcnNetwork))
+                    .thenReturn(mMockVcnNetworkCapabilities);
+            mDefaultNetworkCallbackCaptor.getValue().onCapabilitiesChanged(vpnNetwork,
+                    vpnOverVcnOverWifiNetworkCapabilities);
+            // Now VPN-over-VCN-over-Wifi is default, so isDefaultNetwork returns true
             assertThat(mergedCarrierEntry.isDefaultNetwork()).isTrue();
         } finally {
             session.finishMocking();
