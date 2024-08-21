@@ -31,9 +31,11 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
@@ -293,7 +295,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         }
 
         // Update configs and scans
-        updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
+        updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
         mScanResultUpdater.update(mWifiManager.getScanResults());
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
@@ -351,7 +353,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     /** All wifi entries and saved entries needs to be updated. */
     protected void processConfiguredNetworksChanged() {
-        updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
+        updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
         // Update scans since config changes may result in different entries being shown.
         conditionallyUpdateScanResults(false /* lastScanSucceeded */);
@@ -1188,6 +1190,16 @@ public class WifiPickerTracker extends BaseWifiTracker {
     }
 
     @WorkerThread
+    private void updateWifiConfigurationsInternal() {
+        if (mContext.checkSelfPermission(Manifest.permission.READ_WIFI_CREDENTIAL)
+            == PackageManager.PERMISSION_GRANTED) {
+            updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
+        } else {
+            updateWifiConfigurations(mWifiManager.getConfiguredNetworks());
+        }
+    }
+
+    @WorkerThread
     private void updatePasspointConfigurations(@NonNull List<PasspointConfiguration> configs) {
         checkNotNull(configs, "Config list should not be null!");
         mPasspointConfigCache.clear();
@@ -1220,7 +1232,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
             // We're connected but don't have any configured networks, so fetch the list of configs
             // again. This can happen when we fetch the configured networks after SSR, but the Wifi
             // thread times out waiting for driver restart and returns an empty list of networks.
-            updateWifiConfigurations(mWifiManager.getPrivilegedConfiguredNetworks());
+            updateWifiConfigurationsInternal();
         }
         // Create a WifiEntry for the current connection if there are no scan results yet.
         conditionallyCreateConnectedWifiEntry(Utils.getWifiInfo(capabilities));
