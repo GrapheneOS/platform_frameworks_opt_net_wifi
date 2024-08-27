@@ -301,7 +301,7 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
             return mOsuWifiEntry != null && mOsuWifiEntry.canConnect();
         }
 
-        return mLevel != WIFI_LEVEL_UNREACHABLE
+        return mScanResultLevel != WIFI_LEVEL_UNREACHABLE
                 && getConnectedState() == CONNECTED_STATE_DISCONNECTED && mWifiConfig != null;
     }
 
@@ -539,12 +539,12 @@ public class PasspointWifiEntry extends WifiEntry implements WifiEntry.WifiEntry
                 mWifiConfig.SSID = "\"" + bestScanResult.SSID + "\"";
             }
             if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-                mLevel = bestScanResult != null
+                mScanResultLevel = bestScanResult != null
                         ? mWifiManager.calculateSignalLevel(bestScanResult.level)
                         : WIFI_LEVEL_UNREACHABLE;
             }
         } else {
-            mLevel = WIFI_LEVEL_UNREACHABLE;
+            mScanResultLevel = WIFI_LEVEL_UNREACHABLE;
         }
         notifyOnUpdated();
     }

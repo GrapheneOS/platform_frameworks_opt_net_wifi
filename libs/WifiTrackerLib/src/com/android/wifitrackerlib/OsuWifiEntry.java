@@ -141,7 +141,7 @@ class OsuWifiEntry extends WifiEntry {
         if (hasAdminRestrictions()) {
             return false;
         }
-        return mLevel != WIFI_LEVEL_UNREACHABLE
+        return mScanResultLevel != WIFI_LEVEL_UNREACHABLE
                 && getConnectedState() == CONNECTED_STATE_DISCONNECTED;
     }
 
@@ -165,10 +165,10 @@ class OsuWifiEntry extends WifiEntry {
         if (bestScanResult != null) {
             mSsid = bestScanResult.SSID;
             if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-                mLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
+                mScanResultLevel = mWifiManager.calculateSignalLevel(bestScanResult.level);
             }
         } else {
-            mLevel = WIFI_LEVEL_UNREACHABLE;
+            mScanResultLevel = WIFI_LEVEL_UNREACHABLE;
         }
         notifyOnUpdated();
     }

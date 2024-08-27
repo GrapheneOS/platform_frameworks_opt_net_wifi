@@ -244,8 +244,8 @@ public class WifiEntry {
     // Callback associated with this WifiEntry. Subclasses should call its methods appropriately.
     private WifiEntryCallback mListener;
     protected final Handler mCallbackHandler;
-
-    protected int mLevel = WIFI_LEVEL_UNREACHABLE;
+    protected int mWifiInfoLevel = WIFI_LEVEL_UNREACHABLE;
+    protected int mScanResultLevel = WIFI_LEVEL_UNREACHABLE;
     protected WifiInfo mWifiInfo;
     protected NetworkInfo mNetworkInfo;
     protected Network mNetwork;
@@ -345,7 +345,10 @@ public class WifiEntry {
      * A value of WIFI_LEVEL_UNREACHABLE indicates an out of range network.
      */
     public int getLevel() {
-        return mLevel;
+        if (mWifiInfoLevel != WIFI_LEVEL_UNREACHABLE) {
+            return mWifiInfoLevel;
+        }
+        return mScanResultLevel;
     };
 
     /**
@@ -1050,17 +1053,18 @@ public class WifiEntry {
         notifyOnUpdated();
     }
 
-    private synchronized void updateWifiInfo(WifiInfo wifiInfo) {
+    protected synchronized void updateWifiInfo(WifiInfo wifiInfo) {
         if (wifiInfo == null) {
             mWifiInfo = null;
             mConnectedInfo = null;
+            mWifiInfoLevel = WIFI_LEVEL_UNREACHABLE;
             updateSecurityTypes();
             return;
         }
         mWifiInfo = wifiInfo;
         final int wifiInfoRssi = mWifiInfo.getRssi();
         if (wifiInfoRssi != INVALID_RSSI) {
-            mLevel = mWifiManager.calculateSignalLevel(wifiInfoRssi);
+            mWifiInfoLevel = mWifiManager.calculateSignalLevel(wifiInfoRssi);
         }
         if (getConnectedState() == CONNECTED_STATE_CONNECTED) {
             if (mCalledConnect) {

@@ -603,7 +603,7 @@ public class WifiPickerTrackerTest {
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
-                buildScanResult("ssid", "bssid", START_MILLIS)));
+                buildScanResult("ssid", "bssid", START_MILLIS, GOOD_RSSI)));
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
         verify(mMockConnectivityManager).registerNetworkCallback(
@@ -620,6 +620,52 @@ public class WifiPickerTrackerTest {
                 .onWifiEntriesChanged(WifiPickerTracker.WIFI_ENTRIES_CHANGED_REASON_GENERAL);
         assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
         assertThat(wifiPickerTracker.getConnectedWifiEntry()).isEqualTo(entry);
+
+        // Disconnect and verify network is on unconnectedl ist.
+        mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
+        mTestLooper.dispatchAll();
+
+        verify(mMockCallback, atLeastOnce())
+                .onWifiEntriesChanged(WifiPickerTracker.WIFI_ENTRIES_CHANGED_REASON_GENERAL);
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
+        assertThat(wifiPickerTracker.getWifiEntries().get(0)).isEqualTo(entry);
+    }
+
+    /**
+     * Tests that connecting to a network will update getConnectedEntry() to return the connected
+     * WifiEntry and remove that entry from getWifiEntries().
+     */
+    @Test
+    public void testGetConnectedEntry_connectToNetworkNoScans_returnsConnectedEntry() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        verify(mMockConnectivityManager).registerNetworkCallback(
+                any(), mNetworkCallbackCaptor.capture(), any());
+
+        // Connect to network and verify it's the connected entry.
+        mNetworkCallbackCaptor.getValue().onCapabilitiesChanged(
+                mMockNetwork, mMockNetworkCapabilities);
+        verify(mMockCallback, atLeastOnce())
+                .onWifiEntriesChanged(WifiPickerTracker.WIFI_ENTRIES_CHANGED_REASON_GENERAL);
+        assertThat(wifiPickerTracker.getWifiEntries()).isEmpty();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getTitle()).isEqualTo("ssid");
+
+        // Disconnect and verify network is removed from list.
+        mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
+        mTestLooper.dispatchAll();
+
+        verify(mMockCallback, atLeastOnce())
+                .onWifiEntriesChanged(WifiPickerTracker.WIFI_ENTRIES_CHANGED_REASON_GENERAL);
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
+        assertThat(wifiPickerTracker.getWifiEntries().isEmpty());
     }
 
     /**
@@ -732,34 +778,6 @@ public class WifiPickerTrackerTest {
                 .onWifiEntriesChanged(WifiPickerTracker.WIFI_ENTRIES_CHANGED_REASON_GENERAL);
         assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNotNull();
         assertThat(wifiPickerTracker.getConnectedWifiEntry().getTitle()).isEqualTo("ssid");
-    }
-
-    /**
-     * Tests that disconnecting from a network will update getConnectedEntry() to return null.
-     */
-    @Test
-    public void testGetConnectedEntry_disconnectFromNetwork_returnsNull() {
-        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
-        final WifiConfiguration config = new WifiConfiguration();
-        config.SSID = "\"ssid\"";
-        config.networkId = 1;
-        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
-                .thenReturn(Collections.singletonList(config));
-        when(mMockWifiManager.getScanResults()).thenReturn(Arrays.asList(
-                buildScanResult("ssid", "bssid", START_MILLIS)));
-        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
-        when(mMockWifiInfo.getRssi()).thenReturn(-50);
-        wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
-        verify(mMockConnectivityManager).registerNetworkCallback(
-                any(), mNetworkCallbackCaptor.capture(), any());
-
-        mNetworkCallbackCaptor.getValue().onLost(mMockNetwork);
-        mTestLooper.dispatchAll();
-
-        verify(mMockCallback, atLeastOnce())
-                .onWifiEntriesChanged(WifiPickerTracker.WIFI_ENTRIES_CHANGED_REASON_GENERAL);
-        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNull();
     }
 
     /**

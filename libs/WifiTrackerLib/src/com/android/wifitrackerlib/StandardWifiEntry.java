@@ -307,7 +307,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized boolean canConnect() {
-        if (mLevel == WIFI_LEVEL_UNREACHABLE
+        if (mScanResultLevel == WIFI_LEVEL_UNREACHABLE
                 || getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
             return false;
         }
@@ -697,7 +697,7 @@ public class StandardWifiEntry extends WifiEntry {
         final ScanResult bestScanResult = getBestScanResultByLevel(mTargetScanResults);
 
         if (getConnectedState() == CONNECTED_STATE_DISCONNECTED) {
-            mLevel = bestScanResult != null
+            mScanResultLevel = bestScanResult != null
                     ? mWifiManager.calculateSignalLevel(bestScanResult.level)
                     : WIFI_LEVEL_UNREACHABLE;
         }
