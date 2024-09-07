@@ -32,7 +32,7 @@ java_defaults {
     ],
 
     libs: [
-        "android.test.mock",
+        "android.test.mock.stubs.system",
     ],
 
     jni_libs: [
