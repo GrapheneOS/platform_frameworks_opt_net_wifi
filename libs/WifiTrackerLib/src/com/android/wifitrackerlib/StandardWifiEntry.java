@@ -876,7 +876,7 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     protected synchronized String getScanResultDescription() {
-        if (mTargetScanResults.size() == 0) {
+        if (mMatchingScanResults.size() == 0) {
             return "";
         }
 
@@ -891,7 +891,8 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     private synchronized String getScanResultDescription(int minFrequency, int maxFrequency) {
-        final List<ScanResult> scanResults = mTargetScanResults.stream()
+        final List<ScanResult> scanResults = mMatchingScanResults.values().stream()
+                .flatMap(List::stream)
                 .filter(scanResult -> scanResult.frequency >= minFrequency
                         && scanResult.frequency <= maxFrequency)
                 .sorted(Comparator.comparingInt(scanResult -> -1 * scanResult.level))
