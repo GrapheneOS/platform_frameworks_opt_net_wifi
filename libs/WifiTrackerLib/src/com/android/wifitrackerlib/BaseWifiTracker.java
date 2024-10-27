@@ -167,6 +167,8 @@ public class BaseWifiTracker {
     protected final long mScanIntervalMillis;
     protected final ScanResultUpdater mScanResultUpdater;
 
+    protected static final long MAX_SCAN_AGE_FOR_FAILED_SCAN_MS = 5 * 60 * 1000;
+
     @Nullable protected SharedConnectivityManager mSharedConnectivityManager = null;
 
     // Network request for listening on changes to Wifi link properties and network capabilities
@@ -344,8 +346,7 @@ public class BaseWifiTracker {
         mListener = listener;
         mTag = tag;
 
-        mScanResultUpdater = new ScanResultUpdater(clock,
-                maxScanAgeMillis + scanIntervalMillis);
+        mScanResultUpdater = new ScanResultUpdater(clock, MAX_SCAN_AGE_FOR_FAILED_SCAN_MS);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
 
         if (lifecycle != null) { // Need to add after constructor completes.

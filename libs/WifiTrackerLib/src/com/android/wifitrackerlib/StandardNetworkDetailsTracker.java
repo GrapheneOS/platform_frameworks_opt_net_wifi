@@ -173,7 +173,7 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
         } else {
             // Scan failed, increase scan age window to prevent WifiEntry list from
             // clearing prematurely.
-            scanAgeWindow += mScanIntervalMillis;
+            scanAgeWindow = MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
         }
         mChosenEntry.updateScanResultInfo(mScanResultUpdater.getScanResults(scanAgeWindow).stream()
                 .filter(scan -> new ScanResultKey(scan).equals(mKey.getScanResultKey()))

@@ -261,7 +261,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
         } else {
             // Scan failed, increase scan age window to prevent WifiEntry list from
             // clearing prematurely.
-            scanAgeWindow += mScanIntervalMillis;
+            scanAgeWindow = MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
         }
 
         List<ScanResult> currentScans = mScanResultUpdater.getScanResults(scanAgeWindow);
