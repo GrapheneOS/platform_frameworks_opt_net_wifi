@@ -341,7 +341,7 @@ public class BaseWifiTracker {
         mConnectivityDiagnosticsManager =
                 context.getSystemService(ConnectivityDiagnosticsManager.class);
         mPowerManager = context.getSystemService(PowerManager.class);
-        if (mInjector.isSharedConnectivityFeatureEnabled() && BuildCompat.isAtLeastU()) {
+        if (BuildCompat.isAtLeastU()) {
             mSharedConnectivityManager = context.getSystemService(SharedConnectivityManager.class);
             mSharedConnectivityCallback = createSharedConnectivityCallback();
         }

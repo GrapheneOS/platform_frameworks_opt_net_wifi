@@ -115,7 +115,7 @@ public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleServiceConnected() {
-        if (mInjector.isSharedConnectivityFeatureEnabled() && mSharedConnectivityManager != null) {
+        if (mSharedConnectivityManager != null) {
             List<HotspotNetwork> hotspotNetworks = mSharedConnectivityManager.getHotspotNetworks();
             if (hotspotNetworks != null) {
                 mHotspotNetworkData = hotspotNetworks.stream().filter(
@@ -134,11 +134,17 @@ public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleHotspotNetworksUpdated(List<HotspotNetwork> networks) {
-        if (mInjector.isSharedConnectivityFeatureEnabled()) {
-            mHotspotNetworkData = networks.stream().filter(network -> network.getDeviceId()
-                    == mChosenEntry.getHotspotNetworkEntryKey().getDeviceId()).findFirst().orElse(
-                    null);
-        }
+
+        mHotspotNetworkData =
+                networks.stream()
+                        .filter(
+                                network ->
+                                        network.getDeviceId()
+                                                == mChosenEntry
+                                                        .getHotspotNetworkEntryKey()
+                                                        .getDeviceId())
+                        .findFirst()
+                        .orElse(null);
         if (mHotspotNetworkData == null) {
             throw new IllegalArgumentException(
                     "Cannot find data for given HotspotNetworkEntry key!");
@@ -150,8 +156,7 @@ public class HotspotNetworkDetailsTracker extends NetworkDetailsTracker {
     @Override
     protected void handleHotspotNetworkConnectionStatusChanged(
             @NonNull HotspotNetworkConnectionStatus status) {
-        if (!mInjector.isSharedConnectivityFeatureEnabled()
-                || !NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled()) {
+        if (!NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled()) {
             return;
         }
         if (status.getHotspotNetwork().getDeviceId()
