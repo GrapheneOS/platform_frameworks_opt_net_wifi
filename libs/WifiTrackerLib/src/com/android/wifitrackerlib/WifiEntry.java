@@ -1102,7 +1102,7 @@ public class WifiEntry {
      */
     synchronized void onNetworkLost(@NonNull Network network) {
         if (network.equals(mNetwork)) {
-            clearConnectionInfo();
+            clearConnectionInfo(true);
         } else if (network.equals(mLastNetwork)) {
             mLastNetwork = null;
             notifyOnUpdated();
@@ -1112,7 +1112,7 @@ public class WifiEntry {
     /**
      * Clears any connection info from this entry.
      */
-    synchronized void clearConnectionInfo() {
+    synchronized void clearConnectionInfo(boolean notify) {
         updateWifiInfo(null);
         mNetwork = null;
         mLastNetwork = null;
@@ -1129,7 +1129,7 @@ public class WifiEntry {
                 }
             });
         }
-        notifyOnUpdated();
+        if (notify) notifyOnUpdated();
     }
 
     /**

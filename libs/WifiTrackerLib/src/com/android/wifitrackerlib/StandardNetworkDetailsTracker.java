@@ -131,13 +131,13 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     private void updateStartInfo() {
-        // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
-        // the stopped state.
-        mChosenEntry.clearConnectionInfo();
 
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
         handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
+        // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
+        // the stopped state.
+        mChosenEntry.clearConnectionInfo(false);
         Network currentNetwork = mWifiManager.getCurrentNetwork();
         if (currentNetwork != null) {
             NetworkCapabilities networkCapabilities =
