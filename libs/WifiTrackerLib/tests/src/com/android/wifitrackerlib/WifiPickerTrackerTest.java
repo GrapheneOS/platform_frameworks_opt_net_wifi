@@ -100,6 +100,7 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class WifiPickerTrackerTest {
@@ -1919,6 +1920,79 @@ public class WifiPickerTrackerTest {
         assertThat(wifiPickerTracker.getActiveWifiEntries()).isNotEmpty();
         assertThat(wifiPickerTracker.getActiveWifiEntries().get(0))
                 .isEqualTo(wifiPickerTracker.getConnectedWifiEntry());
+    }
+
+    /**
+     * Tests that the connected WifiEntry won't flicker from connected->disconnected->connected
+     * upon onStart().
+     */
+    @Test
+    public void testGetConnectedWifiEntry_alreadyConnectedOnStart_doesNotFlickerToDisconnected() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNotNull();
+        assertThat(wifiPickerTracker.getActiveWifiEntries()).isNotEmpty();
+        assertThat(wifiPickerTracker.getActiveWifiEntries().get(0))
+                .isEqualTo(wifiPickerTracker.getConnectedWifiEntry());
+
+        // Register a callback to verify we don't flicker out of CONNECTED state.
+        WifiEntry entry = wifiPickerTracker.getConnectedWifiEntry();
+        AtomicBoolean callbackWasCalled = new AtomicBoolean(false);
+        WifiEntry.WifiEntryCallback callback = () -> {
+            assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+            callbackWasCalled.set(true);
+        };
+        entry.setListener(callback);
+        wifiPickerTracker.onStop();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        // Success.
+        assertThat(callbackWasCalled.get()).isTrue();
+    }
+
+    /**
+     * Tests that the connected WifiEntry will be disconnected if we've disconnected before
+     * onStart().
+     */
+    @Test
+    public void testGetConnectedWifiEntry_disconnectBeforeOnStart_isDisconnected() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNotNull();
+        assertThat(wifiPickerTracker.getActiveWifiEntries()).isNotEmpty();
+        assertThat(wifiPickerTracker.getActiveWifiEntries().get(0))
+                .isEqualTo(wifiPickerTracker.getConnectedWifiEntry());
+
+        WifiEntry entry = wifiPickerTracker.getConnectedWifiEntry();
+        // Disconnect the network from ConnectivityManager's perspective, but keep
+        // WifiManager.getConnectionInfo()/getCurrentNetwork() returning the old network, which may
+        // happen by race condition.
+        when(mMockConnectivityManager.getNetworkCapabilities(any())).thenReturn(null);
+        wifiPickerTracker.onStop();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        // Entry should be disconnected.
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
     }
 
     /**

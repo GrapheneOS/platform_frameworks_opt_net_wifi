@@ -156,12 +156,12 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     private void updateStartInfo() {
-        // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
-        // the stopped state.
-        mChosenEntry.clearConnectionInfo();
-
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
         conditionallyUpdateConfig();
+        // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
+        // the stopped state, but don't notify the listener to avoid flicker from disconnected ->
+        // connected in case the network is still the same.
+        mChosenEntry.clearConnectionInfo(false);
         Network currentNetwork = mWifiManager.getCurrentNetwork();
         if (currentNetwork != null) {
             NetworkCapabilities networkCapabilities =
