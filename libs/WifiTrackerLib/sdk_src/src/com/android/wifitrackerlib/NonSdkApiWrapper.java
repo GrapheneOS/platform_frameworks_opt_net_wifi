@@ -124,4 +124,12 @@ class NonSdkApiWrapper {
         // Google3 can't access trunk stable flags, so default to false.
         return false;
     }
+
+    /**
+     * Whether the WifiStateChangedListener flag is enabled.
+     */
+    static boolean isWifiStateChangedListenerEnabled() {
+        // Google3 can't access trunk stable flags, so default to false.
+        return false;
+    }
 }
