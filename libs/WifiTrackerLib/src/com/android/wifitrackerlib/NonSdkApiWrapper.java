@@ -21,6 +21,7 @@ import static android.net.wifi.flags.Flags.hotspotNetworkUnknownStatusResetsConn
 
 import static com.android.wifi.flags.Flags.androidVWifiApi;
 import static com.android.wifi.flags.Flags.networkProviderBatteryChargingStatus;
+import static com.android.wifi.flags.Flags.wifiStateChangedListener;
 
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.WifiSsidPolicy;
@@ -155,5 +156,12 @@ class NonSdkApiWrapper {
      */
     static boolean isHotspotNetworkConnectingStateForDetailsPageEnabled() {
         return hotspotNetworkConnectingStateForDetailsPage();
+    }
+
+    /**
+     * Whether the WifiStateChangedListener flag is enabled.
+     */
+    static boolean isWifiStateChangedListenerEnabled() {
+        return wifiStateChangedListener();
     }
 }

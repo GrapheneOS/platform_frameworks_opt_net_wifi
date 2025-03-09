@@ -120,4 +120,18 @@ public class WifiTrackerInjector {
     public ConnectivityManager getConnectivityManager() {
         return mConnectivityManager;
     }
+
+    /**
+     * Injection wrapper for NonSdkApiWrapper.isWifiStateChangedListenerEnabled().
+     */
+    public boolean isWifiStateChangedListenerEnabled() {
+        return NonSdkApiWrapper.isWifiStateChangedListenerEnabled();
+    }
+
+    /**
+     * Injection wrapper for checking the SDK level is at least Baklava.
+     */
+    public boolean isAtLeastB() {
+        return Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM;
+    }
 }

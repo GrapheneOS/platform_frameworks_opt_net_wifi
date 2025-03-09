@@ -61,6 +61,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiManager.WifiStateChangedListener;
 import android.net.wifi.WifiScanner;
 import android.net.wifi.hotspot2.PasspointConfiguration;
 import android.net.wifi.hotspot2.pps.Credential;
@@ -238,6 +239,8 @@ public class WifiPickerTrackerTest {
                         "Temporarily avoiding poor connection"});
         when(mInjector.isSharedConnectivityFeatureEnabled()).thenReturn(true);
         when(mInjector.getConnectivityManager()).thenReturn(mMockConnectivityManager);
+        when(mInjector.isWifiStateChangedListenerEnabled()).thenReturn(false);
+        when(mInjector.isAtLeastB()).thenReturn(false);
     }
 
     /**
@@ -282,6 +285,42 @@ public class WifiPickerTrackerTest {
         mTestLooper.dispatchAll();
 
         verify(mMockCallback, atLeastOnce()).onWifiStateChanged();
+    }
+
+
+
+    /**
+     * Tests that WifiStateChangedListener updates getWifiState().
+     */
+    @Test
+    public void testWifiStateChangedListener_updatesWifiStateAndNotifiesListener() {
+        when(mInjector.isWifiStateChangedListenerEnabled()).thenReturn(true);
+        when(mInjector.isAtLeastB()).thenReturn(true);
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        ArgumentCaptor<WifiStateChangedListener> captor =
+                ArgumentCaptor.forClass(WifiStateChangedListener.class);
+        verify(mMockWifiManager).addWifiStateChangedListener(any(), captor.capture());
+        // Wifi state should be updated by onStart().
+        verify(mMockCallback).onWifiStateChanged();
+        assertThat(wifiPickerTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_ENABLED);
+
+        // Set the wifi state to disabled
+        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_DISABLED);
+        captor.getValue().onWifiStateChanged();
+        mTestLooper.dispatchAll();
+
+        verify(mMockCallback, times(2)).onWifiStateChanged();
+        assertThat(wifiPickerTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_DISABLED);
+
+        // Change the wifi state to enabled
+        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
+        captor.getValue().onWifiStateChanged();
+        mTestLooper.dispatchAll();
+
+        verify(mMockCallback, times(3)).onWifiStateChanged();
+        assertThat(wifiPickerTracker.getWifiState()).isEqualTo(WifiManager.WIFI_STATE_ENABLED);
     }
 
     /**
