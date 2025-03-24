@@ -19,8 +19,6 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.flags.Flags.hotspotNetworkConnectingStateForDetailsPage;
 import static android.net.wifi.flags.Flags.hotspotNetworkUnknownStatusResetsConnectingState;
 
-import static com.android.wifi.flags.Flags.androidVWifiApi;
-import static com.android.wifi.flags.Flags.networkProviderBatteryChargingStatus;
 import static com.android.wifi.flags.Flags.wifiStateChangedListener;
 
 import android.app.admin.DevicePolicyManager;
@@ -133,7 +131,7 @@ class NonSdkApiWrapper {
      * Whether the hotspot network provider battery charging status flag is enabled.
      */
     static boolean isNetworkProviderBatteryChargingStatusEnabled() {
-        return networkProviderBatteryChargingStatus();
+        return BuildCompat.isAtLeastV();
     }
 
     /**
@@ -141,7 +139,7 @@ class NonSdkApiWrapper {
      */
     static boolean isAndroidVWifiApiEnabled() {
         // Google3 can't access trunk stable flags, so default to false.
-        return androidVWifiApi();
+        return BuildCompat.isAtLeastV();
     }
 
     /**
