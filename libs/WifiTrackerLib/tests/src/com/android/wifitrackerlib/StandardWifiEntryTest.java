@@ -1890,10 +1890,15 @@ public class StandardWifiEntryTest {
         assertThat(entry.isDefaultNetwork()).isTrue();
 
         // Wifi switched to new network before default network callback, entry should still be
-        // default
+        // default even if we get multiple network capabilities changed for the new one.
         Network otherNetwork = mock(Network.class);
         when(otherNetwork.getNetId()).thenReturn(2);
         entry.onNetworkCapabilitiesChanged(otherNetwork, mMockNetworkCapabilities);
+        entry.onNetworkCapabilitiesChanged(otherNetwork, mMockNetworkCapabilities);
         assertThat(entry.isDefaultNetwork()).isTrue();
+
+        // Old network is lost, entry should not be default anymore.
+        entry.onNetworkLost(mMockNetwork);
+        assertThat(entry.isDefaultNetwork()).isFalse();
     }
 }
