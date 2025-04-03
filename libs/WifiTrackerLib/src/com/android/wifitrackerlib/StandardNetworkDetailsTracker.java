@@ -167,15 +167,8 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
             return;
         }
 
-        long scanAgeWindow = mMaxScanAgeMillis;
-        if (lastScanSucceeded) {
-            mScanResultUpdater.update(mWifiManager.getScanResults());
-        } else {
-            // Scan failed, increase scan age window to prevent WifiEntry list from
-            // clearing prematurely.
-            scanAgeWindow = MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
-        }
-        mChosenEntry.updateScanResultInfo(mScanResultUpdater.getScanResults(scanAgeWindow).stream()
+        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        mChosenEntry.updateScanResultInfo(mScanResultUpdater.getScanResults().stream()
                 .filter(scan -> new ScanResultKey(scan).equals(mKey.getScanResultKey()))
                 .collect(toList()));
     }
