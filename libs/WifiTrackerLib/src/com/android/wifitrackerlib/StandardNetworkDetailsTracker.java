@@ -111,7 +111,7 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
     }
 
     @WorkerThread
@@ -131,8 +131,7 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     private void updateStartInfo() {
-
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
         conditionallyUpdateConfig();
         handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
         // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in

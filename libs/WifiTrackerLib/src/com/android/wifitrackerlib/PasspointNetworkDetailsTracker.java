@@ -136,7 +136,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
     }
 
     @WorkerThread
@@ -156,7 +156,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     private void updateStartInfo() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
         conditionallyUpdateConfig();
         // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
         // the stopped state, but don't notify the listener to avoid flicker from disconnected ->
