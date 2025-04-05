@@ -1054,8 +1054,10 @@ public class WifiEntry {
 
         // Connection info matches, so the Network/NetworkCapabilities represent this network
         // and the network is currently connecting or connected.
-        mLastNetwork = mNetwork;
-        mNetwork = network;
+        if (mNetwork != network) {
+            mLastNetwork = mNetwork;
+            mNetwork = network;
+        }
         mNetworkCapabilities = capabilities;
         updateWifiInfo(wifiInfo);
         notifyOnUpdated();
