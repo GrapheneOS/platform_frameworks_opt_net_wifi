@@ -35,7 +35,7 @@
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Connexion impossible. Réessayez plus tard."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Déconnecté"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Enregistré"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Mesuré"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Facturé à l\'usage"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Non mesuré"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Connecté sur le réseau <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Accessible dans <xliff:g id="NAME">%1$s</xliff:g>"</string>
