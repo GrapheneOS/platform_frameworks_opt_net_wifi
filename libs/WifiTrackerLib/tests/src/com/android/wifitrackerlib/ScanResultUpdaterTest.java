@@ -20,7 +20,6 @@ import static com.android.wifitrackerlib.TestUtils.buildScanResult;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 import android.net.wifi.ScanResult;
@@ -32,14 +31,15 @@ import org.mockito.MockitoAnnotations;
 
 import java.time.Clock;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 
 public class ScanResultUpdaterTest {
     private static final String SSID = "ssid";
     private static final String BSSID_1 = "11:11:11:11:11:11";
     private static final String BSSID_2 = "22:22:22:22:22:22";
     private static final String BSSID_3 = "33:33:33:33:33:33";
-    private static final long NOW_MILLIS = 123_456_789;
+    private static final long TEST_START_TIME_MS = 123_456_789;
+    private static final long TEST_MAX_SCAN_AGE_MS = 15_000;
 
     @Mock private Clock mMockClock;
 
@@ -47,102 +47,102 @@ public class ScanResultUpdaterTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
-        when(mMockClock.millis()).thenReturn(NOW_MILLIS);
+        when(mMockClock.millis()).thenReturn(TEST_START_TIME_MS);
     }
 
     /**
      * Verify that scan results of the same BSSID are merged to latest one.
      */
     @Test
-    public void testGetScanResults_mergeSameBssid() {
-        ScanResult oldResult = buildScanResult(SSID, BSSID_1, 10);
-        ScanResult newResult = buildScanResult(SSID, BSSID_1, 20);
+    public void testOnScanResultsAvailable_sameSsidBssidUpdatedMultipleTimes_latestScanReturned() {
+        ScanResult oldScan = buildScanResult(SSID, BSSID_1, TEST_START_TIME_MS);
+        ScanResult newScan = buildScanResult(SSID, BSSID_1, TEST_START_TIME_MS + 10);
 
         // Add initial scan result. List should have 1 scan.
-        ScanResultUpdater sru = new ScanResultUpdater(mMockClock);
-        sru.update(Arrays.asList(oldResult));
-        assertThat(sru.getScanResults()).containsExactly(oldResult);
+        ScanResultUpdater sru = new ScanResultUpdater(mMockClock, TEST_MAX_SCAN_AGE_MS);
+        sru.onScanResultsAvailable(Arrays.asList(oldScan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(oldScan);
 
         // Add new scan result. Old scan result should be replaced.
-        sru.update(Arrays.asList(newResult));
-        assertThat(sru.getScanResults()).containsExactly(newResult);
+        sru.onScanResultsAvailable(Arrays.asList(newScan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(newScan);
 
         // Add old scan result back. New scan result should still remain.
-        sru.update(Arrays.asList(oldResult));
-        assertThat(sru.getScanResults()).containsExactly(newResult);
+        sru.onScanResultsAvailable(Arrays.asList(oldScan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(newScan);
     }
 
     /**
      * Verify that scan results are filtered out by age.
      */
     @Test
-    public void testGetScanResults_filtersOldScans() {
-        long maxScanAge = 15_000;
+    public void testOnScanResultsAvailable_filtersOldScans() {
+        ScanResultUpdater sru = new ScanResultUpdater(mMockClock, TEST_MAX_SCAN_AGE_MS);
 
-        ScanResult oldResult = buildScanResult(SSID, BSSID_1, NOW_MILLIS - (maxScanAge + 1));
-        ScanResult newResult = buildScanResult(SSID, BSSID_2, NOW_MILLIS);
+        // Add a scan result and a slightly newer scan result.
+        ScanResult olderScan = buildScanResult(SSID, BSSID_1, TEST_START_TIME_MS - 1);
+        ScanResult newerScan = buildScanResult(SSID, BSSID_2, TEST_START_TIME_MS);
+        sru.onScanResultsAvailable(Arrays.asList(olderScan, newerScan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(olderScan, newerScan);
 
-        // Add a new scan result and an out-of-date scan result.
-        ScanResultUpdater sru = new ScanResultUpdater(mMockClock);
-        sru.update(Arrays.asList(newResult, oldResult));
+        // Age the older result and verify the newer one remains.
+        when(mMockClock.millis()).thenReturn(TEST_START_TIME_MS + TEST_MAX_SCAN_AGE_MS);
+        sru.onScanResultsAvailable(Arrays.asList(olderScan, newerScan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(newerScan);
 
-        // New scan result should remain and out-of-date scan result should not be returned.
-        assertThat(sru.getScanResults(maxScanAge)).containsExactly(newResult);
+        // Age both results out and verify no results remain.
+        when(mMockClock.millis()).thenReturn(TEST_START_TIME_MS + TEST_MAX_SCAN_AGE_MS + 1);
+        sru.onScanResultsAvailable(Arrays.asList(olderScan, newerScan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).isEmpty();
     }
 
     /**
-     * Verify that an exception is thrown if the getScanResults max scan age is larger than the
-     * constructor's max scan age.
+     * Verify that scan results are not aged out if the last scan failed.
      */
     @Test
-    public void testGetScanResults_invalidMaxScanAgeMillis_throwsException() {
-        ScanResultUpdater sru = new ScanResultUpdater(mMockClock, 15_000);
-        try {
-            sru.getScanResults(20_000);
-            fail("Should have thrown exception for maxScanAgeMillis too large.");
-        } catch (IllegalArgumentException ok) {
-            // Expected
-        }
+    public void testOnScanResultsAvailable_multipleScanFailure_scanNotAgedOut() {
+        ScanResultUpdater sru = new ScanResultUpdater(mMockClock, TEST_MAX_SCAN_AGE_MS);
+
+        // Add scan result. List should have 1 scan.
+        ScanResult scan = buildScanResult(SSID, BSSID_1, TEST_START_TIME_MS);
+        sru.onScanResultsAvailable(Arrays.asList(scan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(scan);
+
+        // Failing the scan result should not remove the scan
+        sru.onScanResultsAvailable(Collections.emptyList(), false /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(scan);
+
+        // Failing the scan result after the max scan age should not remove the scan
+        when(mMockClock.millis()).thenReturn(TEST_START_TIME_MS + TEST_MAX_SCAN_AGE_MS + 1);
+        sru.onScanResultsAvailable(Collections.emptyList(), false /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(scan);
+
+        // Failing the scan result after the max failed scan age should finally remove the scan.
+        when(mMockClock.millis()).thenReturn(TEST_START_TIME_MS + (5 * 60 * 1000) + 1);
+        sru.onScanResultsAvailable(Collections.emptyList(), false /* scanSucceeded */);
+        assertThat(sru.getScanResults()).isEmpty();
     }
 
     /**
-     * Verify that the constructor max scan age is obeyed when getting scan results.
+     * Verify that old scan results that were not aged out due to scan failure are aged out upon
+     * the first scan success.
      */
     @Test
-    public void testConstructor_maxScanAge_filtersOldScans() {
-        ScanResultUpdater sru = new ScanResultUpdater(mMockClock, 15_000);
+    public void testOnScanResultsAvailable_scanSuccessAfterFailure_scanAgedOut() {
+        ScanResultUpdater sru = new ScanResultUpdater(mMockClock, TEST_MAX_SCAN_AGE_MS);
 
-        ScanResult scan1 = buildScanResult(SSID, BSSID_1, NOW_MILLIS - 10_000);
-        ScanResult scan2 = buildScanResult(SSID, BSSID_2, NOW_MILLIS - 15_000);
-        ScanResult scan3 = buildScanResult(SSID, BSSID_3, NOW_MILLIS - 20_000);
+        // Add scan result. List should have 1 scan.
+        ScanResult scan = buildScanResult(SSID, BSSID_1, TEST_START_TIME_MS);
+        sru.onScanResultsAvailable(Arrays.asList(scan), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(scan);
 
-        sru.update(Arrays.asList(scan1, scan2, scan3));
+        // Failing the scan result after the max scan age should not remove the scan
+        when(mMockClock.millis()).thenReturn(TEST_START_TIME_MS + TEST_MAX_SCAN_AGE_MS + 1);
+        sru.onScanResultsAvailable(Collections.emptyList(), false /* scanSucceeded */);
+        assertThat(sru.getScanResults()).containsExactly(scan);
 
-        List<ScanResult> scanResults = sru.getScanResults();
-
-        assertThat(scanResults).containsExactly(scan1, scan2);
-    }
-
-    /**
-     * Verify that getScanResults returns results aged by the passed in max scan age even if there
-     * is a max scan age set by the constructor.
-     */
-    @Test
-    public void testGetScanResults_overridesConstructorMaxScanAge() {
-        ScanResultUpdater sru = new ScanResultUpdater(mMockClock, 15_000);
-
-        ScanResult scan1 = buildScanResult(SSID, BSSID_1, NOW_MILLIS - 10_000);
-        ScanResult scan2 = buildScanResult(SSID, BSSID_2, NOW_MILLIS - 15_000);
-        ScanResult scan3 = buildScanResult(SSID, BSSID_3, NOW_MILLIS - 20_000);
-
-        sru.update(Arrays.asList(scan1, scan2, scan3));
-
-        // Aged getScanResults should override the constructor max scan age.
-        List<ScanResult> scanResults = sru.getScanResults(11_000);
-        assertThat(scanResults).containsExactly(scan1);
-
-        // Non-aged getScanResults should revert to the constructor max scan age.
-        scanResults = sru.getScanResults();
-        assertThat(scanResults).containsExactly(scan1, scan2);
+        // Successful scan should use the max scan age to remove the old scan.
+        sru.onScanResultsAvailable(Collections.emptyList(), true /* scanSucceeded */);
+        assertThat(sru.getScanResults()).isEmpty();
     }
 }

@@ -291,7 +291,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
         // Update configs and scans
         updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
-        mScanResultUpdater.update(mWifiManager.getScanResults());
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
 
         // Trigger callbacks manually now to avoid waiting until the first calls to update state.
@@ -1101,17 +1100,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             return;
         }
 
-        long scanAgeWindow = mMaxScanAgeMillis;
-        if (lastScanSucceeded) {
-            // Scan succeeded, cache new scans
-            mScanResultUpdater.update(mWifiManager.getScanResults());
-        } else {
-            // Scan failed, increase scan age window to prevent WifiEntry list from
-            // clearing prematurely.
-            scanAgeWindow = MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
-        }
-
-        List<ScanResult> scanResults = mScanResultUpdater.getScanResults(scanAgeWindow);
+        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        List<ScanResult> scanResults = mScanResultUpdater.getScanResults();
         updateStandardWifiEntryScans(scanResults);
         updateSuggestedWifiEntryScans(scanResults);
         updatePasspointWifiEntryScans(scanResults);

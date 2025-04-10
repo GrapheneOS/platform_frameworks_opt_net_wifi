@@ -235,7 +235,6 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         // Update configs and scans
         updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
-        mScanResultUpdater.update(mWifiManager.getScanResults());
         conditionallyUpdateScanResults(true /* lastScanSucceeded */);
 
         // Trigger callbacks manually now to avoid waiting until the first calls to update state.
@@ -435,16 +434,8 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             return;
         }
 
-        long scanAgeWindow = mMaxScanAgeMillis;
-        if (lastScanSucceeded) {
-            // Scan succeeded, cache new scans
-            mScanResultUpdater.update(mWifiManager.getScanResults());
-        } else {
-            // Scan failed, increase scan age window to prevent WifiEntry list from
-            // clearing prematurely.
-            scanAgeWindow = MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
-        }
-        List<ScanResult> currentScans = mScanResultUpdater.getScanResults(scanAgeWindow);
+        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        List<ScanResult> currentScans = mScanResultUpdater.getScanResults();
         updateStandardWifiEntryScans(currentScans);
         updatePasspointWifiEntryScans(currentScans);
     }
