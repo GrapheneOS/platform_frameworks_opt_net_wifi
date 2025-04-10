@@ -136,7 +136,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
     }
 
     @WorkerThread
@@ -156,7 +156,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     private void updateStartInfo() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
         conditionallyUpdateConfig();
         // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
         // the stopped state, but don't notify the listener to avoid flicker from disconnected ->
@@ -255,16 +255,8 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
             return;
         }
 
-        long scanAgeWindow = mMaxScanAgeMillis;
-        if (lastScanSucceeded) {
-            cacheNewScanResults();
-        } else {
-            // Scan failed, increase scan age window to prevent WifiEntry list from
-            // clearing prematurely.
-            scanAgeWindow = MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
-        }
-
-        List<ScanResult> currentScans = mScanResultUpdater.getScanResults(scanAgeWindow);
+        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        List<ScanResult> currentScans = mScanResultUpdater.getScanResults();
         updatePasspointWifiEntryScans(currentScans);
         updateOsuWifiEntryScans(currentScans);
     }
@@ -278,12 +270,5 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
                         uniqueIdToPasspointWifiEntryKey(config.getUniqueId()),
                         mChosenEntry.getKey()))
                 .findAny().ifPresent(config -> mChosenEntry.updatePasspointConfig(config));
-    }
-
-    /**
-     * Updates ScanResultUpdater with new ScanResults.
-     */
-    private void cacheNewScanResults() {
-        mScanResultUpdater.update(mWifiManager.getScanResults());
     }
 }
