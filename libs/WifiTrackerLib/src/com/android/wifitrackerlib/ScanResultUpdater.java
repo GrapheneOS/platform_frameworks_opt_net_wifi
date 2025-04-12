@@ -33,19 +33,12 @@ import java.util.Map;
  * Thread-safe.
  */
 public class ScanResultUpdater {
+    private static final long MAX_SCAN_AGE_FOR_FAILED_SCAN_MS = 5 * 60 * 1000;
+
     private Map<Pair<String, String>, ScanResult> mScanResultsBySsidAndBssid = new ArrayMap<>();
     private final long mMaxScanAgeMillis;
     private final Object mLock = new Object();
     private final Clock mClock;
-
-    /**
-     * Creates a ScanResultUpdater with no max scan age.
-     *
-     * @param clock Elapsed real time Clock to compare with ScanResult timestamps.
-     */
-    public ScanResultUpdater(Clock clock) {
-        this(clock, Long.MAX_VALUE);
-    }
 
     /**
      * Creates a ScanResultUpdater with a max scan age in milliseconds. Scans older than this limit
@@ -57,12 +50,15 @@ public class ScanResultUpdater {
     }
 
     /**
-     * Updates scan result list and replaces older scans of the same SSID+BSSID pair.
+     * Updates the latest scan results, replacing older scans of the same SSID+BSSID pair and
+     * removing any scan that is older than the max scan age.
+     * Note: To prevent the scan result list from clearing out in the case of temporary consecutive
+     * failed scans, avoid clearing old scans upon scan failure as long as they're not older than
+     * MAX_SCAN_AGE_FOR_FAILED_SCAN_MS.
      */
-    public void update(@NonNull List<ScanResult> newResults) {
+    public void onScanResultsAvailable(
+            @NonNull List<ScanResult> newResults, boolean scanSucceeded) {
         synchronized (mLock) {
-            evictOldScans();
-
             for (ScanResult result : newResults) {
                 final Pair<String, String> key = new Pair(result.SSID, result.BSSID);
                 ScanResult prevResult = mScanResultsBySsidAndBssid.get(key);
@@ -70,42 +66,19 @@ public class ScanResultUpdater {
                     mScanResultsBySsidAndBssid.put(key, result);
                 }
             }
-        }
-    }
-
-    /**
-     * Returns all seen scan results merged by SSID+BSSID pair.
-     */
-    @NonNull
-    public List<ScanResult> getScanResults() {
-        return getScanResults(mMaxScanAgeMillis);
-    }
-
-    /**
-     * Returns all seen scan results merged by SSID+BSSID pair and newer than maxScanAgeMillis.
-     * maxScanAgeMillis must be less than or equal to the mMaxScanAgeMillis field if it was set.
-     */
-    @NonNull
-    public List<ScanResult> getScanResults(long maxScanAgeMillis) throws IllegalArgumentException {
-        if (maxScanAgeMillis > mMaxScanAgeMillis) {
-            throw new IllegalArgumentException(
-                    "maxScanAgeMillis argument cannot be greater than mMaxScanAgeMillis!");
-        }
-        synchronized (mLock) {
-            List<ScanResult> ageFilteredResults = new ArrayList<>();
-            for (ScanResult result : mScanResultsBySsidAndBssid.values()) {
-                if (mClock.millis() - result.timestamp / 1000 <= maxScanAgeMillis) {
-                    ageFilteredResults.add(result);
-                }
-            }
-            return ageFilteredResults;
-        }
-    }
-
-    private void evictOldScans() {
-        synchronized (mLock) {
+            long maxScanAge = scanSucceeded ? mMaxScanAgeMillis : MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
             mScanResultsBySsidAndBssid.entrySet().removeIf((entry) ->
-                    mClock.millis() - entry.getValue().timestamp / 1000 > mMaxScanAgeMillis);
+                    mClock.millis() - entry.getValue().timestamp / 1000 > maxScanAge);
+        }
+    }
+
+    /**
+     * Returns the current up-to-date scan results merged by SSID+BSSID pair.
+     */
+    @NonNull
+    public List<ScanResult> getScanResults() throws IllegalArgumentException {
+        synchronized (mLock) {
+            return new ArrayList<>(mScanResultsBySsidAndBssid.values());
         }
     }
 }

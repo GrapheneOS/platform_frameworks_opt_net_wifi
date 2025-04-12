@@ -167,11 +167,8 @@ public class BaseWifiTracker {
     protected final PowerManager mPowerManager;
     protected final Handler mMainHandler;
     protected final Handler mWorkerHandler;
-    protected final long mMaxScanAgeMillis;
     protected final long mScanIntervalMillis;
     protected final ScanResultUpdater mScanResultUpdater;
-
-    protected static final long MAX_SCAN_AGE_FOR_FAILED_SCAN_MS = 5 * 60 * 1000;
 
     @Nullable protected SharedConnectivityManager mSharedConnectivityManager = null;
 
@@ -363,12 +360,11 @@ public class BaseWifiTracker {
         }
         mMainHandler = mainHandler;
         mWorkerHandler = workerHandler;
-        mMaxScanAgeMillis = maxScanAgeMillis;
         mScanIntervalMillis = scanIntervalMillis;
         mListener = listener;
         mTag = tag;
 
-        mScanResultUpdater = new ScanResultUpdater(clock, MAX_SCAN_AGE_FOR_FAILED_SCAN_MS);
+        mScanResultUpdater = new ScanResultUpdater(clock, maxScanAgeMillis);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
 
         if (lifecycle != null) { // Need to add after constructor completes.
@@ -751,7 +747,8 @@ public class BaseWifiTracker {
                     }
                     // Fake a SCAN_RESULTS_AVAILABLE_ACTION. The results should already be populated
                     // in mScanResultUpdater, which is the source of truth for the child classes.
-                    mScanResultUpdater.update(scanResults);
+                    mScanResultUpdater.onScanResultsAvailable(
+                            scanResults, true /* scanSucceeded */);
                     handleScanResultsAvailableAction(
                             new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
                                     .putExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
