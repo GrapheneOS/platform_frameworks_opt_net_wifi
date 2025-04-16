@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="wifitrackerlib_summary_separator" msgid="6613897475167609815">" / "</string>
     <string name="wifitrackerlib_checking_for_internet_access" msgid="4787495471423429472">"Inatafuta uwezo wa kufikia intaneti..."</string>
-    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Kipengele cha kuunganisha kiotomatiki kimezimwa"</string>
+    <string name="wifitrackerlib_auto_connect_disable" msgid="4714835547164460651">"Kuunganisha kiotomatiki kumezimwa"</string>
     <string name="wifitrackerlib_saved_network" msgid="5353460010746484376">"Ilihifadhiwa na <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_wifi_no_internet" msgid="4998563744669636949">"Hakuna muunganisho wa intaneti"</string>
     <string name="wifitrackerlib_wifi_disabled_password_failure" msgid="2850244218754633550">"Tatizo la uthibitishaji"</string>
