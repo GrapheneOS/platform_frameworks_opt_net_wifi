@@ -404,7 +404,6 @@ public class HotspotNetworkEntry extends WifiEntry {
             return false;
         }
         if (BuildCompat.isAtLeastV()
-                && NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled()
                 && mHotspotNetworkData.getNetworkProviderInfo().isBatteryCharging()) {
             return true;
         }
