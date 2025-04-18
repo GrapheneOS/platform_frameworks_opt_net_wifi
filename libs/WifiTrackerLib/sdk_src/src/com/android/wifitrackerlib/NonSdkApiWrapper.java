@@ -94,14 +94,6 @@ class NonSdkApiWrapper {
     }
 
     /**
-     * Whether the hotspot network provider battery charging status flag is enabled.
-     */
-    static boolean isNetworkProviderBatteryChargingStatusEnabled() {
-        // Google3 can't access trunk stable flags, so default to false.
-        return false;
-    }
-
-    /**
      * Whether Android Wifi V Apis flag is enabled.
      */
     static boolean isAndroidVWifiApiEnabled() {

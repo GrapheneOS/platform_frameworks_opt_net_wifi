@@ -54,6 +54,8 @@ import android.os.test.TestLooper;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 
+import androidx.core.os.BuildCompat;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -508,7 +510,7 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testIsBatteryCharging_apiFlagOn_usesHotspotNetworkDataApi() {
+    public void testIsBatteryCharging_isAtLeastVTrue_usesHotspotNetworkDataApi() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager,
@@ -527,10 +529,9 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
         try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            doReturn(true).when(() -> BuildCompat.isAtLeastV());
             assertThat(entry.isBatteryCharging()).isTrue();
         } finally {
             session.finishMocking();
@@ -538,7 +539,7 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testIsBatteryCharging_apiFlagOn_usesHotspotNetworkDataExtras() {
+    public void testIsBatteryCharging_isAtLeastVTrue_usesHotspotNetworkDataExtras() {
         final Bundle extras = new Bundle();
         extras.putBoolean(HotspotNetworkEntry.EXTRA_KEY_IS_BATTERY_CHARGING, true);
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
@@ -560,10 +561,9 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
         try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            doReturn(true).when(() -> BuildCompat.isAtLeastV());
             assertThat(entry.isBatteryCharging()).isTrue();
         } finally {
             session.finishMocking();
@@ -571,7 +571,7 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testIsBatteryCharging_apiFlagOff_usesHotspotNetworkDataExtras() {
+    public void testIsBatteryCharging_isAtLeastVFalse_usesHotspotNetworkDataExtras() {
         final Bundle extras = new Bundle();
         extras.putBoolean(HotspotNetworkEntry.EXTRA_KEY_IS_BATTERY_CHARGING, true);
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
@@ -592,10 +592,9 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
         try {
-            doReturn(false).when(() ->
-                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            doReturn(false).when(() -> BuildCompat.isAtLeastV());
             assertThat(entry.isBatteryCharging()).isTrue();
         } finally {
             session.finishMocking();
@@ -603,7 +602,7 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testIsBatteryCharging_apiFlagOn_extraFalse() {
+    public void testIsBatteryCharging_isAtLeastVTrue_extraFalse() {
         final Bundle extras = new Bundle();
         extras.putBoolean(HotspotNetworkEntry.EXTRA_KEY_IS_BATTERY_CHARGING, false);
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
@@ -624,10 +623,9 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
         try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            doReturn(true).when(() -> BuildCompat.isAtLeastV());
             assertThat(entry.isBatteryCharging()).isFalse();
         } finally {
             session.finishMocking();
@@ -635,7 +633,7 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testIsBatteryCharging_apiFlagOn_apiFalse() {
+    public void testIsBatteryCharging_isAtLeastVTrue_apiFalse() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager,
@@ -654,10 +652,9 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
         try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            doReturn(true).when(() -> BuildCompat.isAtLeastV());
             assertThat(entry.isBatteryCharging()).isFalse();
         } finally {
             session.finishMocking();
@@ -665,7 +662,7 @@ public class HotspotNetworkEntryTest {
     }
 
     @Test
-    public void testIsBatteryCharging_apiFlagOn_noneSet() {
+    public void testIsBatteryCharging_isAtLeastVTrue_noneSet() {
         final HotspotNetworkEntry entry = new HotspotNetworkEntry(
                 mMockInjector, mMockContext, mTestHandler,
                 mMockWifiManager, mMockSharedConnectivityManager,
@@ -683,10 +680,9 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
+        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
         try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isNetworkProviderBatteryChargingStatusEnabled());
+            doReturn(true).when(() -> BuildCompat.isAtLeastV());
             assertThat(entry.isBatteryCharging()).isFalse();
         } finally {
             session.finishMocking();

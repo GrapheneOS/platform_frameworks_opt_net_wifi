@@ -128,13 +128,6 @@ class NonSdkApiWrapper {
     }
 
     /**
-     * Whether the hotspot network provider battery charging status flag is enabled.
-     */
-    static boolean isNetworkProviderBatteryChargingStatusEnabled() {
-        return BuildCompat.isAtLeastV();
-    }
-
-    /**
      * Whether Android Wifi V Apis flag is enabled.
      */
     static boolean isAndroidVWifiApiEnabled() {
