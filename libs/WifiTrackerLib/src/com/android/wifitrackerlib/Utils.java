@@ -50,6 +50,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiConfiguration.NetworkSelectionStatus;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.net.wifi.WifiScanner;
 import android.os.Build;
 import android.os.PersistableBundle;
@@ -1329,5 +1330,17 @@ public class Utils {
         }
 
         return null;
+    }
+
+    /**
+     * Returns true if there already exists a shared network with the given SSID and security type
+     * family.
+     */
+    public static boolean doesSharedNetworkAlreadyExist(
+            WifiManager wifiManager,
+            String ssid,
+            int securityType) {
+        // TODO(416638579): Implement this.
+        return true;
     }
 }
