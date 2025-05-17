@@ -872,6 +872,46 @@ public class WifiEntry {
     }
 
     /**
+     * Returns true if this network was saved by the current user.
+     */
+    public boolean isOwnedByCurrentUser() {
+        // TODO(416638579): Implement this.
+        return true;
+    }
+
+    /**
+     * Returns true if this network is shared with other users.
+     */
+    public boolean isSharedWithOtherUsers() {
+        // TODO(416638579): Implement this.
+        return true;
+    }
+
+    /**
+     * Sets whether this network is shared with other users.
+     */
+    public void setSharedWithOtherUsers(boolean shared) {
+        // TODO(416638579): Implement this.
+        // Do nothing.
+    }
+
+    /**
+     * Returns true if this network is modifiable by other users.
+     */
+    public boolean isModifiableByOtherUsers() {
+        // TODO(416638579): Implement this.
+        return true;
+    }
+
+    /**
+     * Sets whether this network is modifiable by other users.
+     */
+    public void setModifiableByOtherUsers(boolean modifiable) {
+        // TODO(416638579): Implement this.
+        // Do nothing.
+    }
+
+    /**
      * Sets the callback listener for WifiEntryCallback methods.
      * Subsequent calls will overwrite the previous listener.
      */
