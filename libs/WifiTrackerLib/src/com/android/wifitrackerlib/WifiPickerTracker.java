@@ -33,6 +33,7 @@ import static java.util.stream.Collectors.toMap;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -54,6 +55,7 @@ import android.net.wifi.sharedconnectivity.app.HotspotNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.KnownNetwork;
 import android.net.wifi.sharedconnectivity.app.KnownNetworkConnectionStatus;
 import android.os.Handler;
+import android.os.UserHandle;
 import android.telephony.SubscriptionManager;
 import android.text.TextUtils;
 import android.util.ArrayMap;
@@ -599,6 +601,14 @@ public class WifiPickerTracker extends BaseWifiTracker {
                         hotspotNetworkEntry.getHotspotNetworkEntryKey().getScanResultKey());
             }
         }
+        final UserHandle currentUser = UserHandle.of(ActivityManager.getCurrentUser());
+        final Set<ScanResultKey> sharedNetworkScanResultKeys = new ArraySet<>();
+        for (StandardWifiEntry entry : mStandardWifiEntryCache) {
+            StandardWifiEntryKey key = entry.getStandardWifiEntryKey();
+            if (!key.getConfigOwner().equals(currentUser)) {
+                sharedNetworkScanResultKeys.add(key.getScanResultKey());
+            }
+        }
         Set<ScanResultKey> savedEntryKeys = new ArraySet<>();
         for (StandardWifiEntry entry : mStandardWifiEntryCache) {
             entry.updateAdminRestrictions();
@@ -620,6 +630,12 @@ public class WifiPickerTracker extends BaseWifiTracker {
                             .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
                         continue;
                     }
+                }
+                // Don't show an unsaved network for the current user to configure if we already
+                // have a saved shared network from a different user.
+                if (sharedNetworkScanResultKeys.contains(
+                        entry.getStandardWifiEntryKey().getScanResultKey())) {
+                    continue;
                 }
             } else {
                 // Create a set of saved entry keys
@@ -766,19 +782,26 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void updateStandardWifiEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
+        UserHandle currentUser = UserHandle.of(ActivityManager.getCurrentUser());
 
         // Group scans by ScanResultKey key
         final Map<ScanResultKey, List<ScanResult>> scanResultsByKey = scanResults.stream()
                 .filter(scan -> !TextUtils.isEmpty(scan.SSID))
                 .collect(Collectors.groupingBy(ScanResultKey::new));
         final Set<ScanResultKey> newScanKeys = new ArraySet<>(scanResultsByKey.keySet());
+        final Set<StandardWifiEntryKey> existingNonOwnedEntries = new ArraySet<>();
 
         // Iterate through current entries and update each entry's scan results
         mStandardWifiEntryCache.forEach(entry -> {
-            final ScanResultKey scanKey = entry.getStandardWifiEntryKey().getScanResultKey();
+            StandardWifiEntryKey key = entry.getStandardWifiEntryKey();
+            final ScanResultKey scanKey = key.getScanResultKey();
             newScanKeys.remove(scanKey);
             // Update scan results if available, or set to null.
             entry.updateScanResultInfo(scanResultsByKey.get(scanKey));
+
+            if (!key.getConfigOwner().equals(currentUser)) {
+                existingNonOwnedEntries.add(key);
+            }
         });
         // Create new StandardWifiEntry objects for each leftover group of scan results.
         for (ScanResultKey scanKey: newScanKeys) {
@@ -789,6 +812,28 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     scanResultsByKey.get(scanKey), mWifiManager,
                     false /* forSavedNetworksPage */);
             mStandardWifiEntryCache.add(newEntry);
+        }
+
+        // Create new entries for shared configs that aren't owned by the current user and don't
+        // already exist.
+        for (StandardWifiEntryKey key : mStandardWifiConfigCache.keySet()) {
+            // Skip if the entry belongs to the current user
+            if (key.getConfigOwner().equals(currentUser)) continue;
+            // Skip if the entry already exists.
+            if (existingNonOwnedEntries.contains(key)) continue;
+            existingNonOwnedEntries.add(key);
+
+            final StandardWifiEntry nonOwnedEntry = new StandardWifiEntry(mInjector,
+                    mMainHandler, key, mStandardWifiConfigCache.get(key),
+                    scanResultsByKey.get(key.getScanResultKey()), mWifiManager,
+                    false /* forSavedNetworksPage */);
+
+            // If the current scan results match by security family but the config cannot be used
+            // to connect (i.e. config is SAE but scan results are PSK-only), then this will be
+            // represented as an unsaved entry. In this case, don't add them to the entry cache.
+            if (!nonOwnedEntry.isSaved()) continue;
+
+            mStandardWifiEntryCache.add(nonOwnedEntry);
         }
 
         // Remove any entry that is now unreachable due to no scans or unsupported
@@ -1163,8 +1208,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 .count();
 
         // Iterate through current entries and update each entry's config
-        mStandardWifiEntryCache.forEach(entry ->
-                entry.updateConfig(mStandardWifiConfigCache.get(entry.getStandardWifiEntryKey())));
+        mStandardWifiEntryCache.removeIf(entry -> {
+            entry.updateConfig(mStandardWifiConfigCache.get(entry.getStandardWifiEntryKey()));
+            // Remove the entry if it is a shared network that doesn't have a config anymore.
+            if (!entry.isSaved() && !entry.getStandardWifiEntryKey().getConfigOwner()
+                    .equals(UserHandle.of(ActivityManager.getCurrentUser()))) {
+                return true;
+            }
+            return false;
+        });
 
         // Iterate through current suggestion entries and update each entry's config
         mSuggestedWifiEntryCache.removeIf(entry -> {

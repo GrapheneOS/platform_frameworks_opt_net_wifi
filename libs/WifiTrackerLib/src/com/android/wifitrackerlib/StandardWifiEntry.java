@@ -46,6 +46,7 @@ import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultiple
 import static com.android.wifitrackerlib.Utils.getVerboseSummary;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.WifiSsidPolicy;
 import android.net.ConnectivityManager;
@@ -371,6 +372,7 @@ public class StandardWifiEntry extends WifiEntry {
             // Saved/suggested network
             mWifiManager.connect(mTargetWifiConfig.networkId, new ConnectActionListener());
         } else {
+            // TODO(b/416638579): Add a mechanism to save open configs as private for multi-user.
             if (mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
                 // OWE network
                 final WifiConfiguration oweConfig = new WifiConfiguration();
@@ -1058,32 +1060,51 @@ public class StandardWifiEntry extends WifiEntry {
      *     3) Is network request or not
      *     4) Should prioritize configuring a new network (i.e. target the security type of an
      *     in-range unsaved network, rather than a config that has no scans)
+     *     5) User that owns the config. If the network is unsaved, this will be the current user.
      */
     static class StandardWifiEntryKey {
         private static final String KEY_SCAN_RESULT_KEY = "SCAN_RESULT_KEY";
         private static final String KEY_SUGGESTION_PROFILE_KEY = "SUGGESTION_PROFILE_KEY";
         private static final String KEY_IS_NETWORK_REQUEST = "IS_NETWORK_REQUEST";
         private static final String KEY_IS_TARGETING_NEW_NETWORKS = "IS_TARGETING_NEW_NETWORKS";
+        private static final String KEY_CONFIG_OWNER = "CONFIG_OWNER";
 
         @NonNull private ScanResultKey mScanResultKey;
         @Nullable private String mSuggestionProfileKey;
         private boolean mIsNetworkRequest;
         private boolean mIsTargetingNewNetworks = false;
+        @NonNull private UserHandle mConfigOwner;
 
         /**
-         * Creates a StandardWifiEntryKey matching a ScanResultKey
+         * Base StandardWifiEntryKey constructor.
+         *
+         * @param scanResultKey          key to match ScanResults against.
+         * @param isTargetingNewNetworks Whether this entry should represent an unsaved entry
+         *                               waiting to be configured by the user. This is necessary to
+         *                               ignore existing WifiConfigurations that match the security
+         *                               type family, but have no scan results.
+         * @param configOwner            Owner of the target WifiConfiguration. This should be the
+         *                               current user if the entry is not saved yet.
          */
-        StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey) {
-            this(scanResultKey, false /* isTargetingNewNetworks */);
+        StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey, boolean isTargetingNewNetworks,
+                @NonNull UserHandle configOwner) {
+            mScanResultKey = scanResultKey;
+            mIsTargetingNewNetworks = isTargetingNewNetworks;
+            mConfigOwner = configOwner;
         }
 
         /**
-         * Creates a StandardWifiEntryKey matching a ScanResultKey and sets whether the entry
-         * should target new networks or not.
+         * Base StandardWifiEntryKey constructor targeting the current user.
+         *
+         * @param scanResultKey          key to match ScanResults against.
+         * @param isTargetingNewNetworks Whether this entry should represent an unsaved entry
+         *                               waiting to be configured by the user. This is necessary to
+         *                               ignore existing WifiConfigurations that match the security
+         *                               type family, but have no scan results.
          */
         StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey, boolean isTargetingNewNetworks) {
-            mScanResultKey = scanResultKey;
-            mIsTargetingNewNetworks = isTargetingNewNetworks;
+            this(scanResultKey, isTargetingNewNetworks, UserHandle.of(
+                    ActivityManager.getCurrentUser()));
         }
 
         /**
@@ -1109,6 +1130,7 @@ public class StandardWifiEntry extends WifiEntry {
                 mIsNetworkRequest = true;
             }
             mIsTargetingNewNetworks = isTargetingNewNetworks;
+            mConfigOwner = UserHandle.getUserHandleForUid(config.creatorUid);
         }
 
         /**
@@ -1135,6 +1157,11 @@ public class StandardWifiEntry extends WifiEntry {
                     mIsTargetingNewNetworks = keyJson.getBoolean(
                             KEY_IS_TARGETING_NEW_NETWORKS);
                 }
+                if (keyJson.has(KEY_CONFIG_OWNER)) {
+                    mConfigOwner = UserHandle.of(keyJson.getInt(KEY_CONFIG_OWNER));
+                } else {
+                    mConfigOwner = UserHandle.of(ActivityManager.getCurrentUser());
+                }
             } catch (JSONException e) {
                 Log.e(TAG, "JSONException while converting StandardWifiEntryKey to string: " + e);
             }
@@ -1159,6 +1186,7 @@ public class StandardWifiEntry extends WifiEntry {
                 if (mIsTargetingNewNetworks) {
                     keyJson.put(KEY_IS_TARGETING_NEW_NETWORKS, mIsTargetingNewNetworks);
                 }
+                keyJson.put(KEY_CONFIG_OWNER, mConfigOwner.getIdentifier());
             } catch (JSONException e) {
                 Log.wtf(TAG, "JSONException while converting StandardWifiEntryKey to string: " + e);
             }
@@ -1184,6 +1212,10 @@ public class StandardWifiEntry extends WifiEntry {
             return mIsTargetingNewNetworks;
         }
 
+        @NonNull UserHandle getConfigOwner() {
+            return mConfigOwner;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -1191,12 +1223,14 @@ public class StandardWifiEntry extends WifiEntry {
             StandardWifiEntryKey that = (StandardWifiEntryKey) o;
             return Objects.equals(mScanResultKey, that.mScanResultKey)
                     && TextUtils.equals(mSuggestionProfileKey, that.mSuggestionProfileKey)
-                    && mIsNetworkRequest == that.mIsNetworkRequest;
+                    && mIsNetworkRequest == that.mIsNetworkRequest
+                    && Objects.equals(mConfigOwner, that.mConfigOwner);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(mScanResultKey, mSuggestionProfileKey, mIsNetworkRequest);
+            return Objects.hash(mScanResultKey, mSuggestionProfileKey, mIsNetworkRequest,
+                    mConfigOwner);
         }
     }
 
