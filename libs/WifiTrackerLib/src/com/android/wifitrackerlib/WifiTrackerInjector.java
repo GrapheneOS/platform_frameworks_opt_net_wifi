@@ -18,6 +18,7 @@ package com.android.wifitrackerlib;
 
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
+import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -34,6 +35,8 @@ import java.util.Set;
  * Wrapper class for commonly referenced objects and static data.
  */
 public class WifiTrackerInjector {
+    private static final String TAG = WifiTrackerInjector.class.getSimpleName();
+
     private static final String DEVICE_CONFIG_NAMESPACE = "wifi";
 
     @NonNull private final Context mContext;
@@ -61,7 +64,8 @@ public class WifiTrackerInjector {
         for (int i = 0; i < noAttributionAnnotationPackages.length; i++) {
             mNoAttributionAnnotationPackages.add(noAttributionAnnotationPackages[i]);
         }
-        mIsUserDebugVerboseLoggingEnabled = context.getResources().getBoolean(
+        Resources res = context.getResources();
+        mIsUserDebugVerboseLoggingEnabled = res.getBoolean(
                 R.bool.wifitrackerlib_enable_verbose_logging_for_userdebug)
                 && Build.TYPE.equals("userdebug");
     }
