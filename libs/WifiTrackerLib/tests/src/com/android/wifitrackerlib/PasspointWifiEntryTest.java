@@ -16,7 +16,6 @@
 
 package com.android.wifitrackerlib;
 
-import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -42,6 +41,9 @@ import android.net.wifi.hotspot2.pps.HomeSp;
 import android.os.Handler;
 import android.os.test.TestLooper;
 
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -52,6 +54,7 @@ import org.mockito.MockitoSession;
 import java.util.Arrays;
 
 public class PasspointWifiEntryTest {
+    private MockitoSession mSession;
     @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
     @Mock private WifiManager mMockWifiManager;
@@ -69,6 +72,9 @@ public class PasspointWifiEntryTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        mSession = ExtendedMockito.mockitoSession()
+                .spyStatic(NonSdkApiWrapper.class)
+                .startMocking();
 
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
@@ -83,6 +89,14 @@ public class PasspointWifiEntryTest {
 
         when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mMockConnectivityManager);
+    }
+
+    @After
+    public void cleanUp() throws Exception {
+        ExtendedMockito.validateMockitoUsage();
+        if (mSession != null) {
+            mSession.finishMocking();
+        }
     }
 
     @Test
@@ -322,29 +336,23 @@ public class PasspointWifiEntryTest {
                 getPasspointConfiguration(), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            // Simulate user tapping on the network and receiving captive portal capabilities.
-            // This should trigger the captive portal app.
-            entry.connect(null /* callback */);
-            when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
-            when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
-            when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
-                    getPasspointConfiguration().getUniqueId());
-            when(mMockNetworkCapabilities.hasCapability(
-                    NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        // Simulate user tapping on the network and receiving captive portal capabilities.
+        // This should trigger the captive portal app.
+        entry.connect(null /* callback */);
+        when(mMockWifiInfo.isPasspointAp()).thenReturn(true);
+        when(mMockWifiInfo.getPasspointFqdn()).thenReturn(FQDN);
+        when(mMockWifiInfo.getPasspointUniqueId()).thenReturn(
+                getPasspointConfiguration().getUniqueId());
+        when(mMockNetworkCapabilities.hasCapability(
+                NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)).thenReturn(true);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
-            verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
+        verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
 
-            // Update network capabilities again. This should not trigger the captive portal app.
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        // Update network capabilities again. This should not trigger the captive portal app.
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
-            verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
-        } finally {
-            session.finishMocking();
-        }
-
+        verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
     }
 
     @Test
