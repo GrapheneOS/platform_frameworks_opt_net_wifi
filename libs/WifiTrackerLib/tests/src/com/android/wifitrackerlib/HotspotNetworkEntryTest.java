@@ -21,7 +21,6 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
-import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_CONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.CONNECTED_STATE_DISCONNECTED;
 import static com.android.wifitrackerlib.WifiEntry.MIN_FREQ_24GHZ;
@@ -56,17 +55,23 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 
 import androidx.core.os.BuildCompat;
 
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
+import org.mockito.quality.Strictness;
 
 public class HotspotNetworkEntryTest {
     @Rule
     public final CheckFlagsRule mCheckFlagsRule =
             DeviceFlagsValueProvider.createCheckFlagsRule();
+
+    private MockitoSession mSession;
 
     @Mock private WifiEntry.WifiEntryCallback mMockListener;
     @Mock private WifiEntry.ConnectCallback mMockConnectCallback;
@@ -100,6 +105,11 @@ public class HotspotNetworkEntryTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        mSession = ExtendedMockito.mockitoSession()
+                .spyStatic(NonSdkApiWrapper.class)
+                .spyStatic(BuildCompat.class)
+                .strictness(Strictness.LENIENT)
+                .startMocking();
 
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
@@ -165,6 +175,14 @@ public class HotspotNetworkEntryTest {
                 "2.4 GHz");
         when(mMockResources.getString(R.string.wifitrackerlib_multiband_separator)).thenReturn(
                 ", ");
+    }
+
+    @After
+    public void cleanUp() throws Exception {
+        ExtendedMockito.validateMockitoUsage();
+        if (mSession != null) {
+            mSession.finishMocking();
+        }
     }
 
     @Test
@@ -529,13 +547,8 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
-        try {
-            doReturn(true).when(() -> BuildCompat.isAtLeastV());
-            assertThat(entry.isBatteryCharging()).isTrue();
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() -> BuildCompat.isAtLeastV());
+        assertThat(entry.isBatteryCharging()).isTrue();
     }
 
     @Test
@@ -561,13 +574,8 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
-        try {
-            doReturn(true).when(() -> BuildCompat.isAtLeastV());
-            assertThat(entry.isBatteryCharging()).isTrue();
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() -> BuildCompat.isAtLeastV());
+        assertThat(entry.isBatteryCharging()).isTrue();
     }
 
     @Test
@@ -592,13 +600,8 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
-        try {
-            doReturn(false).when(() -> BuildCompat.isAtLeastV());
-            assertThat(entry.isBatteryCharging()).isTrue();
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(false).when(() -> BuildCompat.isAtLeastV());
+        assertThat(entry.isBatteryCharging()).isTrue();
     }
 
     @Test
@@ -623,13 +626,8 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
-        try {
-            doReturn(true).when(() -> BuildCompat.isAtLeastV());
-            assertThat(entry.isBatteryCharging()).isFalse();
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() -> BuildCompat.isAtLeastV());
+        assertThat(entry.isBatteryCharging()).isFalse();
     }
 
     @Test
@@ -652,13 +650,8 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
-        try {
-            doReturn(true).when(() -> BuildCompat.isAtLeastV());
-            assertThat(entry.isBatteryCharging()).isFalse();
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() -> BuildCompat.isAtLeastV());
+        assertThat(entry.isBatteryCharging()).isFalse();
     }
 
     @Test
@@ -680,13 +673,8 @@ public class HotspotNetworkEntryTest {
                         .addHotspotSecurityType(SECURITY_TYPE_PSK)
                         .build());
 
-        MockitoSession session = mockitoSession().spyStatic(BuildCompat.class).startMocking();
-        try {
-            doReturn(true).when(() -> BuildCompat.isAtLeastV());
-            assertThat(entry.isBatteryCharging()).isFalse();
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() -> BuildCompat.isAtLeastV());
+        assertThat(entry.isBatteryCharging()).isFalse();
     }
 
     @Test
@@ -1105,23 +1093,18 @@ public class HotspotNetworkEntryTest {
                 mMockWifiManager, mMockSharedConnectivityManager, TEST_HOTSPOT_NETWORK_DATA);
         entry.setListener(mMockListener);
         entry.connect(mMockConnectCallback);
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isHotspotNetworkUnknownStatusResetsConnectingStateEnabled());
-            entry.onConnectionStatusChanged(
-                    HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
-            mTestLooper.dispatchAll();
-            assertThat(entry.getSummary()).isEqualTo("Connecting…");
+        doReturn(true).when(() ->
+                NonSdkApiWrapper.isHotspotNetworkUnknownStatusResetsConnectingStateEnabled());
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
+        mTestLooper.dispatchAll();
+        assertThat(entry.getSummary()).isEqualTo("Connecting…");
 
-            entry.onConnectionStatusChanged(
-                    HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN);
-            mTestLooper.dispatchAll();
+        entry.onConnectionStatusChanged(
+                HotspotNetworkConnectionStatus.CONNECTION_STATUS_UNKNOWN);
+        mTestLooper.dispatchAll();
 
-            assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
-        } finally {
-            session.finishMocking();
-        }
+        assertThat(entry.getSummary()).isNotEqualTo("Connecting…");
     }
 
     @Test
@@ -1136,14 +1119,9 @@ public class HotspotNetworkEntryTest {
                 HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
         mTestLooper.dispatchAll();
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            doReturn(false).when(() ->
-                    NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
-            assertThat(entry.getSummary(true)).isEqualTo("Connecting…");
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(false).when(() ->
+                NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
+        assertThat(entry.getSummary(true)).isEqualTo("Connecting…");
     }
 
     @Test
@@ -1158,14 +1136,9 @@ public class HotspotNetworkEntryTest {
                 HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
         mTestLooper.dispatchAll();
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
-            assertThat(entry.getSummary(true)).isEqualTo("Google Fi from your phone");
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() ->
+                NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
+        assertThat(entry.getSummary(true)).isEqualTo("Google Fi from your phone");
     }
 
     @Test
@@ -1180,14 +1153,9 @@ public class HotspotNetworkEntryTest {
                 HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
         mTestLooper.dispatchAll();
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
-            assertThat(entry.getSummary(false)).isEqualTo("Connecting…");
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() ->
+                NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
+        assertThat(entry.getSummary(false)).isEqualTo("Connecting…");
     }
 
     @Test
@@ -1202,15 +1170,10 @@ public class HotspotNetworkEntryTest {
                 HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
         mTestLooper.dispatchAll();
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            doReturn(false).when(() ->
-                    NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
-            assertThat(entry.getConnectedState())
-                    .isEqualTo(HotspotNetworkEntry.CONNECTED_STATE_DISCONNECTED);
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(false).when(() ->
+                NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
+        assertThat(entry.getConnectedState())
+                .isEqualTo(HotspotNetworkEntry.CONNECTED_STATE_DISCONNECTED);
     }
 
     @Test
@@ -1225,14 +1188,9 @@ public class HotspotNetworkEntryTest {
                 HotspotNetworkConnectionStatus.CONNECTION_STATUS_ENABLING_HOTSPOT);
         mTestLooper.dispatchAll();
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            doReturn(true).when(() ->
-                    NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
-            assertThat(entry.getConnectedState())
-                    .isEqualTo(HotspotNetworkEntry.CONNECTED_STATE_CONNECTING);
-        } finally {
-            session.finishMocking();
-        }
+        doReturn(true).when(() ->
+                NonSdkApiWrapper.isHotspotNetworkConnectingStateForDetailsPageEnabled());
+        assertThat(entry.getConnectedState())
+                .isEqualTo(HotspotNetworkEntry.CONNECTED_STATE_CONNECTING);
     }
 }

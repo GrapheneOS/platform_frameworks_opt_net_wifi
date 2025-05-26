@@ -29,7 +29,6 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 
-import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
@@ -80,6 +79,7 @@ import androidx.core.os.BuildCompat;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -87,12 +87,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
+import org.mockito.quality.Strictness;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 
 public class StandardWifiEntryTest {
+    private MockitoSession mSession;
     @Mock private WifiEntry.WifiEntryCallback mMockListener;
     @Mock private WifiEntry.ConnectCallback mMockConnectCallback;
     @Mock private WifiManager mMockWifiManager;
@@ -116,6 +118,11 @@ public class StandardWifiEntryTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        // static mocking
+        mSession = ExtendedMockito.mockitoSession()
+                .spyStatic(NonSdkApiWrapper.class)
+                .strictness(Strictness.LENIENT)
+                .startMocking();
 
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
@@ -146,6 +153,14 @@ public class StandardWifiEntryTest {
                 .thenReturn(mDevicePolicyManager);
         when(mMockInjector.getUserManager()).thenReturn(mUserManager);
         when(mMockInjector.getDevicePolicyManager()).thenReturn(mDevicePolicyManager);
+    }
+
+    @After
+    public void cleanUp() throws Exception {
+        ExtendedMockito.validateMockitoUsage();
+        if (mSession != null) {
+            mSession.finishMocking();
+        }
     }
 
     /**
@@ -443,13 +458,8 @@ public class StandardWifiEntryTest {
         when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            ExtendedMockito.doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(any()));
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-        } finally {
-            session.finishMocking();
-        }
+        ExtendedMockito.doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(any()));
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
     }
@@ -468,24 +478,19 @@ public class StandardWifiEntryTest {
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            ExtendedMockito.doReturn(false)
-                    .when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
-            // Is OEM
-            ExtendedMockito.doReturn(true)
-                    .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-            assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+        ExtendedMockito.doReturn(false)
+                .when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
+        // Is OEM
+        ExtendedMockito.doReturn(true)
+                .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
 
-            // Not OEM anymore
-            ExtendedMockito.doReturn(false)
-                    .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-            assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
-        } finally {
-            session.finishMocking();
-        }
+        // Not OEM anymore
+        ExtendedMockito.doReturn(false)
+                .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
     }
 
     @Test
@@ -1098,22 +1103,17 @@ public class StandardWifiEntryTest {
                 Collections.singletonList(wifiConfig), null, mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            // Simulate user tapping on the network and receiving captive portal capabilities.
-            // This should trigger the captive portal app.
-            entry.connect(null /* callback */);
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        // Simulate user tapping on the network and receiving captive portal capabilities.
+        // This should trigger the captive portal app.
+        entry.connect(null /* callback */);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
-            verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
+        verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
 
-            // Update network capabilities again. This should not trigger the captive portal app.
-            entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        // Update network capabilities again. This should not trigger the captive portal app.
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
-            verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
-        } finally {
-            session.finishMocking();
-        }
+        verify(() -> NonSdkApiWrapper.startCaptivePortalApp(any(), any()), times(1));
     }
 
     @Test
@@ -1386,19 +1386,14 @@ public class StandardWifiEntryTest {
                 WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_ALLOWLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid".getBytes(StandardCharsets.UTF_8)))));
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
-            StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
-                    mMockInjector, mTestHandler,
-                    ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
-                    Collections.singletonList(config), Collections.singletonList(scan),
-                    mMockWifiManager, false /* forSavedNetworksPage */));
-            when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
-            assertThat(spyEntry.canConnect()).isEqualTo(true);
-        } finally {
-            session.finishMocking();
-        }
+        when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        assertThat(spyEntry.canConnect()).isEqualTo(true);
     }
 
     @Test
@@ -1413,19 +1408,14 @@ public class StandardWifiEntryTest {
                 WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_ALLOWLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid2".getBytes(StandardCharsets.UTF_8)))));
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
-            StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
-                    mMockInjector, mTestHandler,
-                    ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
-                    Collections.singletonList(config), Collections.singletonList(scan),
-                    mMockWifiManager, false /* forSavedNetworksPage */));
-            when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
-            assertThat(spyEntry.canConnect()).isEqualTo(false);
-        } finally {
-            session.finishMocking();
-        }
+        when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        assertThat(spyEntry.canConnect()).isEqualTo(false);
     }
 
     @Test
@@ -1440,19 +1430,14 @@ public class StandardWifiEntryTest {
                 WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_DENYLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid2".getBytes(StandardCharsets.UTF_8)))));
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
-            StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
-                    mMockInjector, mTestHandler,
-                    ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
-                    Collections.singletonList(config), Collections.singletonList(scan),
-                    mMockWifiManager, false /* forSavedNetworksPage */));
-            when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
-            assertThat(spyEntry.canConnect()).isEqualTo(true);
-        } finally {
-            session.finishMocking();
-        }
+        when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        assertThat(spyEntry.canConnect()).isEqualTo(true);
     }
 
     @Test
@@ -1467,19 +1452,14 @@ public class StandardWifiEntryTest {
                 WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_DENYLIST,
                 new ArraySet<>(Arrays.asList(
                         WifiSsid.fromBytes("ssid".getBytes(StandardCharsets.UTF_8)))));
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
-            StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
-                    mMockInjector, mTestHandler,
-                    ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
-                    Collections.singletonList(config), Collections.singletonList(scan),
-                    mMockWifiManager, false /* forSavedNetworksPage */));
-            when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
-            assertThat(spyEntry.canConnect()).isEqualTo(false);
-        } finally {
-            session.finishMocking();
-        }
+        when(NonSdkApiWrapper.getWifiSsidPolicy(mDevicePolicyManager)).thenReturn(policy);
+        StandardWifiEntry spyEntry = spy(new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                Collections.singletonList(config), Collections.singletonList(scan),
+                mMockWifiManager, false /* forSavedNetworksPage */));
+        when(spyEntry.getConnectedState()).thenReturn(CONNECTED_STATE_DISCONNECTED);
+        assertThat(spyEntry.canConnect()).isEqualTo(false);
     }
 
     @Test
