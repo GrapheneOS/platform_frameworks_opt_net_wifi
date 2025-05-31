@@ -17,7 +17,6 @@
 package com.android.wifitrackerlib;
 
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
-import static com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession;
 import static com.android.wifitrackerlib.TestUtils.GOOD_RSSI;
 import static com.android.wifitrackerlib.TestUtils.buildScanResult;
 import static com.android.wifitrackerlib.TestUtils.buildWifiConfiguration;
@@ -59,6 +58,9 @@ import android.os.test.TestLooper;
 
 import androidx.lifecycle.Lifecycle;
 
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -66,6 +68,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
+import org.mockito.quality.Strictness;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -83,6 +86,7 @@ public class SavedNetworkTrackerTest {
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
     private static final String TEST_CACERT_NOT_REQUIRED_ALIAS = "cacert_not_required";
+    private MockitoSession mSession;
 
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
@@ -129,6 +133,11 @@ public class SavedNetworkTrackerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        // static mocking
+        mSession = ExtendedMockito.mockitoSession()
+                .spyStatic(NonSdkApiWrapper.class)
+                .strictness(Strictness.LENIENT)
+                .startMocking();
 
         mTestLooper = new TestLooper();
 
@@ -162,6 +171,14 @@ public class SavedNetworkTrackerTest {
         when(mMockContext.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
         when(mPowerManager.isInteractive()).thenReturn(true);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
+    }
+
+    @After
+    public void cleanUp() throws Exception {
+        ExtendedMockito.validateMockitoUsage();
+        if (mSession != null) {
+            mSession.finishMocking();
+        }
     }
 
     /**
@@ -697,45 +714,40 @@ public class SavedNetworkTrackerTest {
         assertThat(mbbEntry.getConnectedState())
                 .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
 
-        MockitoSession session = mockitoSession().spyStatic(NonSdkApiWrapper.class).startMocking();
-        try {
-            // MBB network connected but not primary yet.
-            Network mbbNetwork = mock(Network.class);
-            NetworkCapabilities mbbNetworkCapabilities = mock(NetworkCapabilities.class);
-            WifiInfo mbbWifiInfo = mock(WifiInfo.class);
-            when(mbbWifiInfo.getNetworkId()).thenReturn(mbbConfig.networkId);
-            when(mbbWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
-            when(mbbNetworkCapabilities.getTransportInfo()).thenReturn(mbbWifiInfo);
-            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(mbbWifiInfo));
-            mNetworkCallbackCaptor.getValue()
-                    .onCapabilitiesChanged(mbbNetwork, mbbNetworkCapabilities);
-            // Original network should still be connected.
-            assertThat(originalEntry.getConnectedState())
-                    .isEqualTo(CONNECTED_STATE_CONNECTED);
-            assertThat(mbbEntry.getConnectedState())
-                    .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+        // MBB network connected but not primary yet.
+        Network mbbNetwork = mock(Network.class);
+        NetworkCapabilities mbbNetworkCapabilities = mock(NetworkCapabilities.class);
+        WifiInfo mbbWifiInfo = mock(WifiInfo.class);
+        when(mbbWifiInfo.getNetworkId()).thenReturn(mbbConfig.networkId);
+        when(mbbWifiInfo.getRssi()).thenReturn(GOOD_RSSI);
+        when(mbbNetworkCapabilities.getTransportInfo()).thenReturn(mbbWifiInfo);
+        doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(mbbWifiInfo));
+        mNetworkCallbackCaptor.getValue()
+                .onCapabilitiesChanged(mbbNetwork, mbbNetworkCapabilities);
+        // Original network should still be connected.
+        assertThat(originalEntry.getConnectedState())
+                .isEqualTo(CONNECTED_STATE_CONNECTED);
+        assertThat(mbbEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
 
-            // Original network becomes non-primary and MBB network becomes primary.
-            doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
-            mNetworkCallbackCaptor.getValue()
-                    .onCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
-            doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(mbbWifiInfo));
-            mNetworkCallbackCaptor.getValue()
-                    .onCapabilitiesChanged(mbbNetwork, mbbNetworkCapabilities);
-            // MBB network should be connected now.
-            assertThat(originalEntry.getConnectedState())
-                    .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
-            assertThat(mbbEntry.getConnectedState())
-                    .isEqualTo(CONNECTED_STATE_CONNECTED);
+        // Original network becomes non-primary and MBB network becomes primary.
+        doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
+        mNetworkCallbackCaptor.getValue()
+                .onCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(mbbWifiInfo));
+        mNetworkCallbackCaptor.getValue()
+                .onCapabilitiesChanged(mbbNetwork, mbbNetworkCapabilities);
+        // MBB network should be connected now.
+        assertThat(originalEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+        assertThat(mbbEntry.getConnectedState())
+                .isEqualTo(CONNECTED_STATE_CONNECTED);
 
-            // Original network is lost. MBB network should still be connected
-            assertThat(originalEntry.getConnectedState())
-                    .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
-            assertThat(mbbEntry.getConnectedState())
-                    .isEqualTo(CONNECTED_STATE_CONNECTED);
-        } finally {
-            session.finishMocking();
-        }
+        // Original network is lost. MBB network should still be connected
+        assertThat(originalEntry.getConnectedState())
+                .isEqualTo(WifiEntry.CONNECTED_STATE_DISCONNECTED);
+        assertThat(mbbEntry.getConnectedState())
+                .isEqualTo(CONNECTED_STATE_CONNECTED);
     }
 
     @Test
