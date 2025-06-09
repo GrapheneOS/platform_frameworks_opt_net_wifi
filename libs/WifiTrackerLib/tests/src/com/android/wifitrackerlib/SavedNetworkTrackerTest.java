@@ -45,6 +45,7 @@ import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiInfo;
@@ -152,6 +153,7 @@ public class SavedNetworkTrackerTest {
         when(mMockWifiInfo.getNetworkId()).thenReturn(WifiConfiguration.INVALID_NETWORK_ID);
         when(mMockWifiInfo.getRssi()).thenReturn(WifiInfo.INVALID_RSSI);
         when(mMockWifiInfo.makeCopy(anyLong())).thenReturn(mMockWifiInfo);
+        when(mMockWifiInfo.getSupplicantState()).thenReturn(SupplicantState.COMPLETED);
         when(mMockNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
                 .thenReturn(true);
         when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
@@ -574,6 +576,38 @@ public class SavedNetworkTrackerTest {
         // WifiManager.getConnectionInfo()/getCurrentNetwork() returning the old network, which may
         // happen by race condition.
         when(mMockConnectivityManager.getNetworkCapabilities(any())).thenReturn(null);
+        savedNetworkTracker.onStop();
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
+        // Entry should be disconnected.
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
+    }
+
+    /**
+     * Tests that a WifiEntry is not connected if WifiManager.getConnectionInfo() returns a WifiInfo
+     * whose supplicant state is not COMPLETED on start. This is to prevent cases where the current
+     * WifiInfo does not match WifiManager.getCurrentNetwork()/NetworkCapabilities.
+     */
+    @Test
+    public void testGetConnectedWifiEntry_supplicantStateNotCompleteOnStart_isNotConnected() {
+        final SavedNetworkTracker savedNetworkTracker = createTestSavedNetworkTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+
+        savedNetworkTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        assertThat(savedNetworkTracker.getSavedWifiEntries()).isNotEmpty();
+        WifiEntry entry = savedNetworkTracker.getSavedWifiEntries().get(0);
+        assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
+
+        // Mock the WifiInfo being at the AUTHENTICATING supplicant state of a different connection.
+        when(mMockWifiInfo.getSupplicantState()).thenReturn(SupplicantState.AUTHENTICATING);
         savedNetworkTracker.onStop();
         savedNetworkTracker.onStart();
         mTestLooper.dispatchAll();

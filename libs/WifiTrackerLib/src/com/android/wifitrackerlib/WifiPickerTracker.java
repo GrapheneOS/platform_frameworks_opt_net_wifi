@@ -43,6 +43,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -302,7 +303,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
             entry.clearConnectionInfo(false);
         }
         Network currentNetwork = mWifiManager.getCurrentNetwork();
-        if (currentNetwork != null) {
+        WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+        if (currentNetwork != null && wifiInfo.getSupplicantState() == SupplicantState.COMPLETED) {
             NetworkCapabilities networkCapabilities =
                     mConnectivityManager.getNetworkCapabilities(currentNetwork);
             if (networkCapabilities != null) {
@@ -310,7 +312,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 // networkId, so we need to set the WifiInfo directly from WifiManager.
                 handleNetworkCapabilitiesChanged(currentNetwork,
                         new NetworkCapabilities.Builder(networkCapabilities)
-                                .setTransportInfo(mWifiManager.getConnectionInfo())
+                                .setTransportInfo(wifiInfo)
                                 .build());
             }
             LinkProperties linkProperties = mConnectivityManager.getLinkProperties(currentNetwork);
