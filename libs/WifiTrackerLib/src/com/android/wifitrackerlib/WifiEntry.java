@@ -627,6 +627,14 @@ public class WifiEntry {
         // Do nothing.
     }
 
+    /**
+     * Connects to the network. Any new networks added from this action will be shared or private
+     * based on sharedOnCreation.
+     */
+    public void connect(@Nullable ConnectCallback callback, boolean sharedOnCreation) {
+        connect(callback);
+    }
+
     /** Returns whether the entry should show a disconnect option */
     public boolean canDisconnect() {
         return false;

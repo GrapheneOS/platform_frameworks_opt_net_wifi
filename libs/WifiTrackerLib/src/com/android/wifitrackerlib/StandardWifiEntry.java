@@ -354,6 +354,12 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized void connect(@Nullable ConnectCallback callback) {
+        connect(callback, mContext.getResources()
+                .getBoolean(R.bool.wifitrackerlib_config_saveOpenNetworksAsShared));
+    }
+
+    @Override
+    public synchronized void connect(@Nullable ConnectCallback callback, boolean sharedOnCreation) {
         mConnectCallback = callback;
         // We should flag this network to auto-open captive portal since this method represents
         // the user manually connecting to a network (i.e. not auto-join).
@@ -378,10 +384,7 @@ public class StandardWifiEntry extends WifiEntry {
         final WifiConfiguration openConfig = new WifiConfiguration();
         openConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
         openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-        if (!mContext.getResources()
-                .getBoolean(R.bool.wifitrackerlib_config_saveOpenNetworksAsShared)) {
-            openConfig.shared = false;
-        }
+        openConfig.shared = sharedOnCreation;
         if (mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
             final WifiConfiguration oweConfig = new WifiConfiguration(openConfig);
             oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);

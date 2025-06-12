@@ -1870,6 +1870,30 @@ public class StandardWifiEntryTest {
     }
 
     @Test
+    public void testConnect_sharedOnCreate_configuresSharedNetwork() {
+        when(mMockResources.getBoolean(R.bool.wifitrackerlib_config_saveOpenNetworksAsShared))
+                .thenReturn(true);
+        ScanResult openScan = buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI);
+        openScan.capabilities = "";
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
+                        true /* isTargetingNewNetworks */),
+                null, Collections.singletonList(openScan),
+                mMockWifiManager, false /* forSavedNetworksPage */);
+        ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+
+        entry.connect(null, true /* sharedOnCreate */);
+        verify(mMockWifiManager).connect(connectConfigCaptor.capture(), any());
+
+        WifiConfiguration connectConfig = connectConfigCaptor.getValue();
+        assertThat(Utils.getSecurityTypesFromWifiConfiguration(connectConfig))
+                .isEqualTo(Collections.singletonList(SECURITY_TYPE_OPEN));
+        assertThat(connectConfig.shared).isTrue();
+    }
+
+    @Test
     public void testGetSecurity_openAndOwe_returnsOpen() {
         WifiConfiguration openConfig = new WifiConfiguration();
         openConfig.SSID = "\"ssid\"";
