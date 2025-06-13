@@ -19,6 +19,7 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.flags.Flags.hotspotNetworkConnectingStateForDetailsPage;
 import static android.net.wifi.flags.Flags.hotspotNetworkUnknownStatusResetsConnectingState;
 
+import static com.android.wifi.flags.Flags.multiUserWifiEnhancement;
 import static com.android.wifi.flags.Flags.wifiStateChangedListener;
 
 import android.app.admin.DevicePolicyManager;
@@ -28,6 +29,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiInfo;
+import android.os.Build;
 import android.os.UserManager;
 import android.text.Annotation;
 import android.text.SpannableString;
@@ -154,5 +156,10 @@ class NonSdkApiWrapper {
      */
     static boolean isWifiStateChangedListenerEnabled() {
         return wifiStateChangedListener();
+    }
+
+    static boolean isMultiUserWifiEnhancementEnabled() {
+        return Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA
+                && multiUserWifiEnhancement();
     }
 }
