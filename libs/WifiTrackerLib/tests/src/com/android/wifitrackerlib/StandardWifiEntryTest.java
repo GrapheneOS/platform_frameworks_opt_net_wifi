@@ -29,6 +29,7 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
 import static com.android.wifitrackerlib.StandardWifiEntry.StandardWifiEntryKey;
@@ -41,6 +42,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -92,6 +95,7 @@ import org.mockito.quality.Strictness;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 public class StandardWifiEntryTest {
     private MockitoSession mSession;
@@ -121,6 +125,7 @@ public class StandardWifiEntryTest {
         // static mocking
         mSession = ExtendedMockito.mockitoSession()
                 .spyStatic(NonSdkApiWrapper.class)
+                .spyStatic(Utils.class)
                 .strictness(Strictness.LENIENT)
                 .startMocking();
 
@@ -144,6 +149,7 @@ public class StandardWifiEntryTest {
                 .thenReturn(TestUtils.BAD_LEVEL);
         when(mMockInjector.getContext()).thenReturn(mMockContext);
         when(mMockContext.getResources()).thenReturn(mMockResources);
+        when(mMockContext.getString(anyInt())).thenReturn("");
 
         when(mMockContext.getSystemService(ConnectivityManager.class))
                 .thenReturn(mMockConnectivityManager);
@@ -458,7 +464,7 @@ public class StandardWifiEntryTest {
         when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
-        ExtendedMockito.doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(any()));
+        doReturn(false).when(() -> NonSdkApiWrapper.isPrimary(any()));
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
 
         assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
@@ -478,16 +484,16 @@ public class StandardWifiEntryTest {
         when(mMockWifiInfo.getNetworkId()).thenReturn(1);
         when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
 
-        ExtendedMockito.doReturn(false)
+        doReturn(false)
                 .when(() -> NonSdkApiWrapper.isPrimary(mMockWifiInfo));
         // Is OEM
-        ExtendedMockito.doReturn(true)
+        doReturn(true)
                 .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
         assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_CONNECTED);
 
         // Not OEM anymore
-        ExtendedMockito.doReturn(false)
+        doReturn(false)
                 .when(() -> NonSdkApiWrapper.isOemCapabilities(mMockNetworkCapabilities));
         entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
         assertThat(entry.getConnectedState()).isEqualTo(CONNECTED_STATE_DISCONNECTED);
@@ -821,6 +827,75 @@ public class StandardWifiEntryTest {
         entry.onDefaultNetworkCapabilitiesChanged(otherNetwork, new NetworkCapabilities());
 
         assertThat(entry.getSummary()).isEqualTo("");
+    }
+
+    @Test
+    public void testGetSummary_pskTDI_usesSaeConfigForDescription() {
+        final WifiConfiguration configSae = new WifiConfiguration();
+        configSae.SSID = "\"ssid\"";
+        configSae.networkId = 1;
+        configSae.setSecurityParams(WifiConfiguration.SECURITY_TYPE_SAE);
+        final WifiConfiguration configPsk = new WifiConfiguration(configSae);
+        configPsk.setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK);
+        NetworkSelectionStatus tdiStatus = mock(NetworkSelectionStatus.class);
+        when(tdiStatus.getNetworkSelectionDisableReason())
+                .thenReturn(Utils.DISABLED_TRANSITION_DISABLE_INDICATION);
+        configPsk.setNetworkSelectionStatus(tdiStatus);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK),
+                List.of(configPsk, configSae), null, mMockWifiManager,
+                false /* forSavedNetworksPage */);
+        final String pskDescription = "TDI error";
+        final String saeDescription = "No TDI error";
+        doReturn(pskDescription).when(() -> Utils.getDisconnectedDescription(any(), any(),
+                eq(configPsk), anyBoolean(), anyBoolean()));
+        doReturn(saeDescription).when(() -> Utils.getDisconnectedDescription(any(), any(),
+                eq(configSae), anyBoolean(), anyBoolean()));
+
+        // Only PSK scans: default to the open config description (TDI error)
+        assertThat(entry.getSummary()).isEqualTo(pskDescription);
+
+        final ScanResult saeScan = buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI);
+        saeScan.capabilities = "SAE";
+        entry.updateScanResultInfo(List.of(saeScan));
+
+        // SAE scans: default to the sae config description (no error)
+        assertThat(entry.getSummary()).isEqualTo(saeDescription);
+    }
+
+    @Test
+    public void testGetSummary_openTDI_usesSaeConfigForDescription() {
+        final WifiConfiguration configOwe = new WifiConfiguration();
+        configOwe.SSID = "\"ssid\"";
+        configOwe.networkId = 1;
+        configOwe.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+        final WifiConfiguration configOpen = new WifiConfiguration(configOwe);
+        configOpen.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+        NetworkSelectionStatus tdiStatus = mock(NetworkSelectionStatus.class);
+        when(tdiStatus.getNetworkSelectionDisableReason())
+                .thenReturn(Utils.DISABLED_TRANSITION_DISABLE_INDICATION);
+        configOpen.setNetworkSelectionStatus(tdiStatus);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN),
+                List.of(configOpen, configOwe), null, mMockWifiManager,
+                false /* forSavedNetworksPage */);
+        final String openDescription = "TDI error";
+        final String oweDescription = "No TDI error";
+        doReturn(openDescription).when(() -> Utils.getDisconnectedDescription(any(), any(),
+                eq(configOpen), anyBoolean(), anyBoolean()));
+        doReturn(oweDescription).when(() -> Utils.getDisconnectedDescription(any(), any(),
+                eq(configOwe), anyBoolean(), anyBoolean()));
+        // Only Open scans: default to the open config description (TDI error)
+        assertThat(entry.getSummary()).isEqualTo(openDescription);
+
+        final ScanResult oweScan = buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI);
+        oweScan.capabilities = "OWE";
+        entry.updateScanResultInfo(List.of(oweScan));
+
+        // Open + OWE scans: default to the owe config description (no error)
+        assertThat(entry.getSummary()).isEqualTo(oweDescription);
     }
 
     @Test
