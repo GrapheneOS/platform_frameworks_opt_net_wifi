@@ -189,18 +189,8 @@ public class StandardWifiEntry extends WifiEntry {
         final @ConnectedState int connectedState = getConnectedState();
         switch (connectedState) {
             case CONNECTED_STATE_DISCONNECTED:
-                // Don't display the TDI error message if we can connect with SAE/OWE.
-                WifiConfiguration configToDescribe = mTargetWifiConfig;
-                if (configToDescribe.getNetworkSelectionStatus().getNetworkSelectionDisableReason()
-                        == Utils.DISABLED_TRANSITION_DISABLE_INDICATION) {
-                    for (int upgradeType : List.of(SECURITY_TYPE_SAE, SECURITY_TYPE_OWE)) {
-                        if (!mMatchingScanResults.containsKey(upgradeType)) continue;
-                        if (!mMatchingWifiConfigs.containsKey(upgradeType)) continue;
-                        configToDescribe = mMatchingWifiConfigs.get(upgradeType);
-                    }
-                }
                 connectedStateDescription = getDisconnectedDescription(mInjector, mContext,
-                        configToDescribe,
+                        mTargetWifiConfig,
                         mForSavedNetworksPage,
                         concise);
                 break;
