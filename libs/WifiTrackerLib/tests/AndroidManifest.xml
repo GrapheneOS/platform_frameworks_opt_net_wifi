@@ -17,6 +17,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.android.wifitrackerlib.test" >
 
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" />
+
     <application android:debuggable="true">
         <uses-library android:name="android.test.runner" />
         <activity android:label="WifiTrackerTestsDummyLabel"

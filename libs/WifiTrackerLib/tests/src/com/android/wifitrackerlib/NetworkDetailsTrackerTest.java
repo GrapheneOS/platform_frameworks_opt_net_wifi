@@ -113,8 +113,12 @@ public class NetworkDetailsTrackerTest {
     public void testCreateNetworkDetailsTracker_returnsStandardNetworkDetailsTracker()
             throws Exception {
         final NetworkDetailsTracker tracker = createTestNetworkDetailsTracker(
-                new StandardWifiEntryKey(new ScanResultKey("ssid",
-                        Collections.singletonList(WifiEntry.SECURITY_NONE))).toString());
+                new StandardWifiEntryKey(
+                        new ScanResultKey(
+                                "ssid",
+                                Collections.singletonList(WifiEntry.SECURITY_NONE)),
+                        false /* isTargetingNewNetworks */)
+                        .toString());
         assertThat(tracker).isInstanceOf(StandardNetworkDetailsTracker.class);
     }
 

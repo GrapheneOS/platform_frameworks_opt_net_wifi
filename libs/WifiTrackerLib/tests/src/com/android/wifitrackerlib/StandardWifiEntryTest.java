@@ -1648,7 +1648,23 @@ public class StandardWifiEntryTest {
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
         assertThat(new StandardWifiEntryKey(config, true /* isTargetingNewNetworks */))
                 .isEqualTo(new StandardWifiEntryKey(
-                        new ScanResultKey(config), true /* isTargetingNewNetworks */));
+                        new ScanResultKey(config), true /* isTargetingNewNetworks */
+                ));
+    }
+
+    @Test
+    public void testStandardWifiEntryKeyConstructor_fromNonOwnedConfig_matchesFromScanResultKey() {
+        // Create a config with uid 100000 (maps to User 1)
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+        config.creatorUid = 100000;
+
+        // Key created from the config should include the creator user handle.
+        assertThat(new StandardWifiEntryKey(config, true /* isTargetingNewNetworks */))
+                .isEqualTo(new StandardWifiEntryKey(
+                        new ScanResultKey(config), true /* isTargetingNewNetworks */,
+                        UserHandle.getUserHandleForUid(config.creatorUid)));
     }
 
     @Test
