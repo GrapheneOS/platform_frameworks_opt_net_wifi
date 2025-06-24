@@ -371,35 +371,39 @@ public class StandardWifiEntry extends WifiEntry {
             }
             // Saved/suggested network
             mWifiManager.connect(mTargetWifiConfig.networkId, new ConnectActionListener());
-        } else {
-            // TODO(b/416638579): Add a mechanism to save open configs as private for multi-user.
-            if (mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
-                // OWE network
-                final WifiConfiguration oweConfig = new WifiConfiguration();
-                oweConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
-                oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
-                mWifiManager.connect(oweConfig, new ConnectActionListener());
-                if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)) {
-                    // Add an extra Open config for OWE transition networks
-                    final WifiConfiguration openConfig = new WifiConfiguration();
-                    openConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
-                    openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-                    mWifiManager.save(openConfig, null);
-                }
-            } else if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)) {
-                // Open network
-                final WifiConfiguration openConfig = new WifiConfiguration();
-                openConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
-                openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-                mWifiManager.connect(openConfig, new ConnectActionListener());
-            } else {
-                // Secure network
-                if (callback != null) {
-                    mCallbackHandler.post(() ->
-                            callback.onConnectResult(
-                                    ConnectCallback.CONNECT_STATUS_FAILURE_NO_CONFIG));
-                }
+            return;
+        }
+
+        // Unsaved OWE network -- connect with a new config.
+        final WifiConfiguration openConfig = new WifiConfiguration();
+        openConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
+        openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
+        if (!mContext.getResources()
+                .getBoolean(R.bool.wifitrackerlib_config_saveOpenNetworksAsShared)) {
+            openConfig.shared = false;
+        }
+        if (mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
+            final WifiConfiguration oweConfig = new WifiConfiguration(openConfig);
+            oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
+            mWifiManager.connect(oweConfig, new ConnectActionListener());
+            if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)) {
+                // Add an extra Open config for OWE transition networks
+                mWifiManager.save(openConfig, null);
             }
+            return;
+        }
+
+        // Unsaved Open network -- connect with a new config.
+        if (mTargetSecurityTypes.contains(SECURITY_TYPE_OPEN)) {
+            mWifiManager.connect(openConfig, new ConnectActionListener());
+            return;
+        }
+
+        // Unsaved secure network -- signal to the caller that they must add the network manually.
+        if (callback != null) {
+            mCallbackHandler.post(() ->
+                    callback.onConnectResult(
+                            ConnectCallback.CONNECT_STATUS_FAILURE_NO_CONFIG));
         }
     }
 
