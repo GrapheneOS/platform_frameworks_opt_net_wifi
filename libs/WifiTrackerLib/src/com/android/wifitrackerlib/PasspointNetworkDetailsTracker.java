@@ -43,6 +43,7 @@ import androidx.annotation.WorkerThread;
 import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -136,15 +137,16 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
-        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, false /* timeoutScans */);
     }
 
     @WorkerThread
     @Override
     protected void handleScanResultsAvailableAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
+        boolean scanSucceeded = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, true);
         conditionallyUpdateScanResults(
-                intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
+                scanSucceeded /* pollScans */, scanSucceeded /* timeoutScans */);
     }
 
     @WorkerThread
@@ -156,7 +158,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     private void updateStartInfo() {
-        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, false /* timeoutScans */);
         conditionallyUpdateConfig();
         // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
         // the stopped state, but don't notify the listener to avoid flicker from disconnected ->
@@ -247,7 +249,7 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
      * Updates the tracked entry's scan results up to the max scan age (or more, if the last scan
      * was unsuccessful). If Wifi is disabled, the tracked entry's level will be cleared.
      */
-    private void conditionallyUpdateScanResults(boolean lastScanSucceeded) {
+    private void conditionallyUpdateScanResults(boolean pollScans, boolean timeoutScans) {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             mChosenEntry.updateScanResultInfo(mCurrentWifiConfig,
                     null /* homeScanResults */,
@@ -255,7 +257,9 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
             return;
         }
 
-        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        final List<ScanResult> newScanResults = pollScans ? mWifiManager.getScanResults()
+                : Collections.emptyList();
+        mScanResultUpdater.onScanResultsAvailable(newScanResults, timeoutScans);
         List<ScanResult> currentScans = mScanResultUpdater.getScanResults();
         updatePasspointWifiEntryScans(currentScans);
         updateOsuWifiEntryScans(currentScans);

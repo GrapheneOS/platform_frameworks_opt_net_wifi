@@ -57,7 +57,7 @@ public class ScanResultUpdater {
      * MAX_SCAN_AGE_FOR_FAILED_SCAN_MS.
      */
     public void onScanResultsAvailable(
-            @NonNull List<ScanResult> newResults, boolean scanSucceeded) {
+            @NonNull List<ScanResult> newResults, boolean timeoutScans) {
         synchronized (mLock) {
             for (ScanResult result : newResults) {
                 final Pair<String, String> key = new Pair(result.SSID, result.BSSID);
@@ -66,7 +66,7 @@ public class ScanResultUpdater {
                     mScanResultsBySsidAndBssid.put(key, result);
                 }
             }
-            long maxScanAge = scanSucceeded ? mMaxScanAgeMillis : MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
+            long maxScanAge = timeoutScans ? mMaxScanAgeMillis : MAX_SCAN_AGE_FOR_FAILED_SCAN_MS;
             mScanResultsBySsidAndBssid.entrySet().removeIf((entry) ->
                     mClock.millis() - entry.getValue().timestamp / 1000 > maxScanAge);
         }

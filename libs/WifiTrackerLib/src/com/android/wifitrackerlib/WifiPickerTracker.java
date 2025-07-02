@@ -294,7 +294,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         // Update configs and scans
         updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, true /* timeoutScans */);
 
         // Trigger callbacks manually now to avoid waiting until the first calls to update state.
         handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
@@ -340,8 +340,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @Override
     protected void handleScanResultsAvailableAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
+        boolean scanSucceeded = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, true);
         conditionallyUpdateScanResults(
-                intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
+                scanSucceeded /* pollScans */, scanSucceeded /* timeoutScans */);
         updateWifiEntries(WIFI_ENTRIES_CHANGED_REASON_SCAN_RESULTS);
     }
 
@@ -359,7 +360,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
         // Update scans since config changes may result in different entries being shown.
-        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, false /* timeoutScans */);
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
@@ -1132,7 +1133,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      * whether the last scan succeeded or not.
      */
     @WorkerThread
-    private void conditionallyUpdateScanResults(boolean lastScanSucceeded) {
+    private void conditionallyUpdateScanResults(boolean pollScans, boolean timeoutScans) {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             updateStandardWifiEntryScans(Collections.emptyList());
             updateSuggestedWifiEntryScans(Collections.emptyList());
@@ -1147,7 +1148,9 @@ public class WifiPickerTracker extends BaseWifiTracker {
             return;
         }
 
-        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        final List<ScanResult> newScanResults = pollScans ? mWifiManager.getScanResults()
+                : Collections.emptyList();
+        mScanResultUpdater.onScanResultsAvailable(newScanResults, timeoutScans);
         List<ScanResult> scanResults = mScanResultUpdater.getScanResults();
         updateStandardWifiEntryScans(scanResults);
         updateSuggestedWifiEntryScans(scanResults);

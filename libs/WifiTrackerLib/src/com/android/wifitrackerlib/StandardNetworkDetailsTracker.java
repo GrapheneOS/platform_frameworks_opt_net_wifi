@@ -29,6 +29,7 @@ import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
@@ -42,6 +43,7 @@ import androidx.lifecycle.Lifecycle;
 
 import java.time.Clock;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of NetworkDetailsTracker that tracks a single StandardWifiEntry.
@@ -111,15 +113,16 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
-        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, false /* timeoutScans */);
     }
 
     @WorkerThread
     @Override
     protected void handleScanResultsAvailableAction(@NonNull Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
+        boolean scanSucceeded = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, true);
         conditionallyUpdateScanResults(
-                intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, true));
+                scanSucceeded /* pollScans */, scanSucceeded /* timeoutScans */);
     }
 
     @WorkerThread
@@ -131,7 +134,7 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
 
     @WorkerThread
     private void updateStartInfo() {
-        conditionallyUpdateScanResults(false /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, false /* timeoutScans */);
         conditionallyUpdateConfig();
         handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
         // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
@@ -160,13 +163,15 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
      * Updates the tracked entry's scan results up to the max scan age (or more, if the last scan
      * was unsuccessful). If Wifi is disabled, the tracked entry's level will be cleared.
      */
-    private void conditionallyUpdateScanResults(boolean lastScanSucceeded) {
+    private void conditionallyUpdateScanResults(boolean pollScans, boolean timeoutScans) {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             mChosenEntry.updateScanResultInfo(Collections.emptyList());
             return;
         }
 
-        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        final List<ScanResult> newScanResults = pollScans ? mWifiManager.getScanResults()
+                : Collections.emptyList();
+        mScanResultUpdater.onScanResultsAvailable(newScanResults, timeoutScans);
         mChosenEntry.updateScanResultInfo(mScanResultUpdater.getScanResults().stream()
                 .filter(scan -> new ScanResultKey(scan).equals(mKey.getScanResultKey()))
                 .collect(toList()));

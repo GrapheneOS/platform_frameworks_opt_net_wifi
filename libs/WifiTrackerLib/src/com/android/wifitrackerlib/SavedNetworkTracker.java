@@ -236,7 +236,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
         // Update configs and scans
         updateStandardWifiEntryConfigs(mWifiManager.getConfiguredNetworks());
         updatePasspointWifiEntryConfigs(mWifiManager.getPasspointConfigurations());
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, true /* timeoutScans */);
 
         // Trigger callbacks manually now to avoid waiting until the first calls to update state.
         // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
@@ -269,7 +269,7 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleWifiStateChangedAction() {
-        conditionallyUpdateScanResults(true /* lastScanSucceeded */);
+        conditionallyUpdateScanResults(true /* pollScans */, true /* timeoutScans */);
         updateWifiEntries();
     }
 
@@ -277,8 +277,9 @@ public class SavedNetworkTracker extends BaseWifiTracker {
     @Override
     protected void handleScanResultsAvailableAction(@Nullable Intent intent) {
         checkNotNull(intent, "Intent cannot be null!");
-        conditionallyUpdateScanResults(intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED,
-                true /* defaultValue */));
+        boolean scanSucceeded = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, true);
+        conditionallyUpdateScanResults(
+                scanSucceeded /* pollScans */, scanSucceeded /* timeoutScans */);
         updateWifiEntries();
     }
 
@@ -429,14 +430,16 @@ public class SavedNetworkTracker extends BaseWifiTracker {
      * whether the last scan succeeded or not.
      */
     @WorkerThread
-    private void conditionallyUpdateScanResults(boolean lastScanSucceeded) {
+    private void conditionallyUpdateScanResults(boolean pollScans, boolean timeoutScans) {
         if (mWifiManager.getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
             updateStandardWifiEntryScans(Collections.emptyList());
             updatePasspointWifiEntryScans(Collections.emptyList());
             return;
         }
 
-        mScanResultUpdater.onScanResultsAvailable(mWifiManager.getScanResults(), lastScanSucceeded);
+        final List<ScanResult> newScanResults = pollScans ? mWifiManager.getScanResults()
+                : Collections.emptyList();
+        mScanResultUpdater.onScanResultsAvailable(newScanResults, timeoutScans);
         List<ScanResult> currentScans = mScanResultUpdater.getScanResults();
         updateStandardWifiEntryScans(currentScans);
         updatePasspointWifiEntryScans(currentScans);
