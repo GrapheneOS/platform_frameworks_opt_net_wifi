@@ -236,8 +236,7 @@ public class StandardNetworkDetailsTrackerTest {
         assertThat(wifiEntry.isSaved()).isFalse();
 
         // Add a config and send a broadcast. isSaved() should return true.
-        final WifiConfiguration config = new WifiConfiguration();
-        config.SSID = "\"" + "ssid" + "\"";
+        final WifiConfiguration config = buildWifiConfiguration("ssid");
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,

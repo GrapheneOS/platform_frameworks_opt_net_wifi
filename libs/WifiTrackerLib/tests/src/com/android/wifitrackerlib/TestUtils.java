@@ -19,6 +19,7 @@ package com.android.wifitrackerlib;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiSsid;
+import android.os.Process;
 
 import java.nio.charset.StandardCharsets;
 
@@ -67,6 +68,7 @@ class TestUtils {
     static WifiConfiguration buildWifiConfiguration(String utf8Ssid) {
         final WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"" + utf8Ssid + "\"";
+        config.creatorUid = Process.myUid();
         return config;
     }
 }
