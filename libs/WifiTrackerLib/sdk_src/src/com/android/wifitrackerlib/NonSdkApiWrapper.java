@@ -124,4 +124,9 @@ class NonSdkApiWrapper {
         // Google3 can't access trunk stable flags, so default to false.
         return false;
     }
+
+    static boolean isMultiUserWifiEnhancementEnabled() {
+        // Google3 can't access trunk stable flags, so default to false.
+        return false;
+    }
 }

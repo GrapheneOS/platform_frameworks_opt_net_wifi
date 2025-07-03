@@ -354,6 +354,12 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized void connect(@Nullable ConnectCallback callback) {
+        connect(callback, mContext.getResources()
+                .getBoolean(R.bool.wifitrackerlib_config_saveOpenNetworksAsShared));
+    }
+
+    @Override
+    public synchronized void connect(@Nullable ConnectCallback callback, boolean sharedOnCreation) {
         mConnectCallback = callback;
         // We should flag this network to auto-open captive portal since this method represents
         // the user manually connecting to a network (i.e. not auto-join).
@@ -378,10 +384,7 @@ public class StandardWifiEntry extends WifiEntry {
         final WifiConfiguration openConfig = new WifiConfiguration();
         openConfig.SSID = "\"" + mKey.getScanResultKey().getSsid() + "\"";
         openConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-        if (!mContext.getResources()
-                .getBoolean(R.bool.wifitrackerlib_config_saveOpenNetworksAsShared)) {
-            openConfig.shared = false;
-        }
+        openConfig.shared = sharedOnCreation;
         if (mTargetSecurityTypes.contains(SECURITY_TYPE_OWE)) {
             final WifiConfiguration oweConfig = new WifiConfiguration(openConfig);
             oweConfig.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OWE);
@@ -674,6 +677,80 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         return false;
+    }
+
+    /**
+     * Returns true if this network is owned by the current user.
+     */
+    public boolean isOwnedByCurrentUser() {
+        return (isSaved() || isSuggestion()) && mKey.getConfigOwner()
+                .equals(UserHandle.of(ActivityManager.getCurrentUser()));
+    }
+
+    /**
+     * Returns true if this network is shared with other users.
+     */
+    public boolean isSharedWithOtherUsers() {
+        WifiConfiguration config = getWifiConfiguration();
+        if (config == null) return false;
+
+        return config.shared;
+    }
+
+    /**
+     * Sets whether this network is shared with other users.
+     */
+    public synchronized void setSharedWithOtherUsers(boolean shared) {
+        if (getWifiConfiguration() == null) return;
+
+        // Refresh the current config so we don't overwrite any changes that we haven't gotten
+        // the CONFIGURED_NETWORKS_CHANGED broadcast for yet.
+        refreshTargetWifiConfig();
+
+        if (mTargetWifiConfig.shared == shared) return;
+
+        int originalNetId = mTargetWifiConfig.networkId;
+        WifiConfiguration newConfig = new WifiConfiguration(mTargetWifiConfig);
+        newConfig.shared = shared;
+        newConfig.networkId = WifiConfiguration.INVALID_NETWORK_ID;
+
+        // Note: WifiManager.ActionListener runs on the Main thread.
+        mWifiManager.save(newConfig, new WifiManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                mWifiManager.forget(originalNetId, null /* listener */);
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.e(TAG, "setSharedWithOtherUsers: save failed with reason " + reason);
+            }
+        });
+    }
+
+    /**
+     * Returns true if this network is modifiable by other users.
+     */
+    public boolean isModifiableByOtherUsers() {
+        // Legacy behavior always allowed other uses to modify.
+        if (!NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()) return true;
+
+        WifiConfiguration config = getWifiConfiguration();
+        if (config == null) return false;
+        return config.isAllowedToUpdateByOtherUsers();
+    }
+
+    /**
+     * Sets whether this network is modifiable by other users.
+     */
+    public synchronized void setModifiableByOtherUsers(boolean modifiable) {
+        if (mTargetWifiConfig == null) return;
+
+        // Refresh the current config so we don't overwrite any changes that we haven't gotten
+        // the CONFIGURED_NETWORKS_CHANGED broadcast for yet.
+        refreshTargetWifiConfig();
+        mTargetWifiConfig.setAllowedToUpdateByOtherUsers(modifiable);
+        mWifiManager.save(mTargetWifiConfig, null /* listener */);
     }
 
     @WorkerThread

@@ -29,6 +29,7 @@ import static android.net.wifi.WifiInfo.SECURITY_TYPE_PSK;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_SAE;
 import static android.net.wifi.WifiInfo.SECURITY_TYPE_WEP;
 
+import static com.android.dx.mockito.inline.extended.ExtendedMockito.doNothing;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.doReturn;
 import static com.android.dx.mockito.inline.extended.ExtendedMockito.verify;
 import static com.android.wifitrackerlib.StandardWifiEntry.ScanResultKey;
@@ -47,6 +48,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -119,6 +121,9 @@ public class StandardWifiEntryTest {
 
     private static final String TEST_PACKAGE_NAME = "com.google.somePackage";
     private static final int TEST_CURRENT_USER = 0;
+    private static final int TEST_CURRENT_USER_UID = 1000;
+    private static final int TEST_OTHER_USER = 1;
+    private static final int TEST_OTHER_USER_UID = 100_000;
     private static final int MANAGED_PROFILE_UID = 1100000;
 
     @Before
@@ -1660,11 +1665,8 @@ public class StandardWifiEntryTest {
 
     @Test
     public void testStandardWifiEntryKeyConstructor_fromNonOwnedConfig_matchesFromScanResultKey() {
-        // Create a config with uid 100000 (maps to User 1)
-        WifiConfiguration config = new WifiConfiguration();
-        config.SSID = "\"ssid\"";
-        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-        config.creatorUid = 100000;
+        WifiConfiguration config =
+                createTestConfigForMultiUser(true /* isOwned */, false /* allowedToUpdate */);
 
         // Key created from the config should include the creator user handle.
         assertThat(new StandardWifiEntryKey(config, true /* isTargetingNewNetworks */))
@@ -1868,6 +1870,30 @@ public class StandardWifiEntryTest {
     }
 
     @Test
+    public void testConnect_sharedOnCreate_configuresSharedNetwork() {
+        when(mMockResources.getBoolean(R.bool.wifitrackerlib_config_saveOpenNetworksAsShared))
+                .thenReturn(true);
+        ScanResult openScan = buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI);
+        openScan.capabilities = "";
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
+                        true /* isTargetingNewNetworks */),
+                null, Collections.singletonList(openScan),
+                mMockWifiManager, false /* forSavedNetworksPage */);
+        ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+
+        entry.connect(null, true /* sharedOnCreate */);
+        verify(mMockWifiManager).connect(connectConfigCaptor.capture(), any());
+
+        WifiConfiguration connectConfig = connectConfigCaptor.getValue();
+        assertThat(Utils.getSecurityTypesFromWifiConfiguration(connectConfig))
+                .isEqualTo(Collections.singletonList(SECURITY_TYPE_OPEN));
+        assertThat(connectConfig.shared).isTrue();
+    }
+
+    @Test
     public void testGetSecurity_openAndOwe_returnsOpen() {
         WifiConfiguration openConfig = new WifiConfiguration();
         openConfig.SSID = "\"ssid\"";
@@ -2057,5 +2083,160 @@ public class StandardWifiEntryTest {
         // Old network is lost, entry should not be default anymore.
         entry.onNetworkLost(mMockNetwork);
         assertThat(entry.isDefaultNetwork()).isFalse();
+    }
+
+    private WifiConfiguration createTestConfigForMultiUser(boolean owned, boolean allowedToUpdate) {
+        final WifiConfiguration config = spy(new WifiConfiguration());
+        config.SSID = "\"ssid\"";
+        config.setSecurityParams(SECURITY_TYPE_PSK);
+        config.networkId = 1;
+        config.creatorUid = owned ? TEST_CURRENT_USER_UID : TEST_OTHER_USER_UID;
+        doReturn(allowedToUpdate).when(config).isAllowedToUpdateByOtherUsers();
+        doNothing().when(config).setAllowedToUpdateByOtherUsers(anyBoolean());
+        return config;
+    }
+
+    @Test
+    public void testIsOwnedByCurrentUser_isOwned_returnsTrue() {
+        WifiConfiguration config =
+                createTestConfigForMultiUser(true /* owned */, true /* allowedToUpdate */);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.isOwnedByCurrentUser()).isTrue();
+    }
+
+    @Test
+    public void testIsOwnedByCurrentUser_notOwned_returnsFalse() {
+        WifiConfiguration config =
+                createTestConfigForMultiUser(false /* owned */, true /* allowedToUpdate */);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.isOwnedByCurrentUser()).isFalse();
+    }
+
+    @Test
+    public void testIsModifiable_isModifiable_returnsTrue() {
+        when(NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()).thenReturn(true);
+        WifiConfiguration config =
+                createTestConfigForMultiUser(false /* owned */, true /* allowedToUpdate */);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.isModifiableByOtherUsers()).isTrue();
+    }
+
+
+    @Test
+    public void testIsModifiable_notModifiable_returnsFalse() {
+        when(NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()).thenReturn(true);
+        WifiConfiguration config =
+                createTestConfigForMultiUser(false /* owned */, false /* allowedToUpdate */);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.isModifiableByOtherUsers()).isFalse();
+    }
+
+    @Test
+    public void testSetModifiableByOtherUsers_savesConfig() {
+        when(NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()).thenReturn(true);
+        WifiConfiguration config =
+                createTestConfigForMultiUser(true /* owned */, false /* allowedToUpdate */);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        entry.setModifiableByOtherUsers(true);
+
+        verify(config).setAllowedToUpdateByOtherUsers(true);
+        verify(mMockWifiManager).save(eq(config), any());
+    }
+
+    @Test
+    public void testIsSharedWithOtherUser_isShared_returnsTrue() {
+        WifiConfiguration config =
+                createTestConfigForMultiUser(false /* owned */, false /* allowedToUpdate */);
+        config.shared = true;
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.isSharedWithOtherUsers()).isTrue();
+    }
+
+    @Test
+    public void testIsSharedWithOtherUser_notShared_returnsFalse() {
+        WifiConfiguration config =
+                createTestConfigForMultiUser(false /* owned */, false /* allowedToUpdate */);
+        config.shared = false;
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.isSharedWithOtherUsers()).isFalse();
+    }
+
+    @Test
+    public void testSetSharedWithOtherUsers_forgetsAndSavesConfig() {
+        when(NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()).thenReturn(true);
+        WifiConfiguration config =
+                createTestConfigForMultiUser(true /* owned */, false /* allowedToUpdate */);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        // Set true while already true should be ignored.
+        entry.setSharedWithOtherUsers(true);
+        verify(mMockWifiManager, never()).save(any(), any());
+
+        entry.setSharedWithOtherUsers(false);
+
+        ArgumentCaptor<WifiConfiguration> configCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        ArgumentCaptor<WifiManager.ActionListener> listenerCaptor =
+                ArgumentCaptor.forClass(WifiManager.ActionListener.class);
+
+        // Verify the two-stage save -> forget
+        verify(mMockWifiManager).save(configCaptor.capture(), listenerCaptor.capture());
+        listenerCaptor.getValue().onSuccess();
+        verify(mMockWifiManager).forget(eq(config.networkId), any());
+        assertThat(configCaptor.getValue().shared).isFalse();
+    }
+
+    @Test
+    public void testSetSharedWithOtherUsers_saveFailureDoesNotForgetConfig() {
+        when(NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()).thenReturn(true);
+        WifiConfiguration config =
+                createTestConfigForMultiUser(true /* owned */, false /* allowedToUpdate */);
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        entry.setSharedWithOtherUsers(false);
+
+        ArgumentCaptor<WifiConfiguration> configCaptor =
+                ArgumentCaptor.forClass(WifiConfiguration.class);
+        ArgumentCaptor<WifiManager.ActionListener> listenerCaptor =
+                ArgumentCaptor.forClass(WifiManager.ActionListener.class);
+
+        // Verify we do not forget the original network if the save failed.
+        verify(mMockWifiManager).save(configCaptor.capture(), listenerCaptor.capture());
+        listenerCaptor.getValue().onFailure(0);
+        verify(mMockWifiManager, never()).forget(anyInt(), any());
     }
 }

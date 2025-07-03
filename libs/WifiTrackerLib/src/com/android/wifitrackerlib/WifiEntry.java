@@ -627,6 +627,14 @@ public class WifiEntry {
         // Do nothing.
     }
 
+    /**
+     * Connects to the network. Any new networks added from this action will be shared or private
+     * based on sharedOnCreation.
+     */
+    public void connect(@Nullable ConnectCallback callback, boolean sharedOnCreation) {
+        connect(callback);
+    }
+
     /** Returns whether the entry should show a disconnect option */
     public boolean canDisconnect() {
         return false;
@@ -872,10 +880,9 @@ public class WifiEntry {
     }
 
     /**
-     * Returns true if this network was saved by the current user.
+     * Returns true if this network is owned by the current user.
      */
     public boolean isOwnedByCurrentUser() {
-        // TODO(416638579): Implement this.
         return true;
     }
 
@@ -883,15 +890,13 @@ public class WifiEntry {
      * Returns true if this network is shared with other users.
      */
     public boolean isSharedWithOtherUsers() {
-        // TODO(416638579): Implement this.
-        return true;
+        return false;
     }
 
     /**
      * Sets whether this network is shared with other users.
      */
     public void setSharedWithOtherUsers(boolean shared) {
-        // TODO(416638579): Implement this.
         // Do nothing.
     }
 
@@ -899,15 +904,13 @@ public class WifiEntry {
      * Returns true if this network is modifiable by other users.
      */
     public boolean isModifiableByOtherUsers() {
-        // TODO(416638579): Implement this.
-        return true;
+        return false;
     }
 
     /**
      * Sets whether this network is modifiable by other users.
      */
     public void setModifiableByOtherUsers(boolean modifiable) {
-        // TODO(416638579): Implement this.
         // Do nothing.
     }
 
