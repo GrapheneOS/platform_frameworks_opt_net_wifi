@@ -563,8 +563,7 @@ public class WifiPickerTrackerTest {
 
         assertThat(entry.isSaved()).isFalse();
 
-        final WifiConfiguration config = new WifiConfiguration();
-        config.SSID = "\"ssid\"";
+        final WifiConfiguration config = buildWifiConfiguration("ssid");
         when(mMockWifiManager.getPrivilegedConfiguredNetworks())
                 .thenReturn(Collections.singletonList(config));
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
