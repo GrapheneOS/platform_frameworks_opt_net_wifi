@@ -406,7 +406,6 @@ public class BaseWifiTracker {
                     && mInjector.isWifiStateChangedListenerEnabled() && mInjector.isAtLeastB()) {
                 mWifiManager.addWifiStateChangedListener((c) -> mWorkerHandler.post(c),
                         mWifiStateChangedListener);
-                mWifiStateChangedListener.onWifiStateChanged();
             } else {
                 filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
             }
