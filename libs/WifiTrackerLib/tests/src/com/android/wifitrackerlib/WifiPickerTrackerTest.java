@@ -491,6 +491,7 @@ public class WifiPickerTrackerTest {
                 buildScanResult("ssid4", "bssid4", START_MILLIS)));
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
                 new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        verify(mMockWifiManager, times(2)).getScanResults();
         final List<WifiEntry> previousEntries = wifiPickerTracker.getWifiEntries();
 
         // Advance the clock to time out old entries and simulate failed scan
@@ -499,8 +500,10 @@ public class WifiPickerTrackerTest {
                 new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
                         .putExtra(WifiManager.EXTRA_RESULTS_UPDATED, false));
 
-        // Failed scan should result in old WifiEntries still being shown
+        // Failed scan should result in old WifiEntries still being shown, and we should not be
+        // querying the scan results from WifiManager again.
         assertThat(previousEntries).containsExactlyElementsIn(wifiPickerTracker.getWifiEntries());
+        verify(mMockWifiManager, times(2)).getScanResults();
 
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
                 new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
