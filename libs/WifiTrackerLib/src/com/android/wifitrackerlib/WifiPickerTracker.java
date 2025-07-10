@@ -360,7 +360,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
         // Update scans since config changes may result in different entries being shown.
-        conditionallyUpdateScanResults(true /* pollScans */, false /* timeoutScans */);
+        conditionallyUpdateScanResults(false /* pollScans */, false /* timeoutScans */);
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
