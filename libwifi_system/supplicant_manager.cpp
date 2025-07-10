@@ -19,6 +19,7 @@
 #include <android-base/logging.h>
 #include <cutils/properties.h>
 #include <fcntl.h>
+#include <sched.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/system_properties.h>
