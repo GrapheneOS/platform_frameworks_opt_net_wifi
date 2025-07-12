@@ -351,12 +351,15 @@ public class WifiPickerTrackerTest {
         mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 any(), any(), any());
+        verify(mMockWifiManager, times(1)).getScanResults();
 
         mBroadcastReceiverCaptor.getValue().onReceive(mMockContext,
                 new Intent(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION));
         mTestLooper.dispatchAll();
 
         verify(mMockCallback, atLeastOnce()).onNumSavedNetworksChanged();
+        // Scans should only be polled once, after onStart
+        verify(mMockWifiManager, times(1)).getScanResults();
     }
 
     /**
