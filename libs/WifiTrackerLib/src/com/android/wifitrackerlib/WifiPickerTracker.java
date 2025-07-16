@@ -291,19 +291,18 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleOnStart() {
-        // Update configs and scans
         updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
-        conditionallyUpdateScanResults(true /* pollScans */, true /* timeoutScans */);
 
-        // Trigger callbacks manually now to avoid waiting until the first calls to update state.
-        handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
         // Clear any stale connection info in case we missed any NetworkCallback.onLost() while in
         // the stopped state, but don't notify the listener to avoid flicker from disconnected ->
         // connected in case the network is still the same.
         for (WifiEntry entry : getAllWifiEntries()) {
             entry.clearConnectionInfo(false);
         }
+
+        // Trigger callbacks manually now to avoid waiting until the first calls to update state.
+        handleDefaultSubscriptionChanged(SubscriptionManager.getDefaultDataSubscriptionId());
         Network currentNetwork = mWifiManager.getCurrentNetwork();
         WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
         if (currentNetwork != null && wifiInfo.getSupplicantState() == SupplicantState.COMPLETED) {
@@ -322,6 +321,11 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 handleLinkPropertiesChanged(currentNetwork, linkProperties);
             }
         }
+
+        // Update scan results after refreshing the connection info above, or else the old WifiInfo
+        // rssi will prevent the previously connected network from being removed on scan empty.
+        conditionallyUpdateScanResults(true /* pollScans */, true /* timeoutScans */);
+
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
         updateWifiEntries();
