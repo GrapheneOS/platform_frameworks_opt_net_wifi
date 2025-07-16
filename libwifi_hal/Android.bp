@@ -65,6 +65,7 @@ soong_config_string_variable {
         "wlan0",
         "unisoc",
         "desktop",
+        "amlogic",
     ],
 }
 
@@ -190,6 +191,9 @@ wifi_cc_defaults {
             },
             desktop: {
                 whole_static_libs: ["libwifi-hal-desktop"],
+            },
+            amlogic: {
+                defaults: ["libwifi-hal-amlogic"],
             },
             conditions_default: {
                 whole_static_libs: ["libwifi-hal-fallback"],
