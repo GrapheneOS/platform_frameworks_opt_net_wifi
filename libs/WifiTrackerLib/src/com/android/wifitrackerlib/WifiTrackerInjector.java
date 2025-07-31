@@ -23,7 +23,6 @@ import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.UserManager;
-import android.provider.DeviceConfig;
 import android.util.ArraySet;
 
 import androidx.annotation.NonNull;
@@ -36,8 +35,6 @@ import java.util.Set;
  */
 public class WifiTrackerInjector {
     private static final String TAG = WifiTrackerInjector.class.getSimpleName();
-
-    private static final String DEVICE_CONFIG_NAMESPACE = "wifi";
 
     @NonNull private final Context mContext;
     private final boolean mIsDemoMode;
@@ -91,11 +88,6 @@ public class WifiTrackerInjector {
      */
     @NonNull Set<String> getNoAttributionAnnotationPackages() {
         return mNoAttributionAnnotationPackages;
-    }
-
-    public boolean isSharedConnectivityFeatureEnabled() {
-        return DeviceConfig.getBoolean(DEVICE_CONFIG_NAMESPACE,
-                "shared_connectivity_enabled", false);
     }
 
     /**
