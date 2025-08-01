@@ -35,7 +35,7 @@
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"Tidak dapat terhubung. Coba lagi nanti."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"Tidak terhubung"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"Tersimpan"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Berbayar"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"Berkuota"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"Tidak berbayar"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"Terhubung melalui <xliff:g id="NAME">%1$s</xliff:g>"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"Tersedia melalui <xliff:g id="NAME">%1$s</xliff:g>"</string>
