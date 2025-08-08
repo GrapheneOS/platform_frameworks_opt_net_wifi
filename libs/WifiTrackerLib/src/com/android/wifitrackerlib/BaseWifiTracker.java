@@ -893,7 +893,11 @@ public class BaseWifiTracker {
             }
             // Remove any pending scanLoops in case possiblyStartScanning was called more than once.
             removeCallbacksAndMessages(null);
-            mWifiManager.startScan();
+            try {
+                mWifiManager.startScan();
+            } catch (SecurityException e) {
+                Log.e(mTag, "Received SecurityException while trying to start scan", e);
+            }
             notifyOnScanRequested();
             postDelayed(this::scanLoop, mScanIntervalMillis);
         }
