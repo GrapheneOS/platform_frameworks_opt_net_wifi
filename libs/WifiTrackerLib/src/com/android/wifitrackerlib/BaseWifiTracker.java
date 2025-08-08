@@ -99,8 +99,8 @@ public class BaseWifiTracker {
 
     private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
 
-    private boolean mIsInitialized = false;
-    private boolean mIsScanningDisabled = false;
+    private volatile boolean mIsInitialized = false;
+    private volatile boolean mIsScanningDisabled = false;
 
     class WifiTrackerLifecycleObserver implements LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_START)
@@ -719,8 +719,8 @@ public class BaseWifiTracker {
      * Scanning is only done when the activity is in the Started state and Wi-Fi is enabled.
      */
     private class Scanner extends Handler {
-        private boolean mIsStartedState = false;
-        private boolean mIsWifiEnabled = false;
+        private volatile boolean mIsStartedState = false;
+        private volatile boolean mIsWifiEnabled = false;
         private final WifiScanner.ScanListener mFirstScanListener = new WifiScanner.ScanListener() {
             @Override
             @MainThread
