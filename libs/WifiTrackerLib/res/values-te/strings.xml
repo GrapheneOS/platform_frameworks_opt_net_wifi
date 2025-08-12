@@ -55,20 +55,20 @@
     <string name="wifitrackerlib_hotspot_network_connecting" msgid="2072252282318270780">"కనెక్ట్ అవుతోంది…"</string>
     <string name="wifitrackerlib_known_network_summary" msgid="6035425130009353268">"<xliff:g id="DEVICE_NAME">%1$s</xliff:g> నుండి అందుబాటులో ఉంది"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2" msgid="4815223667006927841">"WPA/WPA2-EAP"</string>
-    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-Enterprise"</string>
+    <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2" msgid="6425661975745405271">"WPA/WPA2-ఎంటర్‌ప్రయిజ్"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa3" msgid="6210273302049534874">"WPA3-EAP"</string>
-    <string name="wifitrackerlib_wifi_security_eap_wpa3" msgid="3945746966044709030">"WPA3-Enterprise"</string>
+    <string name="wifitrackerlib_wifi_security_eap_wpa3" msgid="3945746966044709030">"WPA3-ఎంటర్‌ప్రయిజ్"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_wpa_wpa2_wpa3" msgid="1461382917566262495">"WPA/WPA2/WPA3-EAP"</string>
     <string name="wifitrackerlib_wifi_security_eap_wpa_wpa2_wpa3" msgid="5793439868239112839">"WPA/WPA2/WPA3-Enterprise"</string>
     <string name="wifitrackerlib_wifi_security_short_eap_suiteb" msgid="6335062557041604336">"Suite-B-192"</string>
-    <string name="wifitrackerlib_wifi_security_eap_suiteb" msgid="4715703239786225763">"WPA3-Enterprise 192-బిట్"</string>
+    <string name="wifitrackerlib_wifi_security_eap_suiteb" msgid="4715703239786225763">"WPA3-ఎంటర్‌ప్రయిజ్ 192-బిట్"</string>
     <string name="wifitrackerlib_wifi_security_short_wpa_wpa2" msgid="6770438383385707243">"WPA/WPA2"</string>
-    <string name="wifitrackerlib_wifi_security_wpa_wpa2" msgid="5767878305316110228">"WPA/WPA2-Personal"</string>
+    <string name="wifitrackerlib_wifi_security_wpa_wpa2" msgid="5767878305316110228">"WPA/WPA2-వ్యక్తిగత"</string>
     <string name="wifitrackerlib_wifi_security_short_wpa_wpa2_wpa3" msgid="4489424775550194618">"WPA/WPA2/WPA3"</string>
     <string name="wifitrackerlib_wifi_security_wpa_wpa2_wpa3" msgid="4154428413248489642">"WPA/WPA2/WPA3-Personal"</string>
     <string name="wifitrackerlib_wifi_security_wep" msgid="7714779033848180369">"WEP"</string>
     <string name="wifitrackerlib_wifi_security_short_sae" msgid="107913757758514692">"WPA3"</string>
-    <string name="wifitrackerlib_wifi_security_sae" msgid="6191706087425911867">"WPA3-Personal"</string>
+    <string name="wifitrackerlib_wifi_security_sae" msgid="6191706087425911867">"WPA3-వ్యక్తిగత"</string>
     <string name="wifitrackerlib_wifi_security_short_owe" msgid="224333285610280433">"OWE"</string>
     <string name="wifitrackerlib_wifi_security_owe" msgid="1018282395106838649">"Enhanced Open"</string>
     <string name="wifitrackerlib_wifi_security_none" msgid="2686062484642847280">"ఏవీ లేవు"</string>
