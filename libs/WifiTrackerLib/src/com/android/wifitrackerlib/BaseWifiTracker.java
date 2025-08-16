@@ -97,7 +97,7 @@ public class BaseWifiTracker {
         return mInjector.isVerboseLoggingEnabled();
     }
 
-    private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
+    private volatile int mWifiState = WifiManager.WIFI_STATE_DISABLED;
 
     private volatile boolean mIsInitialized = false;
     private volatile boolean mIsScanningDisabled = false;
