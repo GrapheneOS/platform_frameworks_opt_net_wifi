@@ -74,6 +74,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.core.os.BuildCompat;
 
@@ -100,6 +101,14 @@ import java.util.stream.Collectors;
 public class StandardWifiEntry extends WifiEntry {
     static final String TAG = "StandardWifiEntry";
     public static final String KEY_PREFIX = "StandardWifiEntry:";
+
+    /**
+     * Time after a user disconnection for a network to be considered "recently disconnected".
+     * This is used to display the WifiEntry as in-range after a disconnection if there are no
+     * scan results yet.
+     */
+    @VisibleForTesting
+    static final long USER_RECENTLY_DISCONNECTED_TIMEOUT_MS = 10_000;
 
     @NonNull private final StandardWifiEntryKey mKey;
 
@@ -131,6 +140,9 @@ public class StandardWifiEntry extends WifiEntry {
 
     private final UserManager mUserManager;
     private final DevicePolicyManager mDevicePolicyManager;
+
+    // Last user disconnect timestamp in milliseconds.
+    private long mLastUserDisconnectTimestampMs = Long.MIN_VALUE;
 
     StandardWifiEntry(
             @NonNull WifiTrackerInjector injector,
@@ -319,8 +331,18 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized boolean canConnect() {
-        if (mScanResultLevel == WIFI_LEVEL_UNREACHABLE
-                || getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
+        // Check if the entry is in range.
+        if (mScanResultLevel == WIFI_LEVEL_UNREACHABLE) {
+            // User may have disconnected before we have any scan results. Make sure we return false
+            // only if the network isn't recently disconnected.
+            long now = mInjector.getClock().millis();
+            if (now >= mLastUserDisconnectTimestampMs + USER_RECENTLY_DISCONNECTED_TIMEOUT_MS) {
+                return false;
+            }
+        }
+
+        // Cannot connect if we're already connected/connecting
+        if (getConnectedState() != CONNECTED_STATE_DISCONNECTED) {
             return false;
         }
 
@@ -428,6 +450,7 @@ public class StandardWifiEntry extends WifiEntry {
             }, 10_000 /* delayMillis */);
             mWifiManager.disableEphemeralNetwork("\"" + mKey.getScanResultKey().getSsid() + "\"");
             mWifiManager.disconnect();
+            mLastUserDisconnectTimestampMs = mInjector.getClock().millis();
         }
     }
 

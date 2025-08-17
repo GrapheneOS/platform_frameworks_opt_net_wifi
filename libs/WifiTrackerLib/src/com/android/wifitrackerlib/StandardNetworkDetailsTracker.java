@@ -64,8 +64,9 @@ public class StandardNetworkDetailsTracker extends NetworkDetailsTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             String key) {
-        this(new WifiTrackerInjector(context), lifecycle, context, wifiManager, connectivityManager,
-                mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, key);
+        this(new WifiTrackerInjector(context, clock), lifecycle, context, wifiManager,
+                connectivityManager, mainHandler, workerHandler, clock, maxScanAgeMillis,
+                scanIntervalMillis, key);
     }
 
     @VisibleForTesting

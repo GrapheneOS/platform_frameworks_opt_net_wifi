@@ -96,6 +96,7 @@ import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -112,6 +113,7 @@ public class StandardWifiEntryTest {
     @Mock private NetworkCapabilities mMockNetworkCapabilities;
     @Mock private WifiTrackerInjector mMockInjector;
     @Mock private Context mMockContext;
+    @Mock private Clock mClock;
     @Mock private Resources mMockResources;
     @Mock private UserManager mUserManager;
     @Mock private DevicePolicyManager mDevicePolicyManager;
@@ -167,6 +169,8 @@ public class StandardWifiEntryTest {
                 .thenReturn(mSubscriptionManager);
         when(mMockContext.getSystemService(DevicePolicyManager.class))
                 .thenReturn(mDevicePolicyManager);
+        when(mMockInjector.getClock()).thenReturn(mClock);
+        when(mClock.millis()).thenReturn(0L);
         when(mMockInjector.getUserManager()).thenReturn(mUserManager);
         when(mMockInjector.getDevicePolicyManager()).thenReturn(mDevicePolicyManager);
         when(ActivityManager.getCurrentUser()).thenReturn(TEST_CURRENT_USER);
@@ -1309,6 +1313,45 @@ public class StandardWifiEntryTest {
                 .thenReturn(DISABLED_AUTHENTICATION_NO_CREDENTIALS);
         assertThat(entry.shouldEditBeforeConnect()).isTrue();
         assertThat(entry.getSummary()).isEqualTo(saved + separator + disabledPasswordFailure);
+    }
+
+    @Test
+    public void testCanConnect_noScans_returnsFalse() {
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN),
+                null, Collections.emptyList(),
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        assertThat(entry.canConnect()).isFalse();
+    }
+
+    @Test
+    public void testCanConnect_noScansRecentlyDisconnected_returnsTrue() {
+        // Set up a connected WifiEntry with no scans.
+        final WifiConfiguration config = new WifiConfiguration();
+        config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_EAP);
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP),
+                Collections.singletonList(config), null, mMockWifiManager,
+                false /* forSavedNetworksPage */);
+        when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+
+        // Disconnect the entry
+        entry.disconnect(null);
+        entry.onNetworkLost(mMockNetwork);
+
+        // Recently disconnected entry can still be connected even if there are no scans.
+        assertThat(entry.canConnect()).isTrue();
+
+        // Timeout reached and still no scans -- we should not be able to connect now.
+        when(mClock.millis()).thenReturn(StandardWifiEntry.USER_RECENTLY_DISCONNECTED_TIMEOUT_MS);
+        assertThat(entry.canConnect()).isFalse();
     }
 
     @Test

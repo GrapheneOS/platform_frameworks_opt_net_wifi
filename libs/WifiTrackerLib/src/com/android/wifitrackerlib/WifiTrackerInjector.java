@@ -28,6 +28,7 @@ import android.util.ArraySet;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.time.Clock;
 import java.util.Set;
 
 /**
@@ -37,6 +38,7 @@ public class WifiTrackerInjector {
     private static final String TAG = WifiTrackerInjector.class.getSimpleName();
 
     @NonNull private final Context mContext;
+    @NonNull private final Clock mClock;
     private final boolean mIsDemoMode;
     private final WifiManager mWifiManager;
     @Nullable
@@ -48,8 +50,9 @@ public class WifiTrackerInjector {
     private boolean mVerboseLoggingDisabledOverride = false;
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
-    WifiTrackerInjector(@NonNull Context context) {
+    WifiTrackerInjector(@NonNull Context context, Clock clock) {
         mContext = context;
+        mClock = clock;
         mWifiManager = context.getSystemService(WifiManager.class);
         mConnectivityManager = context.getSystemService(ConnectivityManager.class);
         mIsDemoMode = NonSdkApiWrapper.isDemoMode(context);
@@ -69,6 +72,14 @@ public class WifiTrackerInjector {
 
     @NonNull Context getContext() {
         return mContext;
+    }
+
+    /**
+     * Returns the common clock used for timing operations, such as scan result timeouts and
+     * "recently disconnected" status.
+     */
+    @NonNull Clock getClock() {
+        return mClock;
     }
 
     boolean isDemoMode() {

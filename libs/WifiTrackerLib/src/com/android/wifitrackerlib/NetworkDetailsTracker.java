@@ -71,7 +71,7 @@ public abstract class NetworkDetailsTracker extends BaseWifiTracker {
             long scanIntervalMillis,
             String key) {
         return createNetworkDetailsTracker(
-                new WifiTrackerInjector(context),
+                new WifiTrackerInjector(context, clock),
                 lifecycle,
                 context,
                 wifiManager,
