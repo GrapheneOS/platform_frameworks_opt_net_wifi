@@ -101,6 +101,7 @@ public class BaseWifiTracker {
 
     private volatile boolean mIsInitialized = false;
     private volatile boolean mIsScanningDisabled = false;
+    private final WifiManager.WifiVerboseLoggingStatusChangedListener mVerboseLoggingListener;
 
     class WifiTrackerLifecycleObserver implements LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_START)
@@ -334,6 +335,8 @@ public class BaseWifiTracker {
             BaseWifiTrackerCallback listener,
             String tag) {
         mInjector = injector;
+        mVerboseLoggingListener =
+                (enabled) -> mInjector.cacheWifiManagerVerboseLoggingValue(enabled);
         mActivityManager = context.getSystemService(ActivityManager.class);
         mContext = context;
         mWifiManager = wifiManager;
@@ -379,7 +382,7 @@ public class BaseWifiTracker {
         mIsScanningDisabled = true;
         // This method indicates SystemUI usage, which shouldn't output verbose logs since it's
         // always up.
-        mInjector.disableVerboseLogging();
+        mInjector.setVerboseLoggingDisabledByClient();
     }
 
     /**
@@ -409,6 +412,8 @@ public class BaseWifiTracker {
             } else {
                 filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
             }
+            mWifiManager.addWifiVerboseLoggingStatusChangedListener(
+                    mWorkerHandler::post, mVerboseLoggingListener);
             if (!mIsScanningDisabled) {
                 filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
             }
@@ -454,6 +459,7 @@ public class BaseWifiTracker {
                         && mInjector.isAtLeastB()) {
                     mWifiManager.removeWifiStateChangedListener(mWifiStateChangedListener);
                 }
+                mWifiManager.removeWifiVerboseLoggingStatusChangedListener(mVerboseLoggingListener);
                 mContext.unregisterReceiver(mBroadcastReceiver);
                 mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
                 mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
@@ -487,6 +493,7 @@ public class BaseWifiTracker {
                     && mInjector.isAtLeastB()) {
                 mWifiManager.removeWifiStateChangedListener(mWifiStateChangedListener);
             }
+            mWifiManager.removeWifiVerboseLoggingStatusChangedListener(mVerboseLoggingListener);
             mContext.unregisterReceiver(mBroadcastReceiver);
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
             mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);

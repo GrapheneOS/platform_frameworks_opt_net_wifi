@@ -2854,7 +2854,7 @@ public class WifiPickerTrackerTest {
                 ArgumentCaptor.forClass(WifiScanner.ScanListener.class);
         verify(mWifiScanner, never()).startScan(any(), mScanListenerCaptor.capture());
         verify(mMockWifiManager, never()).startScan();
-        verify(mInjector).disableVerboseLogging();
+        verify(mInjector).setVerboseLoggingDisabledByClient();
     }
 
     /**
@@ -3638,5 +3638,20 @@ public class WifiPickerTrackerTest {
                 entry -> entry instanceof HotspotNetworkEntry).toList()).hasSize(1);
         assertThat(wifiPickerTracker.getActiveWifiEntries().stream().filter(
                 entry -> entry instanceof HotspotNetworkEntry).toList()).isEmpty();
+    }
+
+    @Test
+    public void testVerboseLoggingChangeUpdatesInjectorValue() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+        ArgumentCaptor<WifiManager.WifiVerboseLoggingStatusChangedListener> verboseListener =
+                ArgumentCaptor.forClass(WifiManager.WifiVerboseLoggingStatusChangedListener.class);
+        verify(mMockWifiManager).addWifiVerboseLoggingStatusChangedListener(
+                any(), verboseListener.capture());
+
+        verboseListener.getValue().onWifiVerboseLoggingStatusChanged(true);
+
+        verify(mInjector).cacheWifiManagerVerboseLoggingValue(true);
     }
 }
