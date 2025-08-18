@@ -98,8 +98,9 @@ public class SavedNetworkTracker extends BaseWifiTracker {
             long maxScanAgeMillis,
             long scanIntervalMillis,
             @Nullable SavedNetworkTrackerCallback listener) {
-        this(new WifiTrackerInjector(context), lifecycle, context, wifiManager, connectivityManager,
-                mainHandler, workerHandler, clock, maxScanAgeMillis, scanIntervalMillis, listener);
+        this(new WifiTrackerInjector(context, clock), lifecycle, context, wifiManager,
+                connectivityManager, mainHandler, workerHandler, clock, maxScanAgeMillis,
+                scanIntervalMillis, listener);
     }
 
     @VisibleForTesting

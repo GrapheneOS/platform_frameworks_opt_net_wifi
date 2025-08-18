@@ -256,6 +256,7 @@ public class WifiPickerTrackerTest {
                         "Connected", "Suspended", "Disconnecting", "Unsuccessful", "Blocked",
                         "Temporarily avoiding poor connection"});
         when(mInjector.getConnectivityManager()).thenReturn(mMockConnectivityManager);
+        when(mInjector.getClock()).thenReturn(mMockClock);
         when(mInjector.isWifiStateChangedListenerEnabled()).thenReturn(false);
         when(mInjector.isAtLeastB()).thenReturn(false);
     }
