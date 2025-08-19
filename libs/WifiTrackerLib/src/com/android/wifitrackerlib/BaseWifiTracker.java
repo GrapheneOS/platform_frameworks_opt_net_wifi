@@ -97,8 +97,6 @@ public class BaseWifiTracker {
         return mInjector.isVerboseLoggingEnabled();
     }
 
-    private volatile int mWifiState = WifiManager.WIFI_STATE_DISABLED;
-
     private volatile boolean mIsInitialized = false;
     private volatile boolean mIsScanningDisabled = false;
     private final WifiManager.WifiVerboseLoggingStatusChangedListener mVerboseLoggingListener;
@@ -135,9 +133,10 @@ public class BaseWifiTracker {
             }
 
             if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
-                mWifiState = intent.getIntExtra(
-                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED);
-                mScanner.onWifiStateChanged(mWifiState == WifiManager.WIFI_STATE_ENABLED);
+                mInjector.cacheWifiState(intent.getIntExtra(
+                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED));
+                mScanner.onWifiStateChanged(
+                        mInjector.getCachedWifiState() == WifiManager.WIFI_STATE_ENABLED);
                 notifyOnWifiStateChanged();
                 handleWifiStateChangedAction();
             } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
@@ -352,8 +351,9 @@ public class BaseWifiTracker {
             mWifiStateChangedListener = new WifiStateChangedListener() {
                 @Override
                 public void onWifiStateChanged() {
-                    mWifiState = mWifiManager.getWifiState();
-                    mScanner.onWifiStateChanged(mWifiState == WifiManager.WIFI_STATE_ENABLED);
+                    mInjector.cacheWifiState(mWifiManager.getWifiState());
+                    mScanner.onWifiStateChanged(
+                            mInjector.getCachedWifiState() == WifiManager.WIFI_STATE_ENABLED);
                     notifyOnWifiStateChanged();
                     handleWifiStateChangedAction();
                 }
@@ -533,7 +533,7 @@ public class BaseWifiTracker {
      */
     @AnyThread
     public int getWifiState() {
-        return mWifiState;
+        return mInjector.getCachedWifiState();
     }
 
     /**
