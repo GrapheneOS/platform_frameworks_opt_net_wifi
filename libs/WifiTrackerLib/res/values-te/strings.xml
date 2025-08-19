@@ -35,7 +35,7 @@
     <string name="wifitrackerlib_wifi_network_not_found" msgid="1308764769892463388">"కనెక్ట్ చేయడం సాధ్యపడదు. తర్వాత మళ్లీ ట్రై చేయండి."</string>
     <string name="wifitrackerlib_wifi_disconnected" msgid="3320414360982942679">"డిస్‌కనెక్ట్ అయింది"</string>
     <string name="wifitrackerlib_wifi_remembered" msgid="2406091442008343041">"సేవ్ అయింది"</string>
-    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"గణించబడింది"</string>
+    <string name="wifitrackerlib_wifi_metered_label" msgid="8818508951778620385">"మీటర్‌డ్ (డేటా కౌంట్ అవుతుంది)"</string>
     <string name="wifitrackerlib_wifi_unmetered_label" msgid="1902150402929678469">"గణించబడటం లేదు"</string>
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> ద్వారా కనెక్ట్ చేయబడింది"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> ద్వారా అందుబాటులో ఉంది"</string>

@@ -20,7 +20,6 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
-import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.UserManager;
 import android.util.ArraySet;
@@ -40,20 +39,19 @@ public class WifiTrackerInjector {
     @NonNull private final Context mContext;
     @NonNull private final Clock mClock;
     private final boolean mIsDemoMode;
-    private final WifiManager mWifiManager;
     @Nullable
     private final ConnectivityManager mConnectivityManager;
     private final UserManager mUserManager;
     private final DevicePolicyManager mDevicePolicyManager;
     @NonNull private final Set<String> mNoAttributionAnnotationPackages;
-    private boolean mIsUserDebugVerboseLoggingEnabled;
-    private boolean mVerboseLoggingDisabledOverride = false;
+    private volatile boolean mCachedWifiManagerVerboseLoggingValue = false;
+    private volatile boolean mIsVerboseLoggingEnabledForUserdebug;
+    private volatile boolean mIsVerboseLoggingDisabledByClient = false;
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     WifiTrackerInjector(@NonNull Context context, Clock clock) {
         mContext = context;
         mClock = clock;
-        mWifiManager = context.getSystemService(WifiManager.class);
         mConnectivityManager = context.getSystemService(ConnectivityManager.class);
         mIsDemoMode = NonSdkApiWrapper.isDemoMode(context);
         mUserManager = context.getSystemService(UserManager.class);
@@ -65,7 +63,7 @@ public class WifiTrackerInjector {
             mNoAttributionAnnotationPackages.add(noAttributionAnnotationPackages[i]);
         }
         Resources res = context.getResources();
-        mIsUserDebugVerboseLoggingEnabled = res.getBoolean(
+        mIsVerboseLoggingEnabledForUserdebug = res.getBoolean(
                 R.bool.wifitrackerlib_enable_verbose_logging_for_userdebug)
                 && Build.TYPE.equals("userdebug");
     }
@@ -102,25 +100,34 @@ public class WifiTrackerInjector {
     }
 
     /**
+     * Sets the cached value for Wi-Fi verbose logging.
+     *
+     * @param enabled the verbose logging status.
+     */
+    void cacheWifiManagerVerboseLoggingValue(boolean enabled) {
+        mCachedWifiManagerVerboseLoggingValue = enabled;
+    }
+
+    /**
      * Whether verbose logging is enabled.
      */
     public boolean isVerboseLoggingEnabled() {
-        return !mVerboseLoggingDisabledOverride
-                && (mWifiManager.isVerboseLoggingEnabled() || mIsUserDebugVerboseLoggingEnabled);
+        return !mIsVerboseLoggingDisabledByClient
+                && (mCachedWifiManagerVerboseLoggingValue || mIsVerboseLoggingEnabledForUserdebug);
     }
 
     /**
      * Whether verbose summaries should be shown in WifiEntry.
      */
     public boolean isVerboseSummaryEnabled() {
-        return !mVerboseLoggingDisabledOverride && mWifiManager.isVerboseLoggingEnabled();
+        return !mIsVerboseLoggingDisabledByClient && mCachedWifiManagerVerboseLoggingValue;
     }
 
     /**
-     * Permanently disables verbose logging.
+     * Permanently disables verbose logging. Intended for status bar use.
      */
-    public void disableVerboseLogging() {
-        mVerboseLoggingDisabledOverride = true;
+    public void setVerboseLoggingDisabledByClient() {
+        mIsVerboseLoggingDisabledByClient = true;
     }
 
     @Nullable
