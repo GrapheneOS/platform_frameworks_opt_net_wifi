@@ -18,6 +18,7 @@ package com.android.wifitrackerlib;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -86,6 +87,7 @@ public class MergedCarrierEntryTest {
         final int subId = 1;
         final MergedCarrierEntry entry = new MergedCarrierEntry(mMockInjector, mTestHandler,
                 mMockWifiManager, false, subId);
+        when(mMockInjector.getCachedWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
 
         entry.connect(mMockConnectCallback);
         mTestLooper.dispatchAll();
@@ -93,6 +95,22 @@ public class MergedCarrierEntryTest {
         verify(mMockConnectCallback)
                 .onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
         verify(mMockWifiManager).startRestrictingAutoJoinToSubscriptionId(subId);
+    }
+
+    @Test
+    public void testConnect_doesNotDisableNonCarrierMergedWifiIfWifiIsDisabled() {
+        Looper.prepare();
+        final int subId = 1;
+        final MergedCarrierEntry entry = new MergedCarrierEntry(mMockInjector, mTestHandler,
+                mMockWifiManager, false, subId);
+        when(mMockInjector.getCachedWifiState()).thenReturn(WifiManager.WIFI_STATE_DISABLED);
+
+        entry.connect(mMockConnectCallback);
+        mTestLooper.dispatchAll();
+
+        verify(mMockConnectCallback)
+                .onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
+        verify(mMockWifiManager, never()).startRestrictingAutoJoinToSubscriptionId(subId);
     }
 
     @Test

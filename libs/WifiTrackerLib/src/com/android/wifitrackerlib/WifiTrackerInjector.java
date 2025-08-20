@@ -20,10 +20,12 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.UserManager;
 import android.util.ArraySet;
 
+import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -44,6 +46,7 @@ public class WifiTrackerInjector {
     private final UserManager mUserManager;
     private final DevicePolicyManager mDevicePolicyManager;
     @NonNull private final Set<String> mNoAttributionAnnotationPackages;
+    private volatile int mCachedWifiState = WifiManager.WIFI_STATE_DISABLED;
     private volatile boolean mCachedWifiManagerVerboseLoggingValue = false;
     private volatile boolean mIsVerboseLoggingEnabledForUserdebug;
     private volatile boolean mIsVerboseLoggingDisabledByClient = false;
@@ -97,6 +100,22 @@ public class WifiTrackerInjector {
      */
     @NonNull Set<String> getNoAttributionAnnotationPackages() {
         return mNoAttributionAnnotationPackages;
+    }
+
+    /**
+     * Sets the cached Wi-Fi state.
+     */
+    @AnyThread
+    void cacheWifiState(int state) {
+        mCachedWifiState = state;
+    }
+
+    /**
+     * Gets the cached Wi-Fi state.
+     */
+    @AnyThread
+    int getCachedWifiState() {
+        return mCachedWifiState;
     }
 
     /**

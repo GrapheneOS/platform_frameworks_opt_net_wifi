@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -123,6 +124,7 @@ public class WifiPickerTrackerTest {
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
     private MockitoSession mSession;
+    private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
@@ -255,6 +257,11 @@ public class WifiPickerTrackerTest {
                 new String[]{"", "Scanning", "Connecting", "Authenticating", "Obtaining IP address",
                         "Connected", "Suspended", "Disconnecting", "Unsuccessful", "Blocked",
                         "Temporarily avoiding poor connection"});
+        doAnswer(invocation -> {
+            mWifiState = invocation.getArgument(0);
+            return null;
+        }).when(mInjector).cacheWifiState(anyInt());
+        when(mInjector.getCachedWifiState()).thenAnswer(invocation -> mWifiState);
         when(mInjector.getConnectivityManager()).thenReturn(mMockConnectivityManager);
         when(mInjector.getClock()).thenReturn(mMockClock);
         when(mInjector.isWifiStateChangedListenerEnabled()).thenReturn(false);

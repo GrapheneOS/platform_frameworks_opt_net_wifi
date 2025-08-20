@@ -28,9 +28,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -89,6 +91,7 @@ public class SavedNetworkTrackerTest {
     private static final String TEST_CACERT_NOT_REQUIRED_ALIAS = "cacert_not_required";
     private MockitoSession mSession;
 
+    private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
@@ -165,6 +168,11 @@ public class SavedNetworkTrackerTest {
                         .build());
         when(mMockConnectivityManager.getLinkProperties(mMockNetwork))
                 .thenReturn(mMockLinkProperties);
+        doAnswer(invocation -> {
+            mWifiState = invocation.getArgument(0);
+            return null;
+        }).when(mInjector).cacheWifiState(anyInt());
+        when(mInjector.getCachedWifiState()).thenAnswer(invocation -> mWifiState);
         when(mInjector.getContext()).thenReturn(mMockContext);
         when(mInjector.getConnectivityManager()).thenReturn(mMockConnectivityManager);
         when(mMockContext.getResources()).thenReturn(mResources);
