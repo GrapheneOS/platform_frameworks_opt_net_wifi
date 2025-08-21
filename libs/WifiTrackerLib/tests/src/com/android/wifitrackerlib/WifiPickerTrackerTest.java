@@ -2738,10 +2738,9 @@ public class WifiPickerTrackerTest {
      * worker thread runnable.
      */
     @Test
-    public void testBroadcastReceiverAndNetworkCallbacks_onStopRunnable_unregistersCallbacks() {
+    public void testBroadcastReceiverAndNetworkCallbacks_onStop_unregistersCallbacks() {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
         verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
                 any(), any(), any());
         verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
@@ -2750,31 +2749,6 @@ public class WifiPickerTrackerTest {
                 mDefaultNetworkCallbackCaptor.capture(), any());
 
         wifiPickerTracker.onStop();
-        mTestLooper.dispatchAll();
-        verify(mMockContext).unregisterReceiver(mBroadcastReceiverCaptor.getValue());
-        verify(mMockConnectivityManager).unregisterNetworkCallback(
-                mDefaultNetworkCallbackCaptor.getValue());
-        verify(mMockConnectivityManager).unregisterNetworkCallback(
-                mDefaultNetworkCallbackCaptor.getValue());
-    }
-
-    /**
-     * Verifies that the BroadcastReceiver and network callbacks are unregistered by onDestroyed().
-     */
-    @Test
-    public void testBroadcastReceiverAndNetworkCallbacks_onDestroyed_unregistersCallbacks() {
-        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
-        wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
-        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
-                any(), any(), any());
-        verify(mMockConnectivityManager, atLeast(0)).registerSystemDefaultNetworkCallback(
-                mDefaultNetworkCallbackCaptor.capture(), any());
-        verify(mMockConnectivityManager, atLeast(0)).registerDefaultNetworkCallback(
-                mDefaultNetworkCallbackCaptor.capture(), any());
-
-        wifiPickerTracker.onStop();
-        wifiPickerTracker.onDestroy();
         verify(mMockContext).unregisterReceiver(mBroadcastReceiverCaptor.getValue());
         verify(mMockConnectivityManager).unregisterNetworkCallback(
                 mDefaultNetworkCallbackCaptor.getValue());
@@ -2918,7 +2892,6 @@ public class WifiPickerTrackerTest {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
 
         wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
 
         verify(mMockSharedConnectivityManager).registerCallback(any(),
                 mSharedConnectivityCallbackCaptor.capture());
@@ -2928,7 +2901,6 @@ public class WifiPickerTrackerTest {
     public void testSharedConnectivityManager_onServiceConnected_gettersCalled() {
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
-        mTestLooper.dispatchAll();
         verify(mMockSharedConnectivityManager).registerCallback(any(),
                 mSharedConnectivityCallbackCaptor.capture());
 
