@@ -22,7 +22,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string-array name="wifitrackerlib_wifi_status">
     <item msgid="4878873480828298657"></item>
-    <item msgid="5782995872855767551">"Søger…"</item>
+    <item msgid="5782995872855767551">"Scanner…"</item>
     <item msgid="9055468790485684083">"Opretter forbindelse…"</item>
     <item msgid="6099499723199990208">"Godkender…"</item>
     <item msgid="6794055951297347103">"Henter IP-adresse…"</item>
