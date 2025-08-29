@@ -141,7 +141,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
     // Cache containing visible OsuWifiEntries. Must be accessed only by the worker thread.
     private final Map<String, OsuWifiEntry> mOsuWifiEntryCache = new ArrayMap<>();
 
-    private MergedCarrierEntry mMergedCarrierEntry;
+    private volatile MergedCarrierEntry mMergedCarrierEntry;
 
     private int mNumSavedNetworks;
 
@@ -229,17 +229,19 @@ public class WifiPickerTracker extends BaseWifiTracker {
      */
     @AnyThread
     public @Nullable MergedCarrierEntry getMergedCarrierEntry() {
-        if (!isInitialized() && mMergedCarrierEntry == null) {
-            // Settings currently relies on the MergedCarrierEntry being available before
-            // handleOnStart() is called in order to display the W+ toggle. Populate it here if
-            // we aren't initialized yet.
-            int subId = SubscriptionManager.getDefaultDataSubscriptionId();
-            if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-                mMergedCarrierEntry = new MergedCarrierEntry(mInjector, mWorkerHandler,
-                        mWifiManager, /* forSavedNetworksPage */ false, subId);
+        // Note: If initialized, null value is valid as it represents INVALID_SUBSCRIPTION_ID.
+        if (isInitialized()) return mMergedCarrierEntry;
+
+        synchronized (this) {
+            if (mMergedCarrierEntry == null) {
+                int subId = SubscriptionManager.getDefaultDataSubscriptionId();
+                if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                    mMergedCarrierEntry = new MergedCarrierEntry(mInjector, mWorkerHandler,
+                            mWifiManager, /* forSavedNetworksPage */ false, subId);
+                }
             }
+            return mMergedCarrierEntry;
         }
-        return mMergedCarrierEntry;
     }
 
     /**
@@ -730,7 +732,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
      * default data subscription ID, or sets it to null if not available.
      */
     @WorkerThread
-    private void updateMergedCarrierEntry(int subId) {
+    private synchronized void updateMergedCarrierEntry(int subId) {
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             if (mMergedCarrierEntry == null) {
                 return;
