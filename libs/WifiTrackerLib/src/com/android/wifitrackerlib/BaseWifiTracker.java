@@ -395,6 +395,9 @@ public class BaseWifiTracker {
         }
         mWifiManager.addWifiVerboseLoggingStatusChangedListener(
                 mWorkerHandler::post, mVerboseLoggingListener);
+        // Cache the verbose logging level immediately since registering for the listener does not
+        // call the callback automatically.
+        mInjector.cacheWifiManagerVerboseLoggingValue(mWifiManager.isVerboseLoggingEnabled());
         if (!mIsScanningDisabled) {
             filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         }

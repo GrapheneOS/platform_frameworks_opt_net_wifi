@@ -3621,9 +3621,12 @@ public class WifiPickerTrackerTest {
 
     @Test
     public void testVerboseLoggingChangeUpdatesInjectorValue() {
+        when(mMockWifiManager.isVerboseLoggingEnabled()).thenReturn(false);
         final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
         wifiPickerTracker.onStart();
         mTestLooper.dispatchAll();
+        verify(mInjector).cacheWifiManagerVerboseLoggingValue(false);
+
         ArgumentCaptor<WifiManager.WifiVerboseLoggingStatusChangedListener> verboseListener =
                 ArgumentCaptor.forClass(WifiManager.WifiVerboseLoggingStatusChangedListener.class);
         verify(mMockWifiManager).addWifiVerboseLoggingStatusChangedListener(
