@@ -500,7 +500,7 @@ public class StandardWifiEntry extends WifiEntry {
 
         if (BuildCompat.isAtLeastT() && mUserManager.hasUserRestrictionForUser(
                 UserManager.DISALLOW_SHARING_ADMIN_CONFIGURED_WIFI,
-                UserHandle.getUserHandleForUid(wifiConfig.creatorUid))
+                Utils.getOwnerUserForWifiConfig(wifiConfig))
                 && Utils.isDeviceOrProfileOwner(wifiConfig.creatorUid,
                 wifiConfig.creatorName, mContext)) {
             return false;
@@ -540,7 +540,7 @@ public class StandardWifiEntry extends WifiEntry {
 
         if (BuildCompat.isAtLeastT() && mUserManager.hasUserRestrictionForUser(
                 UserManager.DISALLOW_SHARING_ADMIN_CONFIGURED_WIFI,
-                UserHandle.getUserHandleForUid(wifiConfig.creatorUid))
+                Utils.getOwnerUserForWifiConfig(wifiConfig))
                 && Utils.isDeviceOrProfileOwner(wifiConfig.creatorUid,
                 wifiConfig.creatorName, mContext)) {
             return false;
@@ -1234,7 +1234,7 @@ public class StandardWifiEntry extends WifiEntry {
                 mIsNetworkRequest = true;
             }
             mIsTargetingNewNetworks = isTargetingNewNetworks;
-            mConfigOwner = UserHandle.getUserHandleForUid(config.creatorUid);
+            mConfigOwner = Utils.getOwnerUserForWifiConfig(config);
         }
 
         /**

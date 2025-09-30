@@ -1043,6 +1043,18 @@ public class Utils {
     }
 
     /**
+     * Returns the user that created this WifiConfiguration.
+     */
+    public static UserHandle getOwnerUserForWifiConfig(@NonNull WifiConfiguration config) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA
+                && NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()) {
+            return UserHandle.of(config.getCreatorUserId());
+        }
+
+        return UserHandle.getUserHandleForUid(config.creatorUid);
+    }
+
+    /**
      * Unknown security type that cannot be converted to
      * DevicePolicyManager.WifiSecurity security type.
      */
