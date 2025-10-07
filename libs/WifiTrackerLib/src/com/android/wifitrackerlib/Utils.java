@@ -1046,8 +1046,9 @@ public class Utils {
      * Returns the user that created this WifiConfiguration.
      */
     public static UserHandle getOwnerUserForWifiConfig(@NonNull WifiConfiguration config) {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA
-                && NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()) {
+        // TODO: b/449013275 Add SDK check here
+        // (i.e. Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA)
+        if (NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()) {
             return UserHandle.of(config.getCreatorUserId());
         }
 
