@@ -26,7 +26,7 @@ import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getNetworkSelectionDescription;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromWifiConfiguration;
-import static com.android.wifitrackerlib.Utils.getSubIdForConfig;
+import static com.android.wifitrackerlib.Utils.getSubIdForCarrierId;
 import static com.android.wifitrackerlib.Utils.isImsiPrivacyProtectionProvided;
 import static com.android.wifitrackerlib.Utils.isSimPresent;
 
@@ -420,31 +420,26 @@ public class UtilsTest {
     }
 
     @Test
-    public void testGetSubIdForWifiConfigurationWithNoSubscription() {
-        WifiConfiguration config = new WifiConfiguration();
-        config.carrierId = TEST_CARRIER_ID;
+    public void testGetSubIdForCarrierIdWithNoSubscription() {
         assertEquals(SubscriptionManager.INVALID_SUBSCRIPTION_ID,
-                getSubIdForConfig(mMockContext, config));
+                getSubIdForCarrierId(mMockContext, TEST_CARRIER_ID));
     }
 
     @Test
-    public void testGetSubIdForWifiConfigurationWithMatchingSubscription() {
-        WifiConfiguration config = new WifiConfiguration();
-        config.carrierId = TEST_CARRIER_ID;
+    public void testGetSubIdForCarrierIdWithMatchingSubscription() {
         List<SubscriptionInfo> subscriptionInfoList = new ArrayList<>();
         SubscriptionInfo subscriptionInfo = mock(SubscriptionInfo.class);
         when(subscriptionInfo.getCarrierId()).thenReturn(TEST_CARRIER_ID);
         when(subscriptionInfo.getSubscriptionId()).thenReturn(TEST_SUB_ID);
         subscriptionInfoList.add(subscriptionInfo);
         when(mSubscriptionManager.getActiveSubscriptionInfoList()).thenReturn(subscriptionInfoList);
-        assertEquals(TEST_SUB_ID, getSubIdForConfig(mMockContext, config));
+        assertEquals(TEST_SUB_ID, getSubIdForCarrierId(mMockContext, TEST_CARRIER_ID));
     }
 
     @Test
-    public void testGetSubIdForWifiConfigurationWithoutCarrierId() {
-        WifiConfiguration config = new WifiConfiguration();
+    public void testGetSubIdForInvalidCarrierId() {
         assertEquals(SubscriptionManager.INVALID_SUBSCRIPTION_ID,
-                getSubIdForConfig(mMockContext, config));
+                getSubIdForCarrierId(mMockContext, TelephonyManager.UNKNOWN_CARRIER_ID));
     }
 
     @Test
