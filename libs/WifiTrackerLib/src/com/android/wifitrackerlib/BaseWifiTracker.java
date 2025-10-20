@@ -63,7 +63,6 @@ import androidx.lifecycle.OnLifecycleEvent;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 /**
  * Base class for WifiTracker functionality.
@@ -97,10 +96,9 @@ public class BaseWifiTracker {
         return mInjector.isVerboseLoggingEnabled();
     }
 
-    private volatile int mWifiState = WifiManager.WIFI_STATE_DISABLED;
-
     private volatile boolean mIsInitialized = false;
     private volatile boolean mIsScanningDisabled = false;
+    private final WifiManager.WifiVerboseLoggingStatusChangedListener mVerboseLoggingListener;
 
     class WifiTrackerLifecycleObserver implements LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_START)
@@ -113,12 +111,6 @@ public class BaseWifiTracker {
         @MainThread
         public void onStop() {
             BaseWifiTracker.this.onStop();
-        }
-
-        @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-        @MainThread
-        public void onDestroy() {
-            BaseWifiTracker.this.onDestroy();
         }
     };
 
@@ -134,9 +126,10 @@ public class BaseWifiTracker {
             }
 
             if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) {
-                mWifiState = intent.getIntExtra(
-                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED);
-                mScanner.onWifiStateChanged(mWifiState == WifiManager.WIFI_STATE_ENABLED);
+                mInjector.cacheWifiState(intent.getIntExtra(
+                        WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_DISABLED));
+                mScanner.onWifiStateChanged(
+                        mInjector.getCachedWifiState() == WifiManager.WIFI_STATE_ENABLED);
                 notifyOnWifiStateChanged();
                 handleWifiStateChangedAction();
             } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
@@ -233,21 +226,6 @@ public class BaseWifiTracker {
         }
     };
 
-    private final Executor mConnectivityDiagnosticsExecutor = new Executor() {
-        @Override
-        public void execute(Runnable command) {
-            mWorkerHandler.post(command);
-        }
-    };
-
-    @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private final Executor mSharedConnectivityExecutor = new Executor() {
-        @Override
-        public void execute(Runnable command) {
-            mWorkerHandler.post(command);
-        }
-    };
-
     @TargetApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Nullable
     private SharedConnectivityClientCallback mSharedConnectivityCallback = null;
@@ -334,6 +312,8 @@ public class BaseWifiTracker {
             BaseWifiTrackerCallback listener,
             String tag) {
         mInjector = injector;
+        mVerboseLoggingListener =
+                (enabled) -> mInjector.cacheWifiManagerVerboseLoggingValue(enabled);
         mActivityManager = context.getSystemService(ActivityManager.class);
         mContext = context;
         mWifiManager = wifiManager;
@@ -349,8 +329,9 @@ public class BaseWifiTracker {
             mWifiStateChangedListener = new WifiStateChangedListener() {
                 @Override
                 public void onWifiStateChanged() {
-                    mWifiState = mWifiManager.getWifiState();
-                    mScanner.onWifiStateChanged(mWifiState == WifiManager.WIFI_STATE_ENABLED);
+                    mInjector.cacheWifiState(mWifiManager.getWifiState());
+                    mScanner.onWifiStateChanged(
+                            mInjector.getCachedWifiState() == WifiManager.WIFI_STATE_ENABLED);
                     notifyOnWifiStateChanged();
                     handleWifiStateChangedAction();
                 }
@@ -379,7 +360,7 @@ public class BaseWifiTracker {
         mIsScanningDisabled = true;
         // This method indicates SystemUI usage, which shouldn't output verbose logs since it's
         // always up.
-        mInjector.disableVerboseLogging();
+        mInjector.setVerboseLoggingDisabledByClient();
     }
 
     /**
@@ -401,40 +382,45 @@ public class BaseWifiTracker {
         }
         mScanner.onStart();
         mWorkerHandler.post(() -> {
-            IntentFilter filter = new IntentFilter();
-            if (mWifiStateChangedListener != null
-                    && mInjector.isWifiStateChangedListenerEnabled() && mInjector.isAtLeastB()) {
-                mWifiManager.addWifiStateChangedListener((c) -> mWorkerHandler.post(c),
-                        mWifiStateChangedListener);
-            } else {
-                filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-            }
-            if (!mIsScanningDisabled) {
-                filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-            }
-            filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
-            filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-            if (isVerboseLoggingEnabled()) {
-                filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
-            }
-            filter.addAction(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
-            filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-            mContext.registerReceiver(mBroadcastReceiver, filter,
-                    /* broadcastPermission */ null, mWorkerHandler);
-            mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
-                    mWorkerHandler);
-            mConnectivityManager.registerDefaultNetworkCallback(mDefaultNetworkCallback,
-                    mWorkerHandler);
-            mConnectivityDiagnosticsManager.registerConnectivityDiagnosticsCallback(mNetworkRequest,
-                    mConnectivityDiagnosticsExecutor, mConnectivityDiagnosticsCallback);
-            if (mSharedConnectivityManager != null && mSharedConnectivityCallback != null
-                    && BuildCompat.isAtLeastU()) {
-                mSharedConnectivityManager.registerCallback(mSharedConnectivityExecutor,
-                        mSharedConnectivityCallback);
-            }
             handleOnStart();
             mIsInitialized = true;
         });
+        IntentFilter filter = new IntentFilter();
+        if (mWifiStateChangedListener != null
+                && mInjector.isWifiStateChangedListenerEnabled() && mInjector.isAtLeastB()) {
+            mWifiManager.addWifiStateChangedListener((c) -> mWorkerHandler.post(c),
+                    mWifiStateChangedListener);
+        } else {
+            filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        }
+        mWifiManager.addWifiVerboseLoggingStatusChangedListener(
+                mWorkerHandler::post, mVerboseLoggingListener);
+        // Cache the verbose logging level immediately since registering for the listener does not
+        // call the callback automatically.
+        mInjector.cacheWifiManagerVerboseLoggingValue(mWifiManager.isVerboseLoggingEnabled());
+        if (!mIsScanningDisabled) {
+            filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        }
+        filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
+        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        if (isVerboseLoggingEnabled()) {
+            filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
+        }
+        filter.addAction(TelephonyManager.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
+        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+        mContext.registerReceiver(mBroadcastReceiver, filter,
+                /* broadcastPermission */ null, mWorkerHandler);
+        mConnectivityManager.registerNetworkCallback(mNetworkRequest, mNetworkCallback,
+                mWorkerHandler);
+        mConnectivityManager.registerDefaultNetworkCallback(mDefaultNetworkCallback,
+                mWorkerHandler);
+        mConnectivityDiagnosticsManager.registerConnectivityDiagnosticsCallback(mNetworkRequest,
+                mWorkerHandler::post, mConnectivityDiagnosticsCallback);
+        if (mSharedConnectivityManager != null && mSharedConnectivityCallback != null
+                && BuildCompat.isAtLeastU()) {
+            mSharedConnectivityManager.registerCallback(mWorkerHandler::post,
+                    mSharedConnectivityCallback);
+        }
     }
 
     /**
@@ -447,46 +433,13 @@ public class BaseWifiTracker {
             Log.v(mTag, "onStop");
         }
         mScanner.onStop();
-        mWorkerHandler.post(() -> {
-            try {
-                if (mWifiStateChangedListener != null
-                        && mInjector.isWifiStateChangedListenerEnabled()
-                        && mInjector.isAtLeastB()) {
-                    mWifiManager.removeWifiStateChangedListener(mWifiStateChangedListener);
-                }
-                mContext.unregisterReceiver(mBroadcastReceiver);
-                mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
-                mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
-                mConnectivityDiagnosticsManager.unregisterConnectivityDiagnosticsCallback(
-                        mConnectivityDiagnosticsCallback);
-                if (mSharedConnectivityManager != null && mSharedConnectivityCallback != null
-                        && BuildCompat.isAtLeastU()) {
-                    boolean result =
-                            mSharedConnectivityManager.unregisterCallback(
-                                    mSharedConnectivityCallback);
-                    if (!result) {
-                        Log.e(mTag, "onStop: unregisterCallback failed");
-                    }
-                }
-            } catch (IllegalArgumentException e) {
-                // Already unregistered in onDestroyed().
-            }
-        });
-    }
-
-    /**
-     * Unregisters the broadcast receiver network callbacks in case the Activity is destroyed before
-     * the worker thread runnable posted in onStop() runs.
-     */
-    @MainThread
-    @SuppressLint("NewApi")
-    public void onDestroy() {
         try {
             if (mWifiStateChangedListener != null
                     && mInjector.isWifiStateChangedListenerEnabled()
                     && mInjector.isAtLeastB()) {
                 mWifiManager.removeWifiStateChangedListener(mWifiStateChangedListener);
             }
+            mWifiManager.removeWifiVerboseLoggingStatusChangedListener(mVerboseLoggingListener);
             mContext.unregisterReceiver(mBroadcastReceiver);
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
             mConnectivityManager.unregisterNetworkCallback(mDefaultNetworkCallback);
@@ -498,11 +451,12 @@ public class BaseWifiTracker {
                         mSharedConnectivityManager.unregisterCallback(
                                 mSharedConnectivityCallback);
                 if (!result) {
-                    Log.e(mTag, "onDestroyed: unregisterCallback failed");
+                    Log.e(mTag, "onStop: unregisterCallback failed");
                 }
             }
         } catch (IllegalArgumentException e) {
-            // Already unregistered in onStop() worker thread runnable.
+            // Not registered yet, possibly due to a client manually calling onStop() to clean up
+            // state outside of the lifecycle events, such as upon user switching.
         }
     }
 
@@ -526,7 +480,7 @@ public class BaseWifiTracker {
      */
     @AnyThread
     public int getWifiState() {
-        return mWifiState;
+        return mInjector.getCachedWifiState();
     }
 
     /**

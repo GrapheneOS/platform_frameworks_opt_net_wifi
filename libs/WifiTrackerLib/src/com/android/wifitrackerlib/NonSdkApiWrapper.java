@@ -29,7 +29,6 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiInfo;
-import android.os.Build;
 import android.os.UserManager;
 import android.text.Annotation;
 import android.text.SpannableString;
@@ -159,7 +158,8 @@ class NonSdkApiWrapper {
     }
 
     static boolean isMultiUserWifiEnhancementEnabled() {
-        return Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA
-                && multiUserWifiEnhancement();
+        // TODO: b/449013275 Add SDK check here
+        // (i.e. Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA)
+        return multiUserWifiEnhancement();
     }
 }

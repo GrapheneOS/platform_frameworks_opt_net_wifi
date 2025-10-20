@@ -61,6 +61,7 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -80,6 +81,8 @@ import java.util.StringJoiner;
  * Utility methods for WifiTrackerLib.
  */
 public class Utils {
+    private static final String TAG = "WifiTrackerLibUtils";
+
     // TODO(b/242144920): remove this after publishing this reason in U.
     // This reason is added in U and hidden in T, using a hard-coded value first.
     public static final int DISABLED_TRANSITION_DISABLE_INDICATION = 13;
@@ -415,11 +418,24 @@ public class Utils {
             return "";
         }
 
-        final String carrierName = getCarrierNameForSubId(context,
-                getSubIdForConfig(context, wifiConfiguration));
-        if (!TextUtils.isEmpty(carrierName)) {
+        if (wifiConfiguration.carrierId != TelephonyManager.UNKNOWN_CARRIER_ID) {
+            int subId = getSubIdForCarrierId(context, wifiConfiguration.carrierId);
+            if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                Log.e(TAG, "getSuggestionOrSpecifierLabel: Failed to get sub id for carrier id "
+                        + wifiConfiguration.carrierId);
+                return "";
+            }
+
+            String carrierName = getCarrierNameForSubId(context, subId);
+            if (TextUtils.isEmpty(carrierName)) {
+                Log.e(TAG, "getSuggestionOrSpecifierLabel: Failed to get carrier name for sub id "
+                        + subId);
+                return "";
+            }
+
             return carrierName;
         }
+
         final String suggestorLabel = getAppLabel(context, wifiConfiguration.creatorName);
         if (!TextUtils.isEmpty(suggestorLabel)) {
             return suggestorLabel;
@@ -650,14 +666,28 @@ public class Utils {
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             return null;
         }
+
         TelephonyManager telephonyManager =
                 (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        if (telephonyManager == null) return null;
-        TelephonyManager specifiedTm = telephonyManager.createForSubscriptionId(subId);
-        if (specifiedTm == null) {
+        if (telephonyManager == null) {
+            Log.e(TAG, "getCarrierNameForSubId: Failed to get TelephonyManager");
             return null;
         }
-        return specifiedTm.getSimOperatorName();
+
+        TelephonyManager specifiedTm = telephonyManager.createForSubscriptionId(subId);
+        if (specifiedTm == null) {
+            Log.e(TAG, "getCarrierNameForSubId: Failed to create TelephonyManager for subId "
+                    + subId);
+            return null;
+        }
+
+        String simOperatorName = specifiedTm.getSimOperatorName();
+        if (TextUtils.isEmpty(simOperatorName)) {
+            Log.e(TAG, "getCarrierNameForSubId: Sim operator name for subId " + subId
+                    + " is empty");
+        }
+
+        return simOperatorName;
     }
 
     static boolean isServerCertUsedNetwork(@NonNull WifiConfiguration config) {
@@ -670,33 +700,38 @@ public class Utils {
     }
 
     /**
-     * Get the best match subscription Id for target WifiConfiguration.
+     * Get the best match subscription ID for a carrier ID.
      */
-    static int getSubIdForConfig(@NonNull Context context, @NonNull WifiConfiguration config) {
-        if (config.carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
+    static int getSubIdForCarrierId(@NonNull Context context, @NonNull int carrierId) {
+        if (carrierId == TelephonyManager.UNKNOWN_CARRIER_ID) {
             return SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         }
         SubscriptionManager subscriptionManager =
                 (SubscriptionManager) context.getSystemService(
                         Context.TELEPHONY_SUBSCRIPTION_SERVICE);
         if (subscriptionManager == null) {
+            Log.e(TAG, "getSubIdForCarrierId: Failed to get SubscriptionManager.");
             return SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         }
         List<SubscriptionInfo> subInfoList = subscriptionManager.getActiveSubscriptionInfoList();
         if (subInfoList == null || subInfoList.isEmpty()) {
+            Log.e(TAG, "getSubIdForCarrierId: Failed to get active subscription info list.");
             return SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         }
 
         int matchSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         int dataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
         for (SubscriptionInfo subInfo : subInfoList) {
-            if (subInfo.getCarrierId() == config.carrierId) {
+            if (subInfo.getCarrierId() == carrierId) {
                 matchSubId = subInfo.getSubscriptionId();
                 if (matchSubId == dataSubId) {
                     // Priority of Data sub is higher than non data sub.
                     break;
                 }
             }
+        }
+        if (matchSubId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            Log.e(TAG, "getSubIdForCarrierId: Failed to find matching subscription id");
         }
         return matchSubId;
     }
@@ -729,7 +764,7 @@ public class Utils {
             // Config without carrierId use default data subscription.
             subId = SubscriptionManager.getDefaultSubscriptionId();
         } else {
-            subId = getSubIdForConfig(context, wifiConfig);
+            subId = getSubIdForCarrierId(context, wifiConfig.carrierId);
         }
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID
                 || isImsiPrivacyProtectionProvided(context, subId)) {
@@ -1040,6 +1075,19 @@ public class Utils {
     public static boolean isDeviceOrProfileOwner(int uid, String packageName, Context context) {
         return isDeviceOwner(uid, packageName, context)
                 || isProfileOwner(uid, packageName, context);
+    }
+
+    /**
+     * Returns the user that created this WifiConfiguration.
+     */
+    public static UserHandle getOwnerUserForWifiConfig(@NonNull WifiConfiguration config) {
+        // TODO: b/449013275 Add SDK check here
+        // (i.e. Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA)
+        if (NonSdkApiWrapper.isMultiUserWifiEnhancementEnabled()) {
+            return UserHandle.of(config.getCreatorUserId());
+        }
+
+        return UserHandle.getUserHandleForUid(config.creatorUid);
     }
 
     /**

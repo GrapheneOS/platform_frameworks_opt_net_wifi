@@ -114,10 +114,12 @@ public class MergedCarrierEntry extends WifiEntry {
      */
     public synchronized void connect(@Nullable ConnectCallback callback, boolean showToast) {
         mConnectCallback = callback;
-        mWifiManager.startRestrictingAutoJoinToSubscriptionId(mSubscriptionId);
-        if (showToast) {
-            Toast.makeText(mContext, R.string.wifitrackerlib_wifi_wont_autoconnect_for_now,
-                    Toast.LENGTH_SHORT).show();
+        if (mInjector.getCachedWifiState() == WifiManager.WIFI_STATE_ENABLED) {
+            mWifiManager.startRestrictingAutoJoinToSubscriptionId(mSubscriptionId);
+            if (showToast) {
+                Toast.makeText(mContext, R.string.wifitrackerlib_wifi_wont_autoconnect_for_now,
+                        Toast.LENGTH_SHORT).show();
+            }
         }
         if (mConnectCallback != null) {
             mCallbackHandler.post(() -> {

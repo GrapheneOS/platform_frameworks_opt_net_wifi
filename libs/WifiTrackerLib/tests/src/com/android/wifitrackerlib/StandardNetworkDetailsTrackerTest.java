@@ -31,6 +31,7 @@ import static com.android.wifitrackerlib.WifiEntry.WIFI_LEVEL_UNREACHABLE;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -73,6 +74,7 @@ public class StandardNetworkDetailsTrackerTest {
     private static final long MAX_SCAN_AGE_MILLIS = 15_000;
     private static final long SCAN_INTERVAL_MILLIS = 10_000;
 
+    private int mWifiState = WifiManager.WIFI_STATE_DISABLED;
     @Mock private WifiTrackerInjector mInjector;
     @Mock private Lifecycle mMockLifecycle;
     @Mock private Context mMockContext;
@@ -134,6 +136,11 @@ public class StandardNetworkDetailsTrackerTest {
         when(mMockContext.getSystemService(PowerManager.class)).thenReturn(mPowerManager);
         when(mPowerManager.isInteractive()).thenReturn(true);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
+        doAnswer(invocation -> {
+            mWifiState = invocation.getArgument(0);
+            return null;
+        }).when(mInjector).cacheWifiState(anyInt());
+        when(mInjector.getCachedWifiState()).thenAnswer(invocation -> mWifiState);
     }
 
     /**
