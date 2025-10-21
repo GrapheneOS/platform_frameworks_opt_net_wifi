@@ -28,6 +28,9 @@ android_library {
         "wifi_aconfig_flags_lib",
     ],
     srcs: ["src/**/*.java"],
+    lint: {
+        baseline_filename: "lint-baseline2.xml",
+    },
 }
 
 android_library {
@@ -37,6 +40,9 @@ android_library {
     exclude_srcs: ["src/**/NonSdkApiWrapper.java"],
 
     sdk_version: "system_current",
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 // Define the resources as a separate library so that external apps may use them without needing to
