@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#allowAutojoin`"
+        errorLine1="            return mWifiConfig.allowAutojoin;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/PasspointWifiEntry.java"
+            line="440"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#shared`"
+        errorLine1="        openConfig.shared = sharedOnCreation;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="409"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#allowAutojoin`"
+        errorLine1="        return mTargetWifiConfig.allowAutojoin;"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="628"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#shared`"
+        errorLine1="        return config.shared;"
+        errorLine2="               ~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="720"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#shared`"
+        errorLine1="        if (mTargetWifiConfig.shared == shared) return;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="733"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#shared`"
+        errorLine1="        newConfig.shared = shared;"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="737"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#isAllowedToUpdateByOtherUsers`"
+        errorLine1="        return config.isAllowedToUpdateByOtherUsers();"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="763"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#setAllowedToUpdateByOtherUsers`"
+        errorLine1="        mTargetWifiConfig.setAllowedToUpdateByOtherUsers(modifiable);"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
+            line="775"
+            column="27"/>
+    </issue>
+
+</issues>
