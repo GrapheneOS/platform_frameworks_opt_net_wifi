@@ -293,15 +293,9 @@ public class Utils {
         }
 
         if (!TextUtils.isEmpty(suggestionOrSpecifierLabel)) {
-            if (shouldShowConnected || (isDefaultNetwork && isPartialConnectivity)) {
-                // "Connected via app"
-                sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
-                        suggestionOrSpecifierLabel));
-            } else {
-                // "Available via app"
-                sj.add(context.getString(R.string.wifitrackerlib_available_via_app,
-                        suggestionOrSpecifierLabel));
-            }
+            // "Connected via app"
+            sj.add(context.getString(R.string.wifitrackerlib_connected_via_app,
+                    suggestionOrSpecifierLabel));
         } else if (shouldShowConnected) {
             // "Connected"
             sj.add(context.getResources().getStringArray(

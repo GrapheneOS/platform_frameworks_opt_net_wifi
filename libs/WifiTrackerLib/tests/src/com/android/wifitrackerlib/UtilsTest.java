@@ -219,8 +219,6 @@ public class UtilsTest {
                 .thenReturn(STRING_NO_INTERNET);
         when(mMockContext.getString(eq(R.string.wifitrackerlib_connected_via_app),
                 any())).thenAnswer((answer) -> STRING_CONNECTED_VIA_APP + answer.getArguments()[1]);
-        when(mMockContext.getString(eq(R.string.wifitrackerlib_available_via_app),
-                any())).thenAnswer((answer) -> STRING_AVAILABLE_VIA_APP + answer.getArguments()[1]);
         when(mMockContext.getString(eq(R.string.wifitrackerlib_link_speed_mbps),
                 any())).thenAnswer((answer) -> answer.getArguments()[1] + STRING_LINK_SPEED_MBPS);
         when(mMockContext.getString(eq(R.string.wifitrackerlib_link_speed_on_band),
@@ -952,7 +950,7 @@ public class UtilsTest {
                 connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
                 + STRING_SUMMARY_SEPARATOR + STRING_NO_INTERNET);
 
-        // Available via app + Low quality
+        // Connected via app + Low quality
         when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(true);
         assertThat(Utils.getConnectedDescription(
@@ -962,10 +960,10 @@ public class UtilsTest {
                 wifiInfo,
                 false,
                 true,
-                connectivityReport)).isEqualTo(STRING_AVAILABLE_VIA_APP + "appLabel"
+                connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
                 + STRING_SUMMARY_SEPARATOR + STRING_CONNECTED_LOW_QUALITY);
 
-        // Available via app + Sign in to network
+        // Connected via app + Sign in to network
         when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
                 .thenReturn(false);
         when(networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL))
@@ -977,7 +975,7 @@ public class UtilsTest {
                 wifiInfo,
                 true,
                 false,
-                connectivityReport)).isEqualTo(STRING_AVAILABLE_VIA_APP + "appLabel"
+                connectivityReport)).isEqualTo(STRING_CONNECTED_VIA_APP + "appLabel"
                 + STRING_SUMMARY_SEPARATOR + STRING_NETWORK_AVAILABLE_SIGN_IN);
 
         // Connected via app + Limited connection...
