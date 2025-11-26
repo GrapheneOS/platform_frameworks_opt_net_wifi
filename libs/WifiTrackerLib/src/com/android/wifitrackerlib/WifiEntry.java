@@ -798,6 +798,22 @@ public class WifiEntry {
         return Utils.getSpeedString(mContext, mWifiInfo, /* isTx */ false);
     }
 
+    /**
+     * Returns the string displayed for maximum supported Tx link speed, or empty string if there is
+     * no speed to display.
+     */
+    public String getMaxSupportedTxLinkSpeedString() {
+        return Utils.getMaxSupportedLinkSpeedString(mContext, mWifiInfo, /* isTx */ true);
+    }
+
+    /**
+     * Returns the string displayed for maximum supported Rx link speed or empty string if there is
+     * no speed to display.
+     */
+    public String getMaxSupportedRxLinkSpeedString() {
+        return Utils.getMaxSupportedLinkSpeedString(mContext, mWifiInfo, /* isTx */ false);
+    }
+
     /** Returns whether subscription of the entry is expired */
     public boolean isExpired() {
         return false;

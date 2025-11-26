@@ -19,6 +19,7 @@ package com.android.wifitrackerlib;
 import static android.net.wifi.flags.Flags.hotspotNetworkConnectingStateForDetailsPage;
 import static android.net.wifi.flags.Flags.hotspotNetworkUnknownStatusResetsConnectingState;
 
+import static com.android.wifi.flags.Flags.mloLinkSpeedApi;
 import static com.android.wifi.flags.Flags.multiUserWifiEnhancement;
 import static com.android.wifi.flags.Flags.wifiStateChangedListener;
 
@@ -161,5 +162,12 @@ class NonSdkApiWrapper {
         // TODO: b/449013275 Add SDK check here
         // (i.e. Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA)
         return multiUserWifiEnhancement();
+    }
+
+    /**
+     * Whether the MLO link speed API flag is enabled.
+     */
+    static boolean isMloLinkSpeedApiEnabled() {
+        return mloLinkSpeedApi();
     }
 }

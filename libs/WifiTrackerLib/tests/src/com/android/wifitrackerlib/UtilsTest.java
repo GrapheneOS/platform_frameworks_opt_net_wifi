@@ -22,6 +22,7 @@ import static com.android.wifitrackerlib.Utils.getAutoConnectDescription;
 import static com.android.wifitrackerlib.Utils.getBestScanResultByLevel;
 import static com.android.wifitrackerlib.Utils.getCarrierNameForSubId;
 import static com.android.wifitrackerlib.Utils.getImsiProtectionDescription;
+import static com.android.wifitrackerlib.Utils.getMaxSupportedLinkSpeedString;
 import static com.android.wifitrackerlib.Utils.getMeteredDescription;
 import static com.android.wifitrackerlib.Utils.getNetworkSelectionDescription;
 import static com.android.wifitrackerlib.Utils.getSecurityTypesFromScanResult;
@@ -67,6 +68,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.PersistableBundle;
 import android.os.test.TestLooper;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -77,10 +80,12 @@ import android.text.style.ClickableSpan;
 import androidx.annotation.RequiresApi;
 import androidx.core.os.BuildCompat;
 
+import com.android.wifi.flags.Flags;
 import com.android.wifitrackerlib.shadow.ShadowSystem;
 
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -95,6 +100,8 @@ import java.util.StringJoiner;
 
 @Config(shadows = {ShadowSystem.class})
 public class UtilsTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private static final int ID_NETWORK_AVAILABLE_SIGN_IN = 1;
     private static final String STRING_SUMMARY_SEPARATOR = " / ";
     private static final String STRING_AVAILABLE_VIA_APP = "available_via_";
@@ -1167,6 +1174,109 @@ public class UtilsTest {
                 .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
                         + STRING_LINK_SPEED_ON_BAND + BAND_6_GHZ).toString();
         assertThat(Utils.getSpeedString(mMockContext, wifiInfo, false))
+                .isEqualTo(expectedRxSpeed);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    private MloLink createMockMloLinkMaxSupportedSpeed(int band, int txSpeedMbps,
+            int rxSpeedMbps) {
+        MloLink link = mock(MloLink.class);
+        when(link.getBand()).thenReturn(band);
+        when(link.getMaxSupportedTxLinkSpeedMbps()).thenReturn(txSpeedMbps);
+        when(link.getMaxSupportedRxLinkSpeedMbps()).thenReturn(rxSpeedMbps);
+        return link;
+    }
+
+    @Test
+    public void testGetMaxSupportedLinkSpeedString_nullWifiInfo_returnsEmptyString() {
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, null, true)).isEqualTo("");
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, null, false)).isEqualTo("");
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MLO_LINK_SPEED_API)
+    public void testGetMaxSupportedLinkSpeedString_negativeOrZeroSpeed_returnsEmptyString() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN);
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getMaxSupportedTxLinkSpeedMbps()).thenReturn(0);
+        when(wifiInfo.getMaxSupportedRxLinkSpeedMbps()).thenReturn(-1);
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, true)).isEqualTo("");
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, false)).isEqualTo("");
+
+        List<MloLink> links = List.of(
+                createMockMloLinkMaxSupportedSpeed(WifiScanner.WIFI_BAND_24_GHZ, 0, -1),
+                createMockMloLinkMaxSupportedSpeed(WifiScanner.WIFI_BAND_5_GHZ, 100, 200)
+        );
+        when(wifiInfo.getAssociatedMloLinks()).thenReturn(links);
+        when(wifiInfo.getMaxSupportedTxLinkSpeedMbps()).thenReturn(0);
+        when(wifiInfo.getMaxSupportedRxLinkSpeedMbps()).thenReturn(0);
+
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, true))
+                .isEqualTo("100" + STRING_LINK_SPEED_MBPS + STRING_LINK_SPEED_ON_BAND
+                        + BAND_5_GHZ);
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, false))
+                .isEqualTo("200" + STRING_LINK_SPEED_MBPS + STRING_LINK_SPEED_ON_BAND
+                        + BAND_5_GHZ);
+    }
+
+    @Test
+    public void testGetMaxSupportedLinkSpeedString_singleLink_returnsSingleSpeedString() {
+        int txSpeedMbps = 15;
+        int rxSpeedMbps = 100;
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getMaxSupportedTxLinkSpeedMbps()).thenReturn(txSpeedMbps);
+        when(wifiInfo.getMaxSupportedRxLinkSpeedMbps()).thenReturn(rxSpeedMbps);
+
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, true))
+                .isEqualTo(txSpeedMbps + STRING_LINK_SPEED_MBPS);
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, false))
+                .isEqualTo(rxSpeedMbps + STRING_LINK_SPEED_MBPS);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_MLO_LINK_SPEED_API)
+    public void testGetMaxSupportedLinkSpeedString_multipleMloLinks_returnsMultiSpeedString() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN);
+        int txSpeedMbps = 15;
+        int rxSpeedMbps = 100;
+        WifiInfo wifiInfo = mock(WifiInfo.class);
+        when(wifiInfo.getMaxSupportedTxLinkSpeedMbps()).thenReturn(0);
+        when(wifiInfo.getMaxSupportedRxLinkSpeedMbps()).thenReturn(0);
+
+        List<MloLink> links = List.of(
+                createMockMloLinkMaxSupportedSpeed(WifiScanner.WIFI_BAND_UNSPECIFIED, txSpeedMbps,
+                        rxSpeedMbps),
+                createMockMloLinkMaxSupportedSpeed(WifiScanner.WIFI_BAND_24_GHZ, txSpeedMbps,
+                        rxSpeedMbps),
+                createMockMloLinkMaxSupportedSpeed(WifiScanner.WIFI_BAND_5_GHZ, txSpeedMbps,
+                        rxSpeedMbps),
+                createMockMloLinkMaxSupportedSpeed(WifiScanner.WIFI_BAND_6_GHZ, txSpeedMbps,
+                        rxSpeedMbps)
+        );
+        when(wifiInfo.getAssociatedMloLinks()).thenReturn(links);
+
+        String expectedTxSpeed = new StringJoiner(BAND_SEPARATOR)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_UNKNOWN)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_24_GHZ)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_5_GHZ)
+                .add(txSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_6_GHZ).toString();
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, true))
+                .isEqualTo(expectedTxSpeed);
+
+        String expectedRxSpeed = new StringJoiner(BAND_SEPARATOR)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_UNKNOWN)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_24_GHZ)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_5_GHZ)
+                .add(rxSpeedMbps + STRING_LINK_SPEED_MBPS
+                        + STRING_LINK_SPEED_ON_BAND + BAND_6_GHZ).toString();
+        assertThat(getMaxSupportedLinkSpeedString(mMockContext, wifiInfo, false))
                 .isEqualTo(expectedRxSpeed);
     }
 
