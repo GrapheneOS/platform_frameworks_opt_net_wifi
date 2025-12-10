@@ -145,6 +145,7 @@ public class SavedNetworkTrackerTest {
 
         mTestLooper = new TestLooper();
 
+        when(mInjector.getClock()).thenReturn(mMockClock);
         when(mMockWifiManager.getScanResults()).thenReturn(new ArrayList<>());
         when(mMockWifiManager.getConnectionInfo()).thenReturn(mMockWifiInfo);
         when(mMockWifiManager.isWpa3SaeSupported()).thenReturn(true);

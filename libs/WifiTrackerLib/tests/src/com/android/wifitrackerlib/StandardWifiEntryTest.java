@@ -2282,4 +2282,43 @@ public class StandardWifiEntryTest {
         listenerCaptor.getValue().onFailure(0);
         verify(mMockWifiManager, never()).forget(anyInt(), any());
     }
+
+    @Test
+    public void testGetLevel_disconnected_usesLastConnectedSignalLevelWithinTimeout() {
+        final int networkId = 1;
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = networkId;
+        final StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN),
+                Collections.singletonList(config), null, mMockWifiManager,
+                false /* forSavedNetworksPage */);
+
+        // Simulate connection to populate mWifiInfoLevel
+        when(mMockWifiInfo.getNetworkId()).thenReturn(networkId);
+        when(mMockWifiInfo.getRssi()).thenReturn(TestUtils.GOOD_RSSI);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        assertThat(entry.getLevel()).isEqualTo(TestUtils.GOOD_LEVEL);
+
+        // Simulate disconnection. This should set mLastConnectedSignalLevel.
+        entry.onNetworkLost(mMockNetwork);
+        // Clear scan results so mScanResultLevel is WIFI_LEVEL_UNREACHABLE
+        entry.updateScanResultInfo(Collections.emptyList());
+
+        // Immediately after disconnect, level should be the last connected level.
+        assertThat(entry.getLevel()).isEqualTo(TestUtils.GOOD_LEVEL);
+
+        // Advance clock within the timeout period. Level should remain the same.
+        when(mClock.millis()).thenReturn(WifiEntry.LAST_CONNECTED_SIGNAL_LEVEL_TIMEOUT_MS - 1);
+        assertThat(entry.getLevel()).isEqualTo(TestUtils.GOOD_LEVEL);
+
+        // Advance clock to the exact timeout boundary. Level should remain the same.
+        when(mClock.millis()).thenReturn(WifiEntry.LAST_CONNECTED_SIGNAL_LEVEL_TIMEOUT_MS);
+        assertThat(entry.getLevel()).isEqualTo(TestUtils.GOOD_LEVEL);
+
+        // Advance clock just past the timeout. Level should now be unreachable.
+        when(mClock.millis()).thenReturn(WifiEntry.LAST_CONNECTED_SIGNAL_LEVEL_TIMEOUT_MS + 1);
+        assertThat(entry.getLevel()).isEqualTo(WifiEntry.WIFI_LEVEL_UNREACHABLE);
+    }
 }

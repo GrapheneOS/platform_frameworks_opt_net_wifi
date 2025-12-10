@@ -66,6 +66,8 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.MockitoSession;
 import org.mockito.quality.Strictness;
 
+import java.time.Clock;
+
 public class HotspotNetworkEntryTest {
     @Rule
     public final CheckFlagsRule mCheckFlagsRule =
@@ -77,6 +79,7 @@ public class HotspotNetworkEntryTest {
     @Mock private WifiEntry.ConnectCallback mMockConnectCallback;
     @Mock private WifiEntry.DisconnectCallback mMockDisconnectCallback;
     @Mock private WifiTrackerInjector mMockInjector;
+    @Mock private Clock mMockClock;
     @Mock private Context mMockContext;
     @Mock private Resources mMockResources;
     @Mock private WifiManager mMockWifiManager;
@@ -114,6 +117,7 @@ public class HotspotNetworkEntryTest {
         mTestLooper = new TestLooper();
         mTestHandler = new Handler(mTestLooper.getLooper());
 
+        when(mMockInjector.getClock()).thenReturn(mMockClock);
         when(mMockNetworkCapabilities.getTransportInfo()).thenReturn(mMockWifiInfo);
         when(mMockWifiInfo.isPrimary()).thenReturn(true);
         when(mMockWifiInfo.getSSID()).thenReturn("Instant Hotspot abcde");
