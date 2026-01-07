@@ -20,6 +20,7 @@ java_defaults {
 
 android_library {
     name: "WifiTrackerLib",
+    package_name: "com.android.wifitrackerlib.nores",
     defaults: ["WifiTrackerLibDefaults"],
     libs: [
         "android.net.wifi.flags-aconfig-java",
@@ -35,6 +36,7 @@ android_library {
 
 android_library {
     name: "SdkWifiTrackerLib",
+    package_name: "com.android.wifitrackerlib.nores",
     defaults: ["WifiTrackerLibDefaults"],
     srcs: ["sdk_src/**/NonSdkApiWrapper.java"],
     exclude_srcs: ["src/**/NonSdkApiWrapper.java"],
@@ -49,6 +51,7 @@ android_library {
 // be up-to-date with WifiTrackerLib's min_sdk_version
 android_library {
     name: "WifiTrackerLibRes",
+    package_name: "com.android.wifitrackerlib",
     resource_dirs: ["res"],
     min_sdk_version: "1",
 }
