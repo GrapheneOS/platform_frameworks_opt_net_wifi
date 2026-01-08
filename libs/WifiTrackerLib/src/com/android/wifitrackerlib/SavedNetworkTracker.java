@@ -224,7 +224,8 @@ public class SavedNetworkTracker extends BaseWifiTracker {
                 .stream().collect(Collectors.toList());
     }
 
-    private List<WifiEntry> getAllWifiEntries() {
+    @Override
+    protected List<WifiEntry> getAllWifiEntries() {
         List<WifiEntry> allEntries = new ArrayList<>();
         allEntries.addAll(mStandardWifiEntryCache);
         allEntries.addAll(mPasspointWifiEntryCache.values());

@@ -52,6 +52,7 @@ import android.os.Handler;
 import android.os.test.TestLooper;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
+import android.security.advancedprotection.AdvancedProtectionManager;
 
 import androidx.core.os.BuildCompat;
 
@@ -87,6 +88,7 @@ public class HotspotNetworkEntryTest {
     @Mock private WifiInfo mMockWifiInfo;
     @Mock private Network mMockNetwork;
     @Mock private NetworkCapabilities mMockNetworkCapabilities;
+    @Mock private AdvancedProtectionManager mAdvancedProtectionManager;
 
     private TestLooper mTestLooper;
     private Handler mTestHandler;
@@ -179,6 +181,11 @@ public class HotspotNetworkEntryTest {
                 "2.4 GHz");
         when(mMockResources.getString(R.string.wifitrackerlib_multiband_separator)).thenReturn(
                 ", ");
+
+        when(mMockInjector.getContext()).thenReturn(mMockContext);
+        when(mMockContext.getSystemService(AdvancedProtectionManager.class))
+                .thenReturn(mAdvancedProtectionManager);
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(false);
     }
 
     @After

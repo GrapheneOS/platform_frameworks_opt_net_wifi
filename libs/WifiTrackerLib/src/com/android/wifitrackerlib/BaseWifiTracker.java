@@ -43,9 +43,12 @@ import android.net.wifi.sharedconnectivity.app.KnownNetworkConnectionStatus;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityClientCallback;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivityManager;
 import android.net.wifi.sharedconnectivity.app.SharedConnectivitySettingsState;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.security.Flags;
+import android.security.advancedprotection.AdvancedProtectionManager;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -99,6 +102,10 @@ public class BaseWifiTracker {
     private volatile boolean mIsInitialized = false;
     private volatile boolean mIsScanningDisabled = false;
     private final WifiManager.WifiVerboseLoggingStatusChangedListener mVerboseLoggingListener;
+
+    @Nullable protected AdvancedProtectionManager mAapmManager;
+
+    @Nullable private final AdvancedProtectionManager.Callback mAapmCallback;
 
     class WifiTrackerLifecycleObserver implements LifecycleObserver {
         @OnLifecycleEvent(Lifecycle.Event.ON_START)
@@ -351,6 +358,31 @@ public class BaseWifiTracker {
         if (lifecycle != null) { // Need to add after constructor completes.
             mMainHandler.post(() -> lifecycle.addObserver(mLifecycleObserver));
         }
+
+        // TODO(b/477286489): Update to Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                && Flags.aapmFeatureDisableInsecureWifiAutojoin()) {
+            mAapmManager = context.getSystemService(AdvancedProtectionManager.class);
+            mAapmCallback = new AdvancedProtectionManager.Callback() {
+                @Override
+                public void onAdvancedProtectionChanged(boolean isEnabled) {
+                    mWorkerHandler.post(() -> {
+                        boolean verifiedState = isEnabled;
+                        if (mAapmManager != null) {
+                            verifiedState = mAapmManager.isAdvancedProtectionEnabled();
+                        }
+                        mInjector.setAapmEnabled(verifiedState);
+
+                        for (WifiEntry entry : getAllWifiEntries()) {
+                            entry.updateAapmState(verifiedState);
+                        }
+                    });
+                }
+            };
+        } else {
+            mAapmManager = null;
+            mAapmCallback = null;
+        }
     }
 
     /**
@@ -421,6 +453,9 @@ public class BaseWifiTracker {
             mSharedConnectivityManager.registerCallback(mWorkerHandler::post,
                     mSharedConnectivityCallback);
         }
+        if (mAapmManager != null && mAapmCallback != null) {
+            mAapmManager.registerAdvancedProtectionCallback(mWorkerHandler::post, mAapmCallback);
+        }
     }
 
     /**
@@ -453,6 +488,9 @@ public class BaseWifiTracker {
                 if (!result) {
                     Log.e(mTag, "onStop: unregisterCallback failed");
                 }
+            }
+            if (mAapmManager != null && mAapmCallback != null) {
+                mAapmManager.unregisterAdvancedProtectionCallback(mAapmCallback);
             }
         } catch (IllegalArgumentException e) {
             // Not registered yet, possibly due to a client manually calling onStop() to clean up
@@ -882,6 +920,15 @@ public class BaseWifiTracker {
         if (mListener != null) {
             mMainHandler.post(mListener::onScanRequested);
         }
+    }
+
+    /**
+     * Returns the list of all WifiEntries tracked by this tracker.
+     * To be overridden by subclasses
+     */
+    @NonNull
+    protected List<WifiEntry> getAllWifiEntries() {
+        return new ArrayList<>();
     }
 
     /**

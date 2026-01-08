@@ -260,7 +260,8 @@ public class WifiPickerTracker extends BaseWifiTracker {
         return mPasspointConfigCache.size();
     }
 
-    private List<WifiEntry> getAllWifiEntries() {
+    @Override
+    protected List<WifiEntry> getAllWifiEntries() {
         List<WifiEntry> allEntries = new ArrayList<>();
         allEntries.addAll(mStandardWifiEntryCache);
         allEntries.addAll(mSuggestedWifiEntryCache);

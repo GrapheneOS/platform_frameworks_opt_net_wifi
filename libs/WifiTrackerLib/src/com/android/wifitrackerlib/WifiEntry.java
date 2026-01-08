@@ -36,7 +36,9 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Handler;
+import android.security.Flags;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -269,6 +271,8 @@ public class WifiEntry {
     protected boolean mCalledConnect = false;
     protected boolean mCalledDisconnect = false;
 
+    protected boolean mIsAapmEnabled = false;
+
 
     private Optional<ManageSubscriptionAction> mManageSubscriptionAction = Optional.empty();
 
@@ -283,6 +287,12 @@ public class WifiEntry {
         mCallbackHandler = callbackHandler;
         mForSavedNetworksPage = forSavedNetworksPage;
         mWifiManager = wifiManager;
+
+        // TODO(b/477286489): Update to Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                && Flags.aapmFeatureDisableInsecureWifiAutojoin()) {
+            mIsAapmEnabled = mInjector.isAapmEnabled();
+        }
     }
 
     // Info available for all WifiEntries //
@@ -1442,5 +1452,16 @@ public class WifiEntry {
      */
     public boolean isVerboseSummaryEnabled() {
         return mInjector.isVerboseSummaryEnabled();
+    }
+
+    /**
+     * Updates the Advanced Protection Mode state.
+     * Triggers a listener update if the state changes to refresh the UI.
+     */
+    public synchronized void updateAapmState(boolean isEnabled) {
+        if (mIsAapmEnabled != isEnabled) {
+            mIsAapmEnabled = isEnabled;
+            notifyOnUpdated();
+        }
     }
 }

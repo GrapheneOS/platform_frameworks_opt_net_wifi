@@ -52,6 +52,7 @@ import android.net.wifi.WifiScanner;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.os.test.TestLooper;
+import android.security.advancedprotection.AdvancedProtectionManager;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
@@ -85,6 +86,7 @@ public class StandardNetworkDetailsTrackerTest {
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private ConnectivityDiagnosticsManager mMockConnectivityDiagnosticsManager;
     @Mock private Clock mMockClock;
+    @Mock private AdvancedProtectionManager mAdvancedProtectionManager;
 
     private TestLooper mTestLooper;
     private Handler mMainHandler;
@@ -142,6 +144,11 @@ public class StandardNetworkDetailsTrackerTest {
             return null;
         }).when(mInjector).cacheWifiState(anyInt());
         when(mInjector.getCachedWifiState()).thenAnswer(invocation -> mWifiState);
+
+        when(mInjector.getContext()).thenReturn(mMockContext);
+        when(mMockContext.getSystemService(AdvancedProtectionManager.class))
+                .thenReturn(mAdvancedProtectionManager);
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(false);
     }
 
     /**
