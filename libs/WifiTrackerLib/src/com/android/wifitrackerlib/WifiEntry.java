@@ -45,6 +45,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.core.os.BuildCompat;
 
@@ -75,6 +76,9 @@ public class WifiEntry {
     public static final String TAG = "WifiEntry";
 
     private static final int MAX_UNDERLYING_NETWORK_DEPTH = 5;
+
+    @VisibleForTesting
+    static final long LAST_CONNECTED_SIGNAL_LEVEL_TIMEOUT_MS = 25_000;
 
     /**
      * Security type based on WifiConfiguration.KeyMgmt
@@ -246,6 +250,8 @@ public class WifiEntry {
     protected final Handler mCallbackHandler;
     protected int mWifiInfoLevel = WIFI_LEVEL_UNREACHABLE;
     protected int mScanResultLevel = WIFI_LEVEL_UNREACHABLE;
+    private int mLastConnectedSignalLevel = WIFI_LEVEL_UNREACHABLE;
+    private long mDisconnectTimestampMillis = -1;
     protected WifiInfo mWifiInfo;
     protected NetworkInfo mNetworkInfo;
     protected Network mNetwork;
@@ -346,10 +352,16 @@ public class WifiEntry {
      * A value of WIFI_LEVEL_UNREACHABLE indicates an out of range network.
      */
     public int getLevel() {
-        if (mWifiInfoLevel != WIFI_LEVEL_UNREACHABLE) {
-            return mWifiInfoLevel;
+        if (mWifiInfoLevel != WIFI_LEVEL_UNREACHABLE) return mWifiInfoLevel;
+        if (mScanResultLevel != WIFI_LEVEL_UNREACHABLE) return mScanResultLevel;
+
+        // Fall back to the last connected signal level in case we don't have any scan results.
+        if (mInjector.getClock().millis()
+                <= mDisconnectTimestampMillis + LAST_CONNECTED_SIGNAL_LEVEL_TIMEOUT_MS) {
+            return mLastConnectedSignalLevel;
         }
-        return mScanResultLevel;
+
+        return WIFI_LEVEL_UNREACHABLE;
     };
 
     /**
@@ -1163,6 +1175,8 @@ public class WifiEntry {
      */
     synchronized void onNetworkLost(@NonNull Network network) {
         if (network.equals(mNetwork)) {
+            mLastConnectedSignalLevel = mWifiInfoLevel;
+            mDisconnectTimestampMillis = mInjector.getClock().millis();
             clearConnectionInfo(true);
         } else if (network.equals(mLastNetwork)) {
             mLastNetwork = null;
