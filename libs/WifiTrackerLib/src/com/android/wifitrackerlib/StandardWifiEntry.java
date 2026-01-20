@@ -829,6 +829,23 @@ public class StandardWifiEntry extends WifiEntry {
     @Override
     synchronized void onNetworkCapabilitiesChanged(
             @NonNull Network network, @NonNull NetworkCapabilities capabilities) {
+        // Sometimes we connect to an unsaved network but the saved configuration does not match in
+        // key (i.e. the key has mConfigIsShared = true, but the saved configuration was private).
+        // To prevent the UI from displaying a "Connection failed" message, manually trigger the
+        // ConnectCallback success as long as the SSID matches.
+        WifiInfo wifiInfo = Utils.getWifiInfo(capabilities);
+        if (wifiInfo != null && mCalledConnect && !isSaved()
+                && NonSdkApiWrapper.isPrimary(wifiInfo)
+                && TextUtils.equals(getSsid(), sanitizeSsid(wifiInfo.getSSID()))
+                && getSecurityTypes().contains(wifiInfo.getCurrentSecurityType())) {
+            mCalledConnect = false;
+            mCallbackHandler.post(() -> {
+                final ConnectCallback connectCallback = mConnectCallback;
+                if (connectCallback != null) {
+                    connectCallback.onConnectResult(ConnectCallback.CONNECT_STATUS_SUCCESS);
+                }
+            });
+        }
         super.onNetworkCapabilitiesChanged(network, capabilities);
 
         // Auto-open an available captive portal if the user manually connected to this network.
@@ -1180,12 +1197,14 @@ public class StandardWifiEntry extends WifiEntry {
         private static final String KEY_IS_NETWORK_REQUEST = "IS_NETWORK_REQUEST";
         private static final String KEY_SHOULD_USE_SCAN_FALLBACK = "KEY_SHOULD_USE_SCAN_FALLBACK";
         private static final String KEY_CONFIG_OWNER = "CONFIG_OWNER";
+        private static final String KEY_IS_CONFIG_SHARED = "IS_CONFIG_SHARED";
 
         @NonNull private ScanResultKey mScanResultKey;
         @Nullable private String mSuggestionProfileKey;
         private boolean mIsNetworkRequest;
         private boolean mShouldUseScanFallback = false;
         @NonNull private UserHandle mConfigOwner;
+        private boolean mIsConfigShared = true; // AOSP defaults to saving networks as shared
 
         /**
          * Base StandardWifiEntryKey constructor.
@@ -1227,7 +1246,11 @@ public class StandardWifiEntry extends WifiEntry {
         /**
          * Creates a StandardWifiEntryKey matching a WifiConfiguration and sets whether the entry
          * should fall back to the scan security if the config security is out of range.
+         * </p>
+         * Note: Suppressing NewApi lint caused by WifiConfiguration#shared promotion from
+         * system API to public API.
          */
+        @SuppressLint("NewApi")
         StandardWifiEntryKey(@NonNull WifiConfiguration config,
                 boolean shouldUseScanFallback) {
             mScanResultKey = new ScanResultKey(config);
@@ -1242,6 +1265,7 @@ public class StandardWifiEntry extends WifiEntry {
             }
             mShouldUseScanFallback = shouldUseScanFallback;
             mConfigOwner = Utils.getOwnerUserForWifiConfig(config);
+            mIsConfigShared = config.shared;
         }
 
         /**
@@ -1273,6 +1297,9 @@ public class StandardWifiEntry extends WifiEntry {
                 } else {
                     mConfigOwner = UserHandle.of(ActivityManager.getCurrentUser());
                 }
+                if (keyJson.has(KEY_IS_CONFIG_SHARED)) {
+                    mIsConfigShared = keyJson.getBoolean(KEY_IS_CONFIG_SHARED);
+                }
             } catch (JSONException e) {
                 Log.e(TAG, "JSONException while converting StandardWifiEntryKey to string: " + e);
             }
@@ -1299,6 +1326,7 @@ public class StandardWifiEntry extends WifiEntry {
                             mShouldUseScanFallback);
                 }
                 keyJson.put(KEY_CONFIG_OWNER, mConfigOwner.getIdentifier());
+                keyJson.put(KEY_IS_CONFIG_SHARED, mIsConfigShared);
             } catch (JSONException e) {
                 Log.wtf(TAG, "JSONException while converting StandardWifiEntryKey to string: " + e);
             }
@@ -1337,13 +1365,14 @@ public class StandardWifiEntry extends WifiEntry {
                     && TextUtils.equals(mSuggestionProfileKey, that.mSuggestionProfileKey)
                     && mIsNetworkRequest == that.mIsNetworkRequest
                     && mShouldUseScanFallback == that.mShouldUseScanFallback
-                    && Objects.equals(mConfigOwner, that.mConfigOwner);
+                    && Objects.equals(mConfigOwner, that.mConfigOwner)
+                    && mIsConfigShared == that.mIsConfigShared;
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(mScanResultKey, mSuggestionProfileKey, mIsNetworkRequest,
-                    mConfigOwner);
+                    mConfigOwner, mIsConfigShared);
         }
     }
 
