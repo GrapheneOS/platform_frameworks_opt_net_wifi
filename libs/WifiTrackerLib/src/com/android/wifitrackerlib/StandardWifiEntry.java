@@ -903,10 +903,13 @@ public class StandardWifiEntry extends WifiEntry {
         }
 
         Set<Integer> configSecurityTypes = mMatchingWifiConfigs.keySet();
-        if (mTargetSecurityTypes.isEmpty() && mKey.isTargetingNewNetworks()) {
-            // If we are targeting new networks for configuration, then we should select the
-            // security type of all visible scan results if we don't have any configs that
-            // can connect to them. This will let us configure this entry as a new network.
+
+        // Handle the edge case where the config does not match any of the scans (e.g. config is
+        // SAE-only but the scans are PSK-only. In this case, we want to target the security type of
+        // the scans, so that the entry appears unsaved and the user can configure the unsaved
+        // security type.
+        // Note: This should not apply to shared networks from other users,
+        if (mTargetSecurityTypes.isEmpty() && mKey.shouldUseScanFallback()) {
             boolean configMatchesScans = false;
             Set<Integer> scanSecurityTypes = mMatchingScanResults.keySet();
             for (int configSecurity : configSecurityTypes) {
@@ -980,15 +983,15 @@ public class StandardWifiEntry extends WifiEntry {
     static StandardWifiEntryKey ssidAndSecurityTypeToStandardWifiEntryKey(
             @NonNull String ssid, int security) {
         return ssidAndSecurityTypeToStandardWifiEntryKey(
-                ssid, security, false /* isTargetingNewNetworks */);
+                ssid, security, false /* shouldUseScanFallback */);
     }
 
     @NonNull
     static StandardWifiEntryKey ssidAndSecurityTypeToStandardWifiEntryKey(
-            @NonNull String ssid, int security, boolean isTargetingNewNetworks) {
+            @NonNull String ssid, int security, boolean shouldUseScanFallback) {
         return new StandardWifiEntryKey(
                 new ScanResultKey(ssid, Collections.singletonList(security)),
-                isTargetingNewNetworks);
+                shouldUseScanFallback);
     }
 
     @Override
@@ -1170,44 +1173,42 @@ public class StandardWifiEntry extends WifiEntry {
         private static final String KEY_SCAN_RESULT_KEY = "SCAN_RESULT_KEY";
         private static final String KEY_SUGGESTION_PROFILE_KEY = "SUGGESTION_PROFILE_KEY";
         private static final String KEY_IS_NETWORK_REQUEST = "IS_NETWORK_REQUEST";
-        private static final String KEY_IS_TARGETING_NEW_NETWORKS = "IS_TARGETING_NEW_NETWORKS";
+        private static final String KEY_SHOULD_USE_SCAN_FALLBACK = "KEY_SHOULD_USE_SCAN_FALLBACK";
         private static final String KEY_CONFIG_OWNER = "CONFIG_OWNER";
 
         @NonNull private ScanResultKey mScanResultKey;
         @Nullable private String mSuggestionProfileKey;
         private boolean mIsNetworkRequest;
-        private boolean mIsTargetingNewNetworks = false;
+        private boolean mShouldUseScanFallback = false;
         @NonNull private UserHandle mConfigOwner;
 
         /**
          * Base StandardWifiEntryKey constructor.
          *
-         * @param scanResultKey          key to match ScanResults against.
-         * @param isTargetingNewNetworks Whether this entry should represent an unsaved entry
-         *                               waiting to be configured by the user. This is necessary to
-         *                               ignore existing WifiConfigurations that match the security
-         *                               type family, but have no scan results.
-         * @param configOwner            Owner of the target WifiConfiguration. This should be the
-         *                               current user if the entry is not saved yet.
+         * @param scanResultKey         key to match ScanResults against.
+         * @param shouldUseScanFallback Whether the scans/security type should fall back to any
+         *                              scans of the same security family in case the saved config
+         *                              cannot be applied (i.e. SAE config but only PSK scans).
+         * @param configOwner           Owner of the target WifiConfiguration. This should be the
+         *                              current user if the entry is not saved yet.
          */
-        StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey, boolean isTargetingNewNetworks,
+        StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey, boolean shouldUseScanFallback,
                 @NonNull UserHandle configOwner) {
             mScanResultKey = scanResultKey;
-            mIsTargetingNewNetworks = isTargetingNewNetworks;
+            mShouldUseScanFallback = shouldUseScanFallback;
             mConfigOwner = configOwner;
         }
 
         /**
          * Base StandardWifiEntryKey constructor targeting the current user.
          *
-         * @param scanResultKey          key to match ScanResults against.
-         * @param isTargetingNewNetworks Whether this entry should represent an unsaved entry
-         *                               waiting to be configured by the user. This is necessary to
-         *                               ignore existing WifiConfigurations that match the security
-         *                               type family, but have no scan results.
+         * @param scanResultKey         key to match ScanResults against.
+         * @param shouldUseScanFallback Whether the scans/security type should fall back to any
+         *                              scans of the same security family in case the saved config
+         *                              cannot be applied (i.e. SAE config but only PSK scans).
          */
-        StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey, boolean isTargetingNewNetworks) {
-            this(scanResultKey, isTargetingNewNetworks, UserHandle.of(
+        StandardWifiEntryKey(@NonNull ScanResultKey scanResultKey, boolean shouldUseScanFallback) {
+            this(scanResultKey, shouldUseScanFallback, UserHandle.of(
                     ActivityManager.getCurrentUser()));
         }
 
@@ -1215,14 +1216,15 @@ public class StandardWifiEntry extends WifiEntry {
          * Creates a StandardWifiEntryKey matching a WifiConfiguration
          */
         StandardWifiEntryKey(@NonNull WifiConfiguration config) {
-            this(config, false /* isTargetingNewNetworks */);
+            this(config, false /* shouldUseScanFallback */);
         }
 
         /**
          * Creates a StandardWifiEntryKey matching a WifiConfiguration and sets whether the entry
-         * should target new networks or not.
+         * should fall back to the scan security if the config security is out of range.
          */
-        StandardWifiEntryKey(@NonNull WifiConfiguration config, boolean isTargetingNewNetworks) {
+        StandardWifiEntryKey(@NonNull WifiConfiguration config,
+                boolean shouldUseScanFallback) {
             mScanResultKey = new ScanResultKey(config);
             if (config.fromWifiNetworkSuggestion) {
                 mSuggestionProfileKey = new StringJoiner(",")
@@ -1233,7 +1235,7 @@ public class StandardWifiEntry extends WifiEntry {
             } else if (config.fromWifiNetworkSpecifier) {
                 mIsNetworkRequest = true;
             }
-            mIsTargetingNewNetworks = isTargetingNewNetworks;
+            mShouldUseScanFallback = shouldUseScanFallback;
             mConfigOwner = Utils.getOwnerUserForWifiConfig(config);
         }
 
@@ -1257,9 +1259,9 @@ public class StandardWifiEntry extends WifiEntry {
                 if (keyJson.has(KEY_IS_NETWORK_REQUEST)) {
                     mIsNetworkRequest = keyJson.getBoolean(KEY_IS_NETWORK_REQUEST);
                 }
-                if (keyJson.has(KEY_IS_TARGETING_NEW_NETWORKS)) {
-                    mIsTargetingNewNetworks = keyJson.getBoolean(
-                            KEY_IS_TARGETING_NEW_NETWORKS);
+                if (keyJson.has(KEY_SHOULD_USE_SCAN_FALLBACK)) {
+                    mShouldUseScanFallback = keyJson.getBoolean(
+                            KEY_SHOULD_USE_SCAN_FALLBACK);
                 }
                 if (keyJson.has(KEY_CONFIG_OWNER)) {
                     mConfigOwner = UserHandle.of(keyJson.getInt(KEY_CONFIG_OWNER));
@@ -1287,8 +1289,9 @@ public class StandardWifiEntry extends WifiEntry {
                 if (mIsNetworkRequest) {
                     keyJson.put(KEY_IS_NETWORK_REQUEST, mIsNetworkRequest);
                 }
-                if (mIsTargetingNewNetworks) {
-                    keyJson.put(KEY_IS_TARGETING_NEW_NETWORKS, mIsTargetingNewNetworks);
+                if (mShouldUseScanFallback) {
+                    keyJson.put(KEY_SHOULD_USE_SCAN_FALLBACK,
+                            mShouldUseScanFallback);
                 }
                 keyJson.put(KEY_CONFIG_OWNER, mConfigOwner.getIdentifier());
             } catch (JSONException e) {
@@ -1312,8 +1315,8 @@ public class StandardWifiEntry extends WifiEntry {
             return mIsNetworkRequest;
         }
 
-        boolean isTargetingNewNetworks() {
-            return mIsTargetingNewNetworks;
+        boolean shouldUseScanFallback() {
+            return mShouldUseScanFallback;
         }
 
         @NonNull UserHandle getConfigOwner() {
@@ -1328,6 +1331,7 @@ public class StandardWifiEntry extends WifiEntry {
             return Objects.equals(mScanResultKey, that.mScanResultKey)
                     && TextUtils.equals(mSuggestionProfileKey, that.mSuggestionProfileKey)
                     && mIsNetworkRequest == that.mIsNetworkRequest
+                    && mShouldUseScanFallback == that.mShouldUseScanFallback
                     && Objects.equals(mConfigOwner, that.mConfigOwner);
         }
 

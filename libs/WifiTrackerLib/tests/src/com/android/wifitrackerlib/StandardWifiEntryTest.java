@@ -221,11 +221,11 @@ public class StandardWifiEntryTest {
     }
 
     /**
-     * Tests that the security is set to the security capabilities of the scan results if
-     * the entry is targeting new networks.
+     * Tests that the security is set to the security capabilities of the scan results if scan
+     * fallback is specified.
      */
     @Test
-    public void testConstructor_targetingNewSecurity_scanResultsSetSecurity() {
+    public void testConstructor_shouldUseScanFallback_scanResultsSetSecurity() {
         final ScanResult unsecureScan = buildScanResult("ssid", "bssid", 0, TestUtils.GOOD_RSSI);
         final ScanResult secureScan = buildScanResult("ssid", "bssid", 0, TestUtils.GOOD_RSSI);
         secureScan.capabilities = "EAP/SHA1";
@@ -233,13 +233,13 @@ public class StandardWifiEntryTest {
         final StandardWifiEntry unsecureEntry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Arrays.asList(unsecureScan), mMockWifiManager,
                 false /* forSavedNetworksPage */);
         final StandardWifiEntry secureEntry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Arrays.asList(secureScan), mMockWifiManager,
                 false /* forSavedNetworksPage */);
 
@@ -1700,9 +1700,9 @@ public class StandardWifiEntryTest {
         WifiConfiguration config = new WifiConfiguration();
         config.SSID = "\"ssid\"";
         config.setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN);
-        assertThat(new StandardWifiEntryKey(config, true /* isTargetingNewNetworks */))
+        assertThat(new StandardWifiEntryKey(config, true /* shouldUseScanFallback */))
                 .isEqualTo(new StandardWifiEntryKey(
-                        new ScanResultKey(config), true /* isTargetingNewNetworks */
+                        new ScanResultKey(config), true /* shouldUseScanFallback */
                 ));
     }
 
@@ -1712,9 +1712,9 @@ public class StandardWifiEntryTest {
                 createTestConfigForMultiUser(true /* isOwned */, false /* allowedToUpdate */);
 
         // Key created from the config should include the creator user handle.
-        assertThat(new StandardWifiEntryKey(config, true /* isTargetingNewNetworks */))
+        assertThat(new StandardWifiEntryKey(config, true /* shouldUseScanFallback */))
                 .isEqualTo(new StandardWifiEntryKey(
-                        new ScanResultKey(config), true /* isTargetingNewNetworks */,
+                        new ScanResultKey(config), true /* shouldUseScanFallback */,
                         UserHandle.getUserHandleForUid(config.creatorUid)));
     }
 
@@ -1725,7 +1725,7 @@ public class StandardWifiEntryTest {
         when(mockConfig.getProfileKey()).thenReturn("profileKey");
         mockConfig.fromWifiNetworkSpecifier = true;
         final StandardWifiEntryKey entryKey = new StandardWifiEntryKey(
-                mockConfig, true /* isTargetingNewNetworks */);
+                mockConfig, true /* shouldUseScanFallback */);
 
         assertThat(new StandardWifiEntryKey(entryKey.toString())).isEqualTo(entryKey);
     }
@@ -1746,7 +1746,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK,
-                        true /* isTargetingNewNetwork */),
+                        true /* shouldUseScanFallback */),
                 Collections.singletonList(pskConfig), Arrays.asList(pskScan, saeScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
 
@@ -1774,7 +1774,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Collections.singletonList(openScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
         ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
@@ -1794,7 +1794,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OWE,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Collections.singletonList(oweScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
         ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
@@ -1814,7 +1814,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Collections.singletonList(oweTransitionScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
         ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
@@ -1841,7 +1841,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Collections.singletonList(openScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
         ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
@@ -1865,7 +1865,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Collections.singletonList(oweScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
         ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
@@ -1889,7 +1889,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OWE,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Collections.singletonList(oweTransitionScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
         ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
@@ -1921,7 +1921,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
-                        true /* isTargetingNewNetworks */),
+                        true /* shouldUseScanFallback */),
                 null, Collections.singletonList(openScan),
                 mMockWifiManager, false /* forSavedNetworksPage */);
         ArgumentCaptor<WifiConfiguration> connectConfigCaptor =
@@ -1948,7 +1948,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_OPEN,
-                        true /* isTargetingNewNetwork */),
+                        true /* shouldUseScanFallback */),
                 Arrays.asList(openConfig, oweConfig), null,
                 mMockWifiManager, false /* forSavedNetworksPage */);
 
@@ -1968,7 +1968,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_PSK,
-                        true /* isTargetingNewNetwork */),
+                        true /* shouldUseScanFallback */),
                 Arrays.asList(pskConfig, saeConfig), null,
                 mMockWifiManager, false /* forSavedNetworksPage */);
 
@@ -1988,7 +1988,7 @@ public class StandardWifiEntryTest {
         StandardWifiEntry entry = new StandardWifiEntry(
                 mMockInjector, mTestHandler,
                 ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP,
-                        true /* isTargetingNewNetwork */),
+                        true /* shouldUseScanFallback */),
                 Arrays.asList(eapConfig, eapWpa3Config), null,
                 mMockWifiManager, false /* forSavedNetworksPage */);
 
