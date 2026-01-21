@@ -40,7 +40,7 @@
     <string name="wifitrackerlib_connected_via_app" msgid="7823921840931347560">"<xliff:g id="NAME">%1$s</xliff:g> ಆ್ಯಪ್ ಮೂಲಕ ಕನೆಕ್ಟ್ ಮಾಡಲಾಗಿದೆ"</string>
     <string name="wifitrackerlib_available_via_app" msgid="8556844256194837469">"<xliff:g id="NAME">%1$s</xliff:g> ಮೂಲಕ ಲಭ್ಯವಿದೆ"</string>
     <string name="wifitrackerlib_wifi_limited_connection" msgid="4234326409980991740">"ಸೀಮಿತ ಸಂಪರ್ಕ"</string>
-    <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ಖಾಸಗಿ DNS ಸರ್ವರ್ ಅನ್ನು ಪ್ರವೇಶಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ"</string>
+    <string name="wifitrackerlib_private_dns_broken" msgid="6049401148262718707">"ಖಾಸಗಿ DNS ಸರ್ವರ್ ಅನ್ನು ಆ್ಯಕ್ಸೆಸ್ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ"</string>
     <string name="wifitrackerlib_wifi_connected_cannot_provide_internet" msgid="3803471522215612745">"ಸಾಧನಕ್ಕೆ ಕನೆಕ್ಟ್ ಮಾಡಲಾಗಿದೆ. ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಒದಗಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ."</string>
     <string name="wifi_connected_low_quality" msgid="4478331645458058445">"ಕಳಪೆ ಕನೆಕ್ಷನ್"</string>
     <string name="wifi_connected_less_secure" msgid="2385231117439764954">"<xliff:g id="SECURITY_TYPE">%1$s</xliff:g> (ಕಡಿಮೆ ಸುರಕ್ಷಿತ)"</string>
