@@ -64,6 +64,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.security.Flags;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -621,8 +622,12 @@ public class StandardWifiEntry extends WifiEntry {
 
     @Override
     public synchronized boolean isAutoJoinEnabled() {
-        if (mTargetWifiConfig == null) {
-            return false;
+        if (mTargetWifiConfig == null) return false;
+
+        if (Flags.aapmFeatureDisableInsecureWifiAutojoin()) {
+            if (mIsAapmEnabled) {
+                return mTargetWifiConfig.isAutoJoinInAdvancedProtectionModeEnabled();
+            }
         }
 
         return mTargetWifiConfig.allowAutojoin;

@@ -70,6 +70,7 @@ import android.os.PersistableBundle;
 import android.os.test.TestLooper;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
+import android.security.advancedprotection.AdvancedProtectionManager;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -161,6 +162,7 @@ public class UtilsTest {
     @Mock private TelephonyManager mTelephonyManager;
     @Mock private CarrierConfigManager mCarrierConfigManager;
     @Mock private TelephonyManager mSpecifiedTm;
+    @Mock private AdvancedProtectionManager mAdvancedProtectionManager;
 
     private Handler mTestHandler;
 
@@ -236,6 +238,11 @@ public class UtilsTest {
                 .thenReturn(STRING_WEP_SECURITY);
         when(mMockContext.getString(R.string.wifi_connected_less_secure, STRING_WEP_SECURITY))
                 .thenReturn(STRING_WEP_SECURITY + " (" + STRING_CONNECTED_LESS_SECURE + ")");
+
+        when(mMockInjector.getContext()).thenReturn(mMockContext);
+        when(mMockContext.getSystemService(AdvancedProtectionManager.class))
+                .thenReturn(mAdvancedProtectionManager);
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(false);
     }
 
     @Test
@@ -286,6 +293,61 @@ public class UtilsTest {
         final String autoConnectDescription = getAutoConnectDescription(mMockContext, entry);
 
         assertThat(autoConnectDescription).isEqualTo(LABEL_AUTO_CONNECTION_DISABLED);
+    }
+
+    @Test
+    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin")
+    public void testAutoConnectDesc_aapmEnabled_insecureNetwork_overrideFalse_returnsDisabled() {
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(true);
+
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"open_network\"";
+        config.setSecurityParams(WifiInfo.SECURITY_TYPE_OPEN);
+        config.allowAutojoin = false;
+        config.setAutoJoinInAdvancedProtectionModeEnabled(false);
+
+        StandardWifiEntry entry = getStandardWifiEntry(config);
+
+        when(mMockContext.getString(R.string.wifitrackerlib_auto_connect_disable))
+                .thenReturn(LABEL_AUTO_CONNECTION_DISABLED);
+
+        String description = Utils.getAutoConnectDescription(mMockContext, entry);
+        assertThat(description).isEqualTo(LABEL_AUTO_CONNECTION_DISABLED);
+    }
+
+    @Test
+    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin")
+    public void testAutoConnectDescription_aapmEnabled_insecureNetwork_overrideTrue_returnsEmpty() {
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(true);
+
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"open_network\"";
+        config.setSecurityParams(WifiInfo.SECURITY_TYPE_OPEN);
+        config.allowAutojoin = true;
+        config.setAutoJoinInAdvancedProtectionModeEnabled(true); // User allowed it manually
+
+        StandardWifiEntry entry = getStandardWifiEntry(config);
+
+        String description = Utils.getAutoConnectDescription(mMockContext, entry);
+        assertThat(description).isEqualTo("");
+    }
+
+    @Test
+    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin")
+    public void testGetAutoConnectDescription_aapmEnabled_secureNetwork_ignoresAapm() {
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(true);
+        when(mMockContext.getString(R.string.wifitrackerlib_auto_connect_disable))
+                .thenReturn(LABEL_AUTO_CONNECTION_DISABLED);
+
+        WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"secure_network\"";
+        config.setSecurityParams(WifiInfo.SECURITY_TYPE_PSK);
+        config.allowAutojoin = true;
+
+        StandardWifiEntry entry = getStandardWifiEntry(config);
+
+        String description = Utils.getAutoConnectDescription(mMockContext, entry);
+        assertThat(description).isEqualTo("");
     }
 
     @Test

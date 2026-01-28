@@ -76,6 +76,11 @@ import android.os.Handler;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.test.TestLooper;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
+import android.security.Flags;
+import android.security.advancedprotection.AdvancedProtectionManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -87,6 +92,7 @@ import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -117,6 +123,7 @@ public class StandardWifiEntryTest {
     @Mock private Resources mMockResources;
     @Mock private UserManager mUserManager;
     @Mock private DevicePolicyManager mDevicePolicyManager;
+    @Mock private AdvancedProtectionManager mAdvancedProtectionManager;
 
     private TestLooper mTestLooper;
     private Handler mTestHandler;
@@ -127,6 +134,8 @@ public class StandardWifiEntryTest {
     private static final int TEST_OTHER_USER = 1;
     private static final int TEST_OTHER_USER_UID = 100_000;
     private static final int MANAGED_PROFILE_UID = 1100000;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Before
     public void setUp() {
@@ -174,6 +183,11 @@ public class StandardWifiEntryTest {
         when(mMockInjector.getUserManager()).thenReturn(mUserManager);
         when(mMockInjector.getDevicePolicyManager()).thenReturn(mDevicePolicyManager);
         when(ActivityManager.getCurrentUser()).thenReturn(TEST_CURRENT_USER);
+
+        when(mMockInjector.getContext()).thenReturn(mMockContext);
+        when(mMockContext.getSystemService(AdvancedProtectionManager.class))
+                .thenReturn(mAdvancedProtectionManager);
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(false);
     }
 
     @After
@@ -2320,5 +2334,110 @@ public class StandardWifiEntryTest {
         // Advance clock just past the timeout. Level should now be unreachable.
         when(mClock.millis()).thenReturn(WifiEntry.LAST_CONNECTED_SIGNAL_LEVEL_TIMEOUT_MS + 1);
         assertThat(entry.getLevel()).isEqualTo(WifiEntry.WIFI_LEVEL_UNREACHABLE);
+    }
+
+    @Test
+    public void testIsAutoJoinEnabled_nullConfig_returnsFalse() {
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                ssidAndSecurityTypeToStandardWifiEntryKey("ssid", SECURITY_TYPE_EAP),
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        // No config set yet
+        assertThat(entry.isAutoJoinEnabled()).isFalse();
+    }
+
+    @Test
+    @DisableFlags(Flags.FLAG_AAPM_FEATURE_DISABLE_INSECURE_WIFI_AUTOJOIN)
+    public void testIsAutoJoinEnabled_flagDisabled_returnsConfigAllowAutojoin() {
+        // Setup a config where allowAutojoin is true
+        WifiConfiguration config = spy(new WifiConfiguration());
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        config.allowAutojoin = true;
+
+        // Mock the AAPM check to return false (restriction active),
+        // ensuring we ignore it because the flag is disabled.
+        doReturn(false).when(config).isAutoJoinInAdvancedProtectionModeEnabled();
+
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        // Enable AAPM on the entry
+        entry.updateAapmState(true);
+
+        // Should return true because flag is disabled, so we use config.allowAutojoin
+        assertThat(entry.isAutoJoinEnabled()).isTrue();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_AAPM_FEATURE_DISABLE_INSECURE_WIFI_AUTOJOIN)
+    public void testIsAutoJoinEnabled_flagEnabled_aapmOff_returnsConfigAllowAutojoin() {
+        WifiConfiguration config = spy(new WifiConfiguration());
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        config.allowAutojoin = true;
+
+        // Restriction is active on the config
+        doReturn(false).when(config).isAutoJoinInAdvancedProtectionModeEnabled();
+
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        // Disable AAPM on the entry
+        entry.updateAapmState(false);
+
+        // Should return true because AAPM is off, so we use config.allowAutojoin
+        assertThat(entry.isAutoJoinEnabled()).isTrue();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_AAPM_FEATURE_DISABLE_INSECURE_WIFI_AUTOJOIN)
+    public void testIsAutoJoinEnabled_flagEnabled_aapmOn_restrictedConfig_returnsFalse() {
+        WifiConfiguration config = spy(new WifiConfiguration());
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        config.allowAutojoin = true; // Standard autojoin is allowed
+
+        // But AAPM restriction says NO
+        doReturn(false).when(config).isAutoJoinInAdvancedProtectionModeEnabled();
+
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        // Enable AAPM on the entry
+        entry.updateAapmState(true);
+
+        // Should return false because Flag is ON, AAPM is ON, and config is restricted
+        assertThat(entry.isAutoJoinEnabled()).isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_AAPM_FEATURE_DISABLE_INSECURE_WIFI_AUTOJOIN)
+    public void testIsAutoJoinEnabled_flagEnabled_aapmOn_allowedConfig_returnsTrue() {
+        WifiConfiguration config = spy(new WifiConfiguration());
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        config.allowAutojoin = true;
+
+        // AAPM restriction says YES (Allowed)
+        doReturn(true).when(config).isAutoJoinInAdvancedProtectionModeEnabled();
+
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        // Enable AAPM on the entry
+        entry.updateAapmState(true);
+
+        // Should return true
+        assertThat(entry.isAutoJoinEnabled()).isTrue();
     }
 }

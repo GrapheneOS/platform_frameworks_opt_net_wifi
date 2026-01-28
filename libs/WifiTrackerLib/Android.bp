@@ -24,6 +24,7 @@ android_library {
     defaults: ["WifiTrackerLibDefaults"],
     libs: [
         "android.net.wifi.flags-aconfig-java",
+        "android.security.flags-aconfig-java",
     ],
     static_libs: [
         "wifi_aconfig_flags_lib",
@@ -40,6 +41,10 @@ android_library {
     defaults: ["WifiTrackerLibDefaults"],
     srcs: ["sdk_src/**/NonSdkApiWrapper.java"],
     exclude_srcs: ["src/**/NonSdkApiWrapper.java"],
+
+    libs: [
+        "android.security.flags-aconfig-java",
+    ],
 
     sdk_version: "system_current",
     lint: {

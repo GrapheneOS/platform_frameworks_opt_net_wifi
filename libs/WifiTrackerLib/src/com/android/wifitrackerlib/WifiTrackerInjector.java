@@ -23,6 +23,8 @@ import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.UserManager;
+import android.security.Flags;
+import android.security.advancedprotection.AdvancedProtectionManager;
 import android.util.ArraySet;
 
 import androidx.annotation.AnyThread;
@@ -50,6 +52,8 @@ public class WifiTrackerInjector {
     private volatile boolean mCachedWifiManagerVerboseLoggingValue = false;
     private volatile boolean mIsVerboseLoggingEnabledForUserdebug;
     private volatile boolean mIsVerboseLoggingDisabledByClient = false;
+    @Nullable private final AdvancedProtectionManager mAapmManager;
+    private boolean mIsAapmEnabled = false;
 
     // TODO(b/201571677): Migrate the rest of the common objects to WifiTrackerInjector.
     WifiTrackerInjector(@NonNull Context context, Clock clock) {
@@ -69,6 +73,17 @@ public class WifiTrackerInjector {
         mIsVerboseLoggingEnabledForUserdebug = res.getBoolean(
                 R.bool.wifitrackerlib_enable_verbose_logging_for_userdebug)
                 && Build.TYPE.equals("userdebug");
+
+        // TODO(b/477286489): Update to Build.VERSION.SDK_INT > Build.VERSION_CODES.BAKLAVA
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                && Flags.aapmFeatureDisableInsecureWifiAutojoin()) {
+            mAapmManager = mContext.getSystemService(AdvancedProtectionManager.class);
+            if (mAapmManager != null) {
+                mIsAapmEnabled = mAapmManager.isAdvancedProtectionEnabled();
+            }
+        } else {
+            mAapmManager = null;
+        }
     }
 
     @NonNull Context getContext() {
@@ -166,5 +181,13 @@ public class WifiTrackerInjector {
      */
     public boolean isAtLeastB() {
         return Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM;
+    }
+
+    public boolean isAapmEnabled() {
+        return mIsAapmEnabled;
+    }
+
+    public void setAapmEnabled(boolean isEnabled) {
+        mIsAapmEnabled = isEnabled;
     }
 }

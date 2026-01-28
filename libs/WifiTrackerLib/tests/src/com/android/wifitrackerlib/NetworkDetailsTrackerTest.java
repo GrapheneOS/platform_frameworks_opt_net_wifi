@@ -34,6 +34,7 @@ import android.net.wifi.sharedconnectivity.app.HotspotNetwork;
 import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo;
 import android.os.Handler;
 import android.os.test.TestLooper;
+import android.security.advancedprotection.AdvancedProtectionManager;
 
 import androidx.lifecycle.Lifecycle;
 
@@ -60,6 +61,7 @@ public class NetworkDetailsTrackerTest {
     @Mock private WifiManager mMockWifiManager;
     @Mock private ConnectivityManager mMockConnectivityManager;
     @Mock private Clock mMockClock;
+    @Mock private AdvancedProtectionManager mAdvancedProtectionManager;
 
     private TestLooper mTestLooper;
 
@@ -90,6 +92,11 @@ public class NetworkDetailsTrackerTest {
         when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
         when(mMockClock.millis()).thenReturn(START_MILLIS);
         when(mMockContext.getResources()).thenReturn(mResources);
+
+        when(mInjector.getContext()).thenReturn(mMockContext);
+        when(mMockContext.getSystemService(AdvancedProtectionManager.class))
+                .thenReturn(mAdvancedProtectionManager);
+        when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(false);
     }
 
     /**

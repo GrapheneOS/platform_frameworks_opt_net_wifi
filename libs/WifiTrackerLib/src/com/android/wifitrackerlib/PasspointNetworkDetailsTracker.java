@@ -266,6 +266,12 @@ public class PasspointNetworkDetailsTracker extends NetworkDetailsTracker {
         updateOsuWifiEntryScans(currentScans);
     }
 
+    @Override
+    @WorkerThread
+    protected List<WifiEntry> getAllWifiEntries() {
+        return Collections.singletonList(mChosenEntry);
+    }
+
     /**
      * Updates the tracked entry's PasspointConfiguration from getPasspointConfigurations()
      */
