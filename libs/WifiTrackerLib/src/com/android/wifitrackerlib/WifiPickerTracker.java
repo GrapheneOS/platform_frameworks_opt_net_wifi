@@ -604,14 +604,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
                         hotspotNetworkEntry.getHotspotNetworkEntryKey().getScanResultKey());
             }
         }
-        final UserHandle currentUser = UserHandle.of(ActivityManager.getCurrentUser());
-        final Set<ScanResultKey> sharedNetworkScanResultKeys = new ArraySet<>();
-        for (StandardWifiEntry entry : mStandardWifiEntryCache) {
-            StandardWifiEntryKey key = entry.getStandardWifiEntryKey();
-            if (!key.getConfigOwner().equals(currentUser)) {
-                sharedNetworkScanResultKeys.add(key.getScanResultKey());
-            }
-        }
         Set<ScanResultKey> savedEntryKeys = new ArraySet<>();
         for (StandardWifiEntry entry : mStandardWifiEntryCache) {
             entry.updateAdminRestrictions();
@@ -629,12 +621,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 }
                 // Filter out any unsaved entries that are matched with a KnownNetworkEntry
                 if (knownNetworkKeys.contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
-                    continue;
-                }
-                // Don't show an unsaved network for the current user to configure if we already
-                // have a saved shared network from a different user.
-                if (sharedNetworkScanResultKeys.contains(
-                        entry.getStandardWifiEntryKey().getScanResultKey())) {
                     continue;
                 }
             } else {
@@ -791,64 +777,56 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     private void updateStandardWifiEntryScans(@NonNull List<ScanResult> scanResults) {
         checkNotNull(scanResults, "Scan Result list should not be null!");
-        UserHandle currentUser = UserHandle.of(ActivityManager.getCurrentUser());
 
         // Group scans by ScanResultKey key
         final Map<ScanResultKey, List<ScanResult>> scanResultsByKey = scanResults.stream()
                 .filter(scan -> !TextUtils.isEmpty(scan.SSID))
                 .collect(Collectors.groupingBy(ScanResultKey::new));
-        final Set<ScanResultKey> newScanKeys = new ArraySet<>(scanResultsByKey.keySet());
-        final Set<StandardWifiEntryKey> existingNonOwnedEntries = new ArraySet<>();
+        final Set<StandardWifiEntryKey> seenKeys = new ArraySet<>();
+        final Set<ScanResultKey> remainingScanKeys = new ArraySet<>(scanResultsByKey.keySet());
 
-        // Iterate through current entries and update each entry's scan results
-        mStandardWifiEntryCache.forEach(entry -> {
-            StandardWifiEntryKey key = entry.getStandardWifiEntryKey();
-            final ScanResultKey scanKey = key.getScanResultKey();
-            newScanKeys.remove(scanKey);
-            // Update scan results if available, or set to null.
+        // Update every existing entry's scan results and remove if they are now unreachable.
+        mStandardWifiEntryCache.removeIf(entry -> {
+            seenKeys.add(entry.getStandardWifiEntryKey());
+
+            ScanResultKey scanKey = entry.getStandardWifiEntryKey().getScanResultKey();
             entry.updateScanResultInfo(scanResultsByKey.get(scanKey));
+            remainingScanKeys.remove(scanKey);
 
-            if (!key.getConfigOwner().equals(currentUser)) {
-                existingNonOwnedEntries.add(key);
-            }
+            return entry.getLevel() == WIFI_LEVEL_UNREACHABLE;
         });
-        // Create new StandardWifiEntry objects for each leftover group of scan results.
-        for (ScanResultKey scanKey: newScanKeys) {
-            final StandardWifiEntryKey entryKey =
-                    new StandardWifiEntryKey(scanKey, true /* isTargetingNewNetworks */);
-            final StandardWifiEntry newEntry = new StandardWifiEntry(mInjector,
-                    mMainHandler, entryKey, mStandardWifiConfigCache.get(entryKey),
-                    scanResultsByKey.get(scanKey), mWifiManager,
-                    false /* forSavedNetworksPage */);
-            mStandardWifiEntryCache.add(newEntry);
-        }
 
-        // Create new entries for shared configs that aren't owned by the current user and don't
-        // already exist.
+        // Create new entries for each WifiConfig that has scan results
         for (StandardWifiEntryKey key : mStandardWifiConfigCache.keySet()) {
-            // Skip if the entry belongs to the current user
-            if (key.getConfigOwner().equals(currentUser)) continue;
-            // Skip if the entry already exists.
-            if (existingNonOwnedEntries.contains(key)) continue;
-            existingNonOwnedEntries.add(key);
+            // Skip if this config already has an entry
+            if (seenKeys.contains(key)) continue;
 
-            final StandardWifiEntry nonOwnedEntry = new StandardWifiEntry(mInjector,
-                    mMainHandler, key, mStandardWifiConfigCache.get(key),
-                    scanResultsByKey.get(key.getScanResultKey()), mWifiManager,
-                    false /* forSavedNetworksPage */);
+            // Skip if no scans for this config
+            ScanResultKey scanKey = key.getScanResultKey();
+            if (!scanResultsByKey.containsKey(scanKey)) continue;
 
-            // If the current scan results match by security family but the config cannot be used
-            // to connect (i.e. config is SAE but scan results are PSK-only), then this will be
-            // represented as an unsaved entry. In this case, don't add them to the entry cache.
-            if (!nonOwnedEntry.isSaved()) continue;
+            StandardWifiEntry entry = new StandardWifiEntry(mInjector, mMainHandler, key,
+                    /* configs */ mStandardWifiConfigCache.get(key),
+                    scanResultsByKey.get(scanKey), mWifiManager, /* forSavedNetworksPage */ false);
 
-            mStandardWifiEntryCache.add(nonOwnedEntry);
+            // In some cases, no scan results apply to the given entry (e.g. SAE config but PSK
+            // scans). In this case, the entry should be skipped.
+            if (entry.getLevel() == WIFI_LEVEL_UNREACHABLE) continue;
+
+            mStandardWifiEntryCache.add(entry);
+            remainingScanKeys.remove(key.getScanResultKey());
         }
 
-        // Remove any entry that is now unreachable due to no scans or unsupported
-        // security types.
-        mStandardWifiEntryCache.removeIf(
-                entry -> entry.getLevel() == WIFI_LEVEL_UNREACHABLE);
+        // Create new unsaved entries from the remaining scan results that we don't have an existing
+        // entry for.
+        for (ScanResultKey scanKey : remainingScanKeys) {
+            StandardWifiEntry entry = new StandardWifiEntry(mInjector, mMainHandler,
+                    new StandardWifiEntryKey(scanKey, /* shouldUseScanFallback */ true),
+                    /* configs */ null, scanResultsByKey.get(scanKey), mWifiManager,
+                    /* forSavedNetworksPage */ false);
+
+            mStandardWifiEntryCache.add(entry);
+        }
     }
 
     /**
@@ -1049,7 +1027,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
         // Create new KnownNetworkEntry objects for each leftover group of scan results.
         for (ScanResultKey scanKey : newScanKeys) {
             final StandardWifiEntryKey entryKey =
-                    new StandardWifiEntryKey(scanKey, true /* isTargetingNewNetworks */);
+                    new StandardWifiEntryKey(scanKey, false /* shouldUseScanFallback */);
             final KnownNetworkEntry newEntry = new KnownNetworkEntry(mInjector,
                     mMainHandler, entryKey, null /* configs */,
                     scanResultsByKey.get(scanKey), mWifiManager,
@@ -1190,21 +1168,35 @@ public class WifiPickerTracker extends BaseWifiTracker {
             if (config.carrierMerged) {
                 continue;
             }
-            StandardWifiEntryKey standardWifiEntryKey =
-                    new StandardWifiEntryKey(config, true /* isTargetingNewNetworks */);
+
             if (config.isPasspoint()) {
                 mPasspointWifiConfigCache.put(config.networkId, config);
             } else if (config.fromWifiNetworkSuggestion) {
-                if (!mSuggestedConfigCache.containsKey(standardWifiEntryKey)) {
-                    mSuggestedConfigCache.put(standardWifiEntryKey, new ArrayList<>());
+                StandardWifiEntryKey suggestionWifiEntryKey =
+                        new StandardWifiEntryKey(config, false /* shouldUseScanFallback */);
+                if (!mSuggestedConfigCache.containsKey(suggestionWifiEntryKey)) {
+                    mSuggestedConfigCache.put(suggestionWifiEntryKey, new ArrayList<>());
                 }
-                mSuggestedConfigCache.get(standardWifiEntryKey).add(config);
+                mSuggestedConfigCache.get(suggestionWifiEntryKey).add(config);
             } else if (config.fromWifiNetworkSpecifier) {
-                if (!mNetworkRequestConfigCache.containsKey(standardWifiEntryKey)) {
-                    mNetworkRequestConfigCache.put(standardWifiEntryKey, new ArrayList<>());
+                StandardWifiEntryKey networkSpecifierWifiEntryKey =
+                        new StandardWifiEntryKey(config, false /* shouldUseScanFallback */);
+                if (!mNetworkRequestConfigCache.containsKey(networkSpecifierWifiEntryKey)) {
+                    mNetworkRequestConfigCache.put(networkSpecifierWifiEntryKey, new ArrayList<>());
                 }
-                mNetworkRequestConfigCache.get(standardWifiEntryKey).add(config);
+                mNetworkRequestConfigCache.get(networkSpecifierWifiEntryKey).add(config);
             } else {
+                boolean shouldUseScanFallback = true;
+
+                // Entries for configs not owned by the current user should strictly match the
+                // scans/security of the config.
+                if (!Utils.getOwnerUserForWifiConfig(config)
+                        .equals(UserHandle.of(ActivityManager.getCurrentUser()))) {
+                    shouldUseScanFallback = false;
+                }
+
+                StandardWifiEntryKey standardWifiEntryKey =
+                        new StandardWifiEntryKey(config, shouldUseScanFallback);
                 if (!mStandardWifiConfigCache.containsKey(standardWifiEntryKey)) {
                     mStandardWifiConfigCache.put(standardWifiEntryKey, new ArrayList<>());
                 }
@@ -1352,8 +1344,19 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     .count() == 0) {
                 continue;
             }
-            final StandardWifiEntryKey entryKey =
-                    new StandardWifiEntryKey(configs.get(0), true /* isTargetingNewNetworks */);
+
+            boolean shouldUseScanFallback = true;
+
+            // Entries for configs not owned by the current user should strictly match the
+            // scans/security of the config.
+            WifiConfiguration targetConfig = configs.get(0);
+            if (!Utils.getOwnerUserForWifiConfig(targetConfig)
+                    .equals(UserHandle.of(ActivityManager.getCurrentUser()))) {
+                shouldUseScanFallback = false;
+            }
+
+            StandardWifiEntryKey entryKey =
+                    new StandardWifiEntryKey(targetConfig, shouldUseScanFallback);
             for (StandardWifiEntry existingEntry : mStandardWifiEntryCache) {
                 if (entryKey.equals(existingEntry.getStandardWifiEntryKey())) {
                     return;
@@ -1382,7 +1385,7 @@ public class WifiPickerTracker extends BaseWifiTracker {
                 continue;
             }
             final StandardWifiEntryKey entryKey =
-                    new StandardWifiEntryKey(configs.get(0), true /* isTargetingNewNetworks */);
+                    new StandardWifiEntryKey(configs.get(0), false /* shouldUseScanFallback */);
             for (StandardWifiEntry existingEntry : mSuggestedWifiEntryCache) {
                 if (entryKey.equals(existingEntry.getStandardWifiEntryKey())) {
                     return;
