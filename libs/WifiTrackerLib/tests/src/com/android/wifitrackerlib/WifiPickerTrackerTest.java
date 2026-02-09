@@ -1170,6 +1170,49 @@ public class WifiPickerTrackerTest {
     }
 
     /**
+     * Tests that the connected WifiEntry is discovered if it was already connected before
+     * WiFi state changed to enabled.
+     */
+    @Test
+    public void testGetConnectedEntry_connectedBeforeWifiEnabled_returnsConnectedEntry() {
+        final WifiPickerTracker wifiPickerTracker = createTestWifiPickerTracker();
+        final WifiConfiguration config = new WifiConfiguration();
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        when(mMockWifiManager.getPrivilegedConfiguredNetworks())
+                .thenReturn(Collections.singletonList(config));
+
+        // Simulate connection being established (e.g. by another process or during enabling)
+        when(mMockWifiManager.getCurrentNetwork()).thenReturn(mMockNetwork);
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getRssi()).thenReturn(-50);
+        when(mMockWifiInfo.getSupplicantState()).thenReturn(SupplicantState.COMPLETED);
+        when(mMockWifiInfo.isPrimary()).thenReturn(true);
+        when(mMockWifiManager.getConnectionInfo()).thenReturn(mMockWifiInfo);
+        doReturn(true).when(() -> NonSdkApiWrapper.isPrimary(any()));
+
+        // WiFi is disabled initially
+        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_DISABLED);
+        wifiPickerTracker.onStart();
+        mTestLooper.dispatchAll();
+
+        verify(mMockContext).registerReceiver(mBroadcastReceiverCaptor.capture(),
+                any(), any(), any());
+
+        // WiFi state changes to ENABLED
+        when(mMockWifiManager.getWifiState()).thenReturn(WifiManager.WIFI_STATE_ENABLED);
+        Intent intent = new Intent(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        intent.putExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_ENABLED);
+        mBroadcastReceiverCaptor.getValue().onReceive(mMockContext, intent);
+        mTestLooper.dispatchAll();
+
+        assertThat(wifiPickerTracker.getConnectedWifiEntry()).isNotNull();
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getTitle()).isEqualTo("ssid");
+        assertThat(wifiPickerTracker.getConnectedWifiEntry().getConnectedState())
+                .isEqualTo(CONNECTED_STATE_CONNECTED);
+    }
+
+    /**
      * Tests that a connected WifiEntry's isDefaultNetwork() will reflect updates from the default
      * network changing.
      */

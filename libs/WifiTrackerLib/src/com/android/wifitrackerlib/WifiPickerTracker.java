@@ -291,6 +291,23 @@ public class WifiPickerTracker extends BaseWifiTracker {
     @WorkerThread
     @Override
     protected void handleOnStart() {
+        initializeState();
+    }
+
+    @WorkerThread
+    @Override
+    protected void handleWifiStateChangedAction() {
+        final int wifiState = getWifiState();
+        if (wifiState == WifiManager.WIFI_STATE_DISABLED) {
+            clearAllWifiEntries();
+            updateWifiEntries();
+        } else if (wifiState == WifiManager.WIFI_STATE_ENABLED) {
+            initializeState();
+        }
+    }
+
+    @WorkerThread
+    private void initializeState() {
         updateWifiConfigurationsInternal();
         updatePasspointConfigurations(mWifiManager.getPasspointConfigurations());
 
@@ -328,15 +345,6 @@ public class WifiPickerTracker extends BaseWifiTracker {
 
         notifyOnNumSavedNetworksChanged();
         notifyOnNumSavedSubscriptionsChanged();
-        updateWifiEntries();
-    }
-
-    @WorkerThread
-    @Override
-    protected void handleWifiStateChangedAction() {
-        if (getWifiState() == WifiManager.WIFI_STATE_DISABLED) {
-            clearAllWifiEntries();
-        }
         updateWifiEntries();
     }
 
