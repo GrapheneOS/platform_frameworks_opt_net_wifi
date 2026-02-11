@@ -24,6 +24,7 @@ import static com.android.wifitrackerlib.Utils.getNetworkPart;
 import static com.android.wifitrackerlib.Utils.getSingleSecurityTypeFromMultipleSecurityTypes;
 
 import android.content.Context;
+import android.icu.text.Collator;
 import android.net.ConnectivityDiagnosticsManager;
 import android.net.ConnectivityManager;
 import android.net.LinkAddress;
@@ -78,6 +79,9 @@ public class WifiEntry {
     public static final String TAG = "WifiEntry";
 
     private static final int MAX_UNDERLYING_NETWORK_DEPTH = 5;
+
+    private static final Collator COLLATOR = Collator.getInstance();
+
 
     @VisibleForTesting
     static final long LAST_CONNECTED_SIGNAL_LEVEL_TIMEOUT_MS = 25_000;
@@ -233,13 +237,13 @@ public class WifiEntry {
                     .thenComparing((WifiEntry entry) -> !entry.isSaved())
                     .thenComparing((WifiEntry entry) -> !entry.isSuggestion())
                     .thenComparing((WifiEntry entry) -> -entry.getLevel())
-                    .thenComparing((WifiEntry entry) -> entry.getTitle());
+                    .thenComparing(WifiEntry::getTitle, COLLATOR);
 
     /**
      * Default comparator for sorting WifiEntries by title.
      */
     public static Comparator<WifiEntry> TITLE_COMPARATOR =
-            Comparator.comparing((WifiEntry entry) -> entry.getTitle());
+            Comparator.comparing(WifiEntry::getTitle, COLLATOR);
 
     protected final boolean mForSavedNetworksPage;
 
