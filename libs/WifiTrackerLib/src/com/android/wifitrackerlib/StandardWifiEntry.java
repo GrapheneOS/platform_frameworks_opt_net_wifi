@@ -621,6 +621,7 @@ public class StandardWifiEntry extends WifiEntry {
     }
 
     @Override
+    @SuppressLint("NewApi")
     public synchronized boolean isAutoJoinEnabled() {
         if (mTargetWifiConfig == null) return false;
 
