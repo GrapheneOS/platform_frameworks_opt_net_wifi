@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
-
+<issues
+    format="6"
+    by="lint 8.4.0-alpha08"
+    type="baseline"
+    client=""
+    dependencies="true"
+    name=""
+    variant="all"
+    version="8.4.0-alpha08">
     <issue
         id="NewApi"
         message="Field requires API level 37.1 (current min is 31): `android.net.wifi.WifiConfiguration#allowAutojoin`"
@@ -87,6 +94,28 @@
             file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/StandardWifiEntry.java"
             line="775"
             column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 37): `android.net.wifi.MloLink#getMaxSupportedTxLinkSpeedMbps`"
+        errorLine1="                        ? link.getMaxSupportedTxLinkSpeedMbps()"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="1274"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 37): `android.net.wifi.MloLink#getMaxSupportedRxLinkSpeedMbps`"
+        errorLine1="                        : link.getMaxSupportedRxLinkSpeedMbps();"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/opt/net/wifi/libs/WifiTrackerLib/src/com/android/wifitrackerlib/Utils.java"
+            line="1275"
+            column="32"/>
     </issue>
 
 </issues>
