@@ -80,7 +80,7 @@ public class WifiEntry {
 
     private static final int MAX_UNDERLYING_NETWORK_DEPTH = 5;
 
-    private static final Collator COLLATOR = Collator.getInstance();
+    private static final Collator COLLATOR = Collator.getInstance().freeze();
 
 
     @VisibleForTesting
