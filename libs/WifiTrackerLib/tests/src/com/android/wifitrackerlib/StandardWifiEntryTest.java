@@ -2440,4 +2440,44 @@ public class StandardWifiEntryTest {
         // Should return true
         assertThat(entry.isAutoJoinEnabled()).isTrue();
     }
+
+    /**
+     * Tests that an Unsaved entry will trigger its ConnectCallback if it matches a connection
+     * by SSID and Security, even if the primary matching fails (e.g. during an Unsaved -> Shared
+     * Saved transition where the key changes).
+     */
+    @Test
+    public void testOnNetworkCapabilitiesChanged_ssidAndSecurityMatches_triggersConnectCallback() {
+        ScanResult scan = buildScanResult("ssid", "bssid0", 0, TestUtils.GOOD_RSSI);
+        final StandardWifiEntryKey entryKey = new StandardWifiEntryKey(new ScanResultKey(scan),
+                /* shouldUseScanFallback */ true);
+        final StandardWifiEntry entry = new StandardWifiEntry(mMockInjector, mTestHandler, entryKey,
+                null, List.of(scan), mMockWifiManager, false /* forSavedNetworksPage */);
+        final WifiEntry.ConnectCallback mockCallback = mock(WifiEntry.ConnectCallback.class);
+
+        // Start a connection on the unsaved entry.
+        entry.connect(mockCallback);
+
+        // WifiManager.connect() ActionListener sets mCalledConnect upon success
+        final ArgumentCaptor<WifiManager.ActionListener> actionListener =
+                ArgumentCaptor.forClass(WifiManager.ActionListener.class);
+        verify(mMockWifiManager).connect(any(), actionListener.capture());
+        actionListener.getValue().onSuccess();
+
+        // Non-matching security type should be ignored
+        when(mMockWifiInfo.getSSID()).thenReturn("\"ssid\"");
+        when(mMockWifiInfo.getNetworkId()).thenReturn(1);
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_PSK);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        mTestLooper.dispatchAll();
+
+        verify(mockCallback, never()).onConnectResult(anyInt());
+
+        // Matching security type should trigger CONNECT_STATUS_SUCCESS
+        when(mMockWifiInfo.getCurrentSecurityType()).thenReturn(SECURITY_TYPE_OPEN);
+        entry.onNetworkCapabilitiesChanged(mMockNetwork, mMockNetworkCapabilities);
+        mTestLooper.dispatchAll();
+
+        verify(mockCallback).onConnectResult(WifiEntry.ConnectCallback.CONNECT_STATUS_SUCCESS);
+    }
 }
