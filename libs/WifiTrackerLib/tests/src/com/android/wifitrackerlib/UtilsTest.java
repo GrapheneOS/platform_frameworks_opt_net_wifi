@@ -296,7 +296,7 @@ public class UtilsTest {
     }
 
     @Test
-    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin")
+    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin_v2")
     public void testAutoConnectDesc_aapmEnabled_insecureNetwork_overrideFalse_returnsDisabled() {
         when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(true);
 
@@ -316,7 +316,7 @@ public class UtilsTest {
     }
 
     @Test
-    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin")
+    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin_v2")
     public void testAutoConnectDescription_aapmEnabled_insecureNetwork_overrideTrue_returnsEmpty() {
         when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(true);
 
@@ -333,7 +333,7 @@ public class UtilsTest {
     }
 
     @Test
-    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin")
+    @EnableFlags("android.security.aapm_feature_disable_insecure_wifi_autojoin_v2")
     public void testGetAutoConnectDescription_aapmEnabled_secureNetwork_ignoresAapm() {
         when(mAdvancedProtectionManager.isAdvancedProtectionEnabled()).thenReturn(true);
         when(mMockContext.getString(R.string.wifitrackerlib_auto_connect_disable))
