@@ -2441,6 +2441,30 @@ public class StandardWifiEntryTest {
         assertThat(entry.isAutoJoinEnabled()).isTrue();
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_AAPM_FEATURE_DISABLE_INSECURE_WIFI_AUTOJOIN)
+    public void testIsAutoJoinEnabled_aapmOn_allowedByAapmButDisabledByUser_returnsFalse() {
+        WifiConfiguration config = spy(new WifiConfiguration());
+        config.SSID = "\"ssid\"";
+        config.networkId = 1;
+        // User/System has disabled autojoin for this network
+        config.allowAutojoin = false;
+
+        // AAPM logic says this network is secure enough to autojoin
+        doReturn(true).when(config).isAutoJoinInAdvancedProtectionModeEnabled();
+
+        StandardWifiEntry entry = new StandardWifiEntry(
+                mMockInjector, mTestHandler,
+                new StandardWifiEntryKey(config), Collections.singletonList(config), null,
+                mMockWifiManager, false /* forSavedNetworksPage */);
+
+        // Enable AAPM state on the entry
+        entry.updateAapmState(true);
+
+        // Should return false
+        assertThat(entry.isAutoJoinEnabled()).isFalse();
+    }
+
     /**
      * Tests that an Unsaved entry will trigger its ConnectCallback if it matches a connection
      * by SSID and Security, even if the primary matching fails (e.g. during an Unsaved -> Shared
