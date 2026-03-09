@@ -63,6 +63,7 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
+import java.lang.ref.WeakReference;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,6 +103,8 @@ public class BaseWifiTracker {
     private volatile boolean mIsInitialized = false;
     private volatile boolean mIsScanningDisabled = false;
     private final WifiManager.WifiVerboseLoggingStatusChangedListener mVerboseLoggingListener;
+
+    private final WeakReference<Lifecycle> mLifecycle;
 
     @Nullable protected AdvancedProtectionManager mAapmManager;
 
@@ -355,6 +358,7 @@ public class BaseWifiTracker {
         mScanResultUpdater = new ScanResultUpdater(clock, maxScanAgeMillis);
         mScanner = new BaseWifiTracker.Scanner(workerHandler.getLooper());
 
+        mLifecycle = new WeakReference<>(lifecycle);
         if (lifecycle != null) { // Need to add after constructor completes.
             mMainHandler.post(() -> lifecycle.addObserver(mLifecycleObserver));
         }
@@ -495,6 +499,18 @@ public class BaseWifiTracker {
         } catch (IllegalArgumentException e) {
             // Not registered yet, possibly due to a client manually calling onStop() to clean up
             // state outside of the lifecycle events, such as upon user switching.
+        }
+    }
+
+    /**
+     * Closes the WifiTracker and cleans up resources.
+     * This method should be called when the WifiTracker is no longer needed.
+     */
+    public void close() {
+        onStop();
+        Lifecycle lifecycle = mLifecycle.get();
+        if (lifecycle != null) {
+            mMainHandler.post(() -> lifecycle.removeObserver(mLifecycleObserver));
         }
     }
 
