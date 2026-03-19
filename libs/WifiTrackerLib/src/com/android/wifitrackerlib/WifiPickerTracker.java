@@ -612,25 +612,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
                         hotspotNetworkEntry.getHotspotNetworkEntryKey().getScanResultKey());
             }
         }
-
-        // Gather all saved keys for filtering.
         Set<ScanResultKey> savedEntryKeys = new ArraySet<>();
-        for (StandardWifiEntry entry : mStandardWifiEntryCache) {
-            if (entry.isSaved()) {
-                savedEntryKeys.add(entry.getStandardWifiEntryKey().getScanResultKey());
-            }
-        }
-
-        // Filter out any redundant entries
-        Set<ScanResultKey> seenUnsavedKeys = new ArraySet<>();
         for (StandardWifiEntry entry : mStandardWifiEntryCache) {
             entry.updateAdminRestrictions();
             if (activeWifiEntries.contains(entry)) {
                 continue;
             }
-            ScanResultKey scanKey = entry.getStandardWifiEntryKey().getScanResultKey();
             if (!entry.isSaved()) {
-                if (scanResultKeysWithVisibleSuggestions.contains(scanKey)) {
+                if (scanResultKeysWithVisibleSuggestions
+                        .contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
                     continue;
                 }
                 // Filter out any unsaved entries that are already provisioned with Passpoint
@@ -638,22 +628,15 @@ public class WifiPickerTracker extends BaseWifiTracker {
                     continue;
                 }
                 // Filter out any unsaved entries that are matched with a KnownNetworkEntry
-                if (knownNetworkKeys.contains(scanKey)) {
+                if (knownNetworkKeys.contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
                     continue;
                 }
-                // Filter out any unsaved entries that match a saved entry
-                if (savedEntryKeys.contains(scanKey)) {
-                    continue;
-                }
-                // Filter out duplicate unsaved entries, which may happen when a saved network with
-                // the same scan key as an unsaved network is forgotten.
-                if (seenUnsavedKeys.contains(scanKey)) {
-                    continue;
-                }
-                seenUnsavedKeys.add(scanKey);
+            } else {
+                // Create a set of saved entry keys
+                savedEntryKeys.add(entry.getStandardWifiEntryKey().getScanResultKey());
             }
             // Filter out any entries that are matched with a HotspotNetworkEntry
-            if (hotspotNetworkKeys.contains(scanKey)) {
+            if (hotspotNetworkKeys.contains(entry.getStandardWifiEntryKey().getScanResultKey())) {
                 continue;
             }
             wifiEntries.add(entry);
